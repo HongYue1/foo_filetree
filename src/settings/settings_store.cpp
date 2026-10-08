@@ -54,7 +54,8 @@ cfg_string cfg_never_show(guid_never_show, "");
 cfg_string cfg_hide_patterns(guid_hide_patterns, "");
 cfg_string cfg_menu(guid_menu, "");
 
-std::optional<Settings> g_current;
+std::optional<Settings> g_current; //!< saved
+std::optional<Settings> g_preview;
 std::shared_ptr<const model::FilterRules> g_rules;
 std::vector<Listener*> g_listeners;
 
@@ -131,22 +132,25 @@ std::shared_ptr<const model::FilterRules> build_rules(const Settings& s) {
 
 } // namespace
 
-const Settings& current() {
+const Settings& stored() {
     if (!g_current) {
         g_current = load();
-        g_rules = build_rules(*g_current);
+        if (!g_preview) g_rules = build_rules(*g_current);
     }
     return *g_current;
 }
 
-void apply(Settings next) {
-    next.sanitize();
-    const Settings before = current();
-    const std::uint32_t changes = diff(before, next);
-    if (before == next) return;
-    save(next);
-    g_current = std::move(next);
-    if ((changes & change_relist) != 0) g_rules = build_rules(*g_current);
+const Settings& current() {
+    if (g_preview) return *g_preview;
+    return stored();
+}
+
+namespace {
+
+//! After the effective settings changed from `before`: rebuild the rules, tell the panels.
+void publish(const Settings& before) {
+    const std::uint32_t changes = diff(before, current());
+    if ((changes & change_relist) != 0) g_rules = build_rules(current());
     if (changes == 0) return; // e.g. only the menu layout: read when the menu opens
     // Copy: a listener may unsubscribe while being notified.
     const std::vector<Listener*> listeners = g_listeners;
@@ -155,6 +159,31 @@ void apply(Settings next) {
             listener->on_settings_changed(changes);
         }
     }
+}
+
+} // namespace
+
+void apply(Settings next) {
+    next.sanitize();
+    const Settings before = current();
+    if (!(stored() == next)) save(next);
+    g_current = std::move(next);
+    g_preview.reset();
+    publish(before);
+}
+
+void preview(Settings next) {
+    next.sanitize();
+    const Settings before = current();
+    g_preview = std::move(next);
+    publish(before);
+}
+
+void end_preview() {
+    if (!g_preview) return;
+    const Settings before = *g_preview;
+    g_preview.reset();
+    publish(before);
 }
 
 std::shared_ptr<const model::FilterRules> filter_rules() {

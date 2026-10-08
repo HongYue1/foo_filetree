@@ -91,7 +91,12 @@ Steps:
 - [x] M5b: Preferences page (src/prefs/preferences.cpp, prefs_util.*, foo_filetree.rc,
   resource.h; Display > Folder Tree) with General / Display / Filter tabs. dialog_check 0
   problems. Drive check boxes are created at run time (before the dark hooks).
-- [ ] M5b user test: screenshots of all tabs light + dark; Apply effects live (lines, padding,
+- [x] M5b screenshots light + dark look right. User asked: live preview -> settings::preview()
+  / end_preview() (current() = preview, stored() = saved), page previews 250 ms after an edit,
+  WM_DESTROY without Apply reverts. Pattern hint now explains * ? ; and @eaDir (Synology).
+- [ ] user asked: drag & drop out (to playlists, playlist tabs, Explorer) -> moved from M7 to
+  the start of M6 (PLAN.md updated).
+- [ ] M5b user test: Apply effects live (lines, padding,
   extensions, sort, filter, hidden drives, patterns); Reset
 - [ ] M5c: Actions tab (binding editor) + Menu tab; menu honours layout
 - [ ] M5d: CUI colour client "Tree lines" entry; user test; commit

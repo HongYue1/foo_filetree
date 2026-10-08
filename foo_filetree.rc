@@ -103,5 +103,5 @@ BEGIN
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,171,286,1
     LTEXT           "Patterns:",IDC_STATIC,12,180,70,8
     EDITTEXT        IDC_HIDE_PATTERNS,85,178,208,12,ES_AUTOHSCROLL
-    LTEXT           "Hides matching files and folders. Wildcards * and ?, separated by ; for example: @eaDir; *.tmp",IDC_STATIC,85,193,208,16
+    LTEXT           "Hides files and folders whose whole name matches. * stands for any characters, ? for one. Separate patterns with ; for example: *.tmp; Thumbs.db; @eaDir (Synology NAS thumbnail folders)",IDC_STATIC,85,193,208,24
 END

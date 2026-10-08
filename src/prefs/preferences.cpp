@@ -38,7 +38,7 @@ struct PageState {
 
 PageState stored_state() {
     PageState state;
-    state.settings = settings::current();
+    state.settings = settings::stored();
     state.temp_playlist =
         pfc::stringcvt::string_wide_from_utf8(actions::temp_playlist_name().c_str()).get_ptr();
     state.recursive = actions::recursive_by_default();
@@ -47,7 +47,7 @@ PageState stored_state() {
 
 PageState default_state() {
     PageState state;
-    state.settings.menu = settings::current().menu; // edited on its own tab (M5c)
+    state.settings.menu = settings::stored().menu; // edited on its own tab (M5c)
     state.temp_playlist = L"Folder Tree";
     return state;
 }
@@ -76,6 +76,7 @@ public:
     }
 
     void apply() override {
+        KillTimer(preview_timer);
         const PageState state = from_controls();
         actions::set_temp_playlist_name(
             pfc::stringcvt::string_utf8_from_wide(state.temp_playlist.c_str()).get_ptr());
@@ -88,11 +89,14 @@ public:
     void reset() override {
         to_controls(default_state());
         callback_->on_state_changed();
+        SetTimer(preview_timer, preview_delay_ms);
     }
 
     BEGIN_MSG_MAP_EX(PreferencesPage)
         MSG_WM_INITDIALOG(on_init_dialog)
         MSG_WM_DRAWITEM(on_draw_item)
+        MSG_WM_TIMER(on_timer)
+        MSG_WM_DESTROY(on_destroy)
         MESSAGE_HANDLER_EX(WM_NOTIFY, on_notify)
         COMMAND_HANDLER_EX(IDC_LINE_SWATCH, BN_CLICKED, on_swatch)
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, on_changed)
@@ -221,10 +225,31 @@ private:
         if (id == IDC_LINE_HEX) ::InvalidateRect(find_control(m_hWnd, IDC_LINE_SWATCH), nullptr, FALSE);
         update_enabled();
         callback_->on_state_changed();
+        // Live preview, debounced so typing a pattern does not relist on every key.
+        SetTimer(preview_timer, preview_delay_ms);
+    }
+
+    void on_timer(UINT_PTR id) {
+        if (id != preview_timer) {
+            SetMsgHandled(FALSE);
+            return;
+        }
+        KillTimer(preview_timer);
+        try {
+            settings::preview(from_controls().settings);
+        } catch (...) {
+        }
+    }
+
+    //! Leaving without Apply (Cancel, another page) drops the preview.
+    void on_destroy() {
+        KillTimer(preview_timer);
+        settings::end_preview();
+        SetMsgHandled(FALSE);
     }
 
     void on_swatch(UINT, int, CWindow) {
-        COLORREF colour = parse_hex(get_text(m_hWnd, IDC_LINE_HEX), settings::current().line_colour);
+        COLORREF colour = parse_hex(get_text(m_hWnd, IDC_LINE_HEX), settings::stored().line_colour);
         if (!pick_colour(m_hWnd, colour)) return;
         set_check(m_hWnd, IDC_LINE_CUSTOM, true);
         set_check(m_hWnd, IDC_LINE_FOLLOW, false);
@@ -237,7 +262,7 @@ private:
             SetMsgHandled(FALSE);
             return;
         }
-        draw_swatch(*item, parse_hex(get_text(m_hWnd, IDC_LINE_HEX), settings::current().line_colour));
+        draw_swatch(*item, parse_hex(get_text(m_hWnd, IDC_LINE_HEX), settings::stored().line_colour));
     }
 
     void update_enabled() {
@@ -321,6 +346,9 @@ private:
         updating_ = false;
         update_enabled();
     }
+
+    static constexpr UINT_PTR preview_timer = 1;
+    static constexpr UINT preview_delay_ms = 250;
 
     const preferences_page_callback::ptr callback_;
     std::array<HWND, tab_count> tabs_{};

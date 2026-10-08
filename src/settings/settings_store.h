@@ -20,10 +20,18 @@ protected:
     ~Listener() = default;
 };
 
+//! What panels use: the saved settings, or a Preferences preview while one is active.
 [[nodiscard]] const Settings& current();
+//! The saved settings, ignoring any preview (what the Preferences page compares against).
+[[nodiscard]] const Settings& stored();
 
-//! Sanitises, saves and notifies every listener of what changed. No-op if nothing did.
+//! Sanitises, saves, ends any preview and notifies every listener of what changed.
 void apply(Settings next);
+
+//! Shows `next` in every panel without saving it (live preview while editing Preferences).
+void preview(Settings next);
+//! Drops the preview: panels go back to the saved settings. No-op without a preview.
+void end_preview();
 
 //! The filter rules for `current()`, rebuilt only when they change. Shared with workers.
 [[nodiscard]] std::shared_ptr<const model::FilterRules> filter_rules();

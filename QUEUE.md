@@ -79,7 +79,7 @@ Design:
 - `settings/settings_store.cpp`: one cfg var per setting (fresh GUIDs), `current()`,
   `apply(new)`: save, diff, notify live views (registry in view). Relist = reload every loaded
   folder keeping expansion + selection by path (M5a: reload expanded roots; good enough).
-- Preferences: one page "Folder Tree" under Display (preferences_page::guid_display); tabs as child dialogs (skill
+- Preferences: one page "Folder Tree" under Tools (guid_tools, like the user's other components); tabs as child dialogs (skill
   preferences-pages.md: 300x246 DU, child per tab, dark hooks per child, guarded WM_NOTIFY,
   style profile comment in the .rc). `dialog_check.bat` zero problems after every layout change.
 
@@ -89,7 +89,7 @@ Steps:
   (tree_view_settings.cpp: relist_all restores expanded paths + selection; hidden drives; row
   padding; extension display; tree lines in paint_lines). Not user-visible until M5b.
 - [x] M5b: Preferences page (src/prefs/preferences.cpp, prefs_util.*, foo_filetree.rc,
-  resource.h; Display > Folder Tree) with General / Display / Filter tabs. dialog_check 0
+  resource.h; Tools > Folder Tree) with General / Display / Filter tabs. dialog_check 0
   problems. Drive check boxes are created at run time (before the dark hooks).
 - [x] M5b screenshots light + dark look right. User asked: live preview -> settings::preview()
   / end_preview() (current() = preview, stored() = saved), page previews 250 ms after an edit,

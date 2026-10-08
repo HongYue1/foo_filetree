@@ -1,4 +1,4 @@
-// The Preferences page: Display > Folder Tree. Tabs are child dialogs (see
+// The Preferences page: Tools > Folder Tree. Tabs are child dialogs (see
 // foobar2000-component-dev/references/preferences-pages.md). Everything here is global; Apply
 // saves through settings::apply(), which tells every live panel what changed.
 
@@ -362,7 +362,7 @@ class PreferencesPageFactory : public preferences_page_impl<PreferencesPage> {
 public:
     const char* get_name() override { return FILETREE_NAME; }
     GUID get_guid() override { return guids::preferences_page; }
-    GUID get_parent_guid() override { return preferences_page::guid_display; }
+    GUID get_parent_guid() override { return preferences_page::guid_tools; }
 };
 
 preferences_page_factory_t<PreferencesPageFactory> g_preferences_page_factory;

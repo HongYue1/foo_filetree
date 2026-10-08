@@ -107,7 +107,7 @@ Steps:
   SHCreateShellItemArrayFromIDLists + BHID_DataObject, SHDoDragDrop, copy/link only (never move).
   User-tested OK (playlist, playlist tabs CUI+DUI, Explorer, Esc cancels, click and
   double click still work).
-- [~] M6b: type-ahead find (on_char; 1 s reset like Explorer; repeated letter cycles; case-insensitive prefix on visible rows). Built; awaiting user test
+- [x] M6b: type-ahead find (on_char; 1 s reset like Explorer; repeated letter cycles; case-insensitive prefix on visible rows). User-tested OK
 - [ ] M6c: moved to M7 after file operations (F5 copy, F6 move, F7 new folder need them first)
 - [ ] M6d: address bar / breadcrumb, filter box
 - [ ] M6e: favourites as roots, startup modes, per-instance state

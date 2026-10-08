@@ -117,11 +117,29 @@
     <ClCompile Include="src\component.cpp" />
     <ClCompile Include="src\hosts\cui_panel.cpp" />
     <ClCompile Include="src\hosts\dui_element.cpp" />
+    <ClCompile Include="src\model\sort.cpp" />
+    <ClCompile Include="src\model\extension_set.cpp" />
+    <ClCompile Include="src\model\name_pool.cpp" />
+    <ClCompile Include="src\model\tree.cpp" />
+    <ClCompile Include="src\platform\worker_pool.cpp" />
+    <ClCompile Include="src\fs\enumerate.cpp" />
+    <ClCompile Include="src\fs\enumeration_service.cpp" />
+    <ClCompile Include="src\fs\drives.cpp" />
+    <ClCompile Include="src\fs\fb2k_glue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\guids.h" />
     <ClInclude Include="src\version.h" />
     <ClInclude Include="src\platform\gdi.h" />
+    <ClInclude Include="src\platform\worker_pool.h" />
+    <ClInclude Include="src\model\sort.h" />
+    <ClInclude Include="src\model\extension_set.h" />
+    <ClInclude Include="src\model\name_pool.h" />
+    <ClInclude Include="src\model\tree.h" />
+    <ClInclude Include="src\fs\enumerate.h" />
+    <ClInclude Include="src\fs\enumeration_service.h" />
+    <ClInclude Include="src\fs\drives.h" />
+    <ClInclude Include="src\fs\fb2k_glue.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

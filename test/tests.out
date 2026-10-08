@@ -1,0 +1,5 @@
+sizeof(Node) = 48 bytes
+10k children: apply 0.578 ms, collapse+expand 0.065 ms, memory 865 KB
+enumerate+filter+sort 10k files (warm cache): 23.91 ms on a worker
+84 checks, 0 failures
+EXIT=0 

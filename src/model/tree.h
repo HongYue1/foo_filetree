@@ -1,0 +1,127 @@
+#pragma once
+
+// The folder tree: a node pool plus the flat list of visible rows. Main thread only.
+//
+// - Nodes live in one vector and are addressed by 32-bit index. A folder's children are one
+//   contiguous index range, appended when its listing arrives (already sorted by the worker).
+// - Visible rows are a flat vector of node indices in display order. Expanding splices the
+//   folder's visible subtree in after it; collapsing erases the rows below it that are deeper.
+//   Paint and hit-test (M2) index this vector directly.
+// - Collapsing keeps the children, so re-expanding is instant. Memory therefore grows with what
+//   has been expanded this session; unloading large collapsed subtrees is an M7 item.
+
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "name_pool.h"
+
+namespace filetree::model {
+
+inline constexpr std::uint32_t no_node = 0xffffffffu;
+
+enum NodeFlag : std::uint16_t {
+    node_container = 1 << 0,   //!< folder or root: can be expanded
+    node_expanded = 1 << 1,    //!< the user wants it open (rows shown once loaded)
+    node_loaded = 1 << 2,      //!< children are present (possibly zero of them)
+    node_loading = 1 << 3,     //!< a listing has been requested and not yet applied
+    node_load_failed = 1 << 4, //!< the last listing failed (access denied, offline, ...)
+    node_root = 1 << 5,
+};
+
+struct Node {
+    const wchar_t* name{};        //!< NamePool, null-terminated
+    std::uint64_t size{};
+    std::int64_t modified{};      //!< FILETIME
+    std::uint32_t parent{no_node};
+    std::uint32_t first_child{no_node};
+    std::uint32_t child_count{};
+    std::uint32_t attributes{};
+    std::uint16_t name_length{};
+    std::uint16_t depth{};
+    std::uint16_t flags{};
+    std::uint16_t reserved{};
+
+    [[nodiscard]] bool has(NodeFlag flag) const noexcept { return (flags & flag) != 0; }
+    [[nodiscard]] std::wstring_view name_view() const noexcept { return {name, name_length}; }
+};
+
+// PLAN.md budget: <= 64 bytes per node plus the name.
+static_assert(sizeof(Node) <= 64, "Node exceeds the per-node memory budget");
+
+//! What changed in the row list, for the view to invalidate and fix scroll/selection.
+//! `row` is the first affected row; rows [row, row + removed) were replaced by `inserted` rows.
+struct RowSplice {
+    std::size_t row{};
+    std::size_t removed{};
+    std::size_t inserted{};
+
+    [[nodiscard]] bool empty() const noexcept { return removed == 0 && inserted == 0; }
+};
+
+//! One child as delivered by a listing, in display order.
+struct ChildRecord {
+    std::wstring_view name;
+    std::uint32_t attributes{};
+    std::uint64_t size{};
+    std::int64_t modified{};
+};
+
+class Tree {
+public:
+    enum class ExpandResult {
+        not_container, //!< files cannot expand
+        unchanged,     //!< already expanded
+        expanded,      //!< rows inserted (see the splice)
+        needs_load,    //!< marked expanded + loading; request a listing, then apply_children()
+        loading,       //!< marked expanded; a listing is already on its way
+    };
+
+    void clear() noexcept;
+
+    //! Adds a top-level entry (a drive "C:\", a favourite folder) as a new last row.
+    std::uint32_t add_root(std::wstring_view path, std::uint32_t attributes = 0x10);
+
+    [[nodiscard]] std::size_t row_count() const noexcept { return rows_.size(); }
+    [[nodiscard]] std::uint32_t node_at_row(std::size_t row) const noexcept { return rows_[row]; }
+    [[nodiscard]] std::span<const std::uint32_t> rows() const noexcept { return rows_; }
+    [[nodiscard]] const Node& node(std::uint32_t index) const noexcept { return nodes_[index]; }
+    [[nodiscard]] std::size_t node_count() const noexcept { return nodes_.size(); }
+
+    //! The node's row, if it is visible. Linear in the row count (fine at 10k rows: one pass
+    //! over contiguous integers); called once per expand/collapse/listing, never per paint.
+    [[nodiscard]] std::optional<std::size_t> row_of(std::uint32_t index) const noexcept;
+
+    ExpandResult expand(std::uint32_t index, RowSplice* splice = nullptr);
+    //! Returns the removed rows; empty if it was not expanded or not visible.
+    RowSplice collapse(std::uint32_t index);
+
+    //! Applies a finished listing. Ignored unless the node is still waiting for one (a refresh
+    //! that races a collapse is harmless). Splices rows in if the node is expanded and visible.
+    RowSplice apply_children(std::uint32_t index, std::span<const ChildRecord> children);
+
+    //! Marks a listing as failed: not loading, not loaded, flagged. The node stays expanded with
+    //! no children, so the view can show the error state; expanding it again retries.
+    void fail_load(std::uint32_t index) noexcept;
+
+    //! Full path of a node: the root's path plus each component, '\' separated.
+    void build_path(std::uint32_t index, std::wstring& out) const;
+
+    //! Bytes held by nodes, rows and names. For the performance counters (M7).
+    [[nodiscard]] std::size_t memory_bytes() const noexcept;
+
+private:
+    void append_visible_subtree(std::uint32_t index);
+    RowSplice splice_children_in(std::uint32_t index);
+
+    std::vector<Node> nodes_;
+    std::vector<std::uint32_t> rows_;
+    std::vector<std::uint32_t> scratch_; //!< reused by expand; grows, never shrinks
+    NamePool names_;
+};
+
+} // namespace filetree::model

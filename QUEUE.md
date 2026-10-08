@@ -109,6 +109,6 @@ Steps:
   double click still work).
 - [x] M6b: type-ahead find (on_char; 1 s reset like Explorer; repeated letter cycles; case-insensitive prefix on visible rows). User-tested OK
 - [ ] M6c: moved to M7 after file operations (F5 copy, F6 move, F7 new folder need them first)
-- [~] M6d: address bar (view/panel.* hosts address bar + tree as child windows; view/address_bar.*: Back/Forward/Up, crumbs, click blank or Ctrl+L to type a path; tree_view_nav.cpp navigate_to via restore sets; history keeps selections held >= 0.8 s; Alt+Left/Right/Up, mouse side buttons; General tab "Show the address bar"). Built, tests + dialog_check pass; awaiting user test
+- [x] M6d: address bar (view/panel.* hosts address bar + tree as child windows; view/address_bar.*: Back/Forward/Up, crumbs, click blank or Ctrl+L to type a path; tree_view_nav.cpp navigate_to via restore sets; history keeps selections held >= 0.8 s; Alt+Left/Right/Up, mouse side buttons; General tab "Show the address bar"). User-tested OK (CUI+DUI, dark)
 - [ ] M6d2: filter box
 - [ ] M6e: favourites as roots, startup modes, per-instance state

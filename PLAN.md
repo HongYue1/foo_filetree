@@ -161,9 +161,13 @@ user (we cannot run foobar2000).
 | M3 | Actions: action model (target x mode x play x recursive, plus None / expand-collapse), configurable single / double / middle click and Enter bindings for folders and files (stored in cfg vars now, edited in M5), playlists via `process_locations_async`, Shift/Ctrl overrides, temp playlist. |
 | M4 | Context menu: own items, shell menu, fb2k context menu, rename, delete, copy path, open in Explorer. |
 | M5 | Preferences pages (General, Display, Filter, Actions, Menu & Commands, Favourites). Display includes tree lines / indentation guides (style, thickness, colour), drawn per visible row with the DC pen (no allocation). Actions includes the click-binding editor. Run `scripts/dialog_check.bat` after every layout change. |
-| M6 | Drag & drop out (playlists, playlist tabs, Explorer; user request, done first), address bar / breadcrumb, filter box, favourites as roots, startup modes, per-instance state. |
-| M7 | Change watching, now-playing follow, footer status, performance counters, drop onto the panel. |
-| M8 | Polish: accessibility (UIA), tooltips, x86 build, packaging, README, release. |
+| M6 | Drag & drop out (playlists, playlist tabs, Explorer; user request, done first), address bar / breadcrumb, filter box, favourites as roots, startup modes, per-instance state, type-ahead find, main-menu commands (bindable in foobar2000 keyboard shortcuts; optional Total Commander preset F5-F8). |
+| M7 | Change watching, now-playing follow + playing marker, footer status, performance counters, drop onto the panel; file operations via Windows (`IFileOperation`: new folder, copy, move with its progress / cancel / conflict UI), delete confirmation with file and folder count for recursive deletes, Open in Explorer, Properties, Open with, save folder as playlist (with recursion), "add to queue" action, user-defined external commands (`%f` file, `%d` folder), library indicators and "add folder to Library" (if the SDK allows). |
+| M8 | Polish: accessibility (UIA), tooltips, zebra stripes and hover colour options, x86 build, packaging, README, release. |
+
+Community suggestions (IloveFb2k, 2026-10): only the cheap items that fit a fast folder tree were
+adopted (in M6-M8 above). Tabs, list / grid views, columns, info pane, tag search, scripting
+hooks, streaming servers and similar were declined as out of scope.
 
 ## Risks
 
@@ -174,3 +178,4 @@ user (we cannot run foobar2000).
 - **Shell context menu** (`IContextMenu`) runs third-party shell extensions in-process; some are
   slow or crash. Built only on demand, on the main thread (COM STA requirement), never cached.
 - **Change notifications** can flood (bulk copies); debounce and coalesce, cap per folder.
+

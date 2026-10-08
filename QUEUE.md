@@ -40,50 +40,38 @@ pages, two instances. PgUp/PgDn = parent folder / past the parent's subtree (use
 `9a7a4cb`, confirmed). "(unavailable)" state untested (no offline drive). Enter needed
 `DLGC_WANTMESSAGE` (recorded in foobar2000-component-dev/references/sdk-quirks.md).
 
-## Current task: M3 - actions
+## Done: M3 - actions (user-tested 2026-10-08, `968628e`)
 
-Goal: send folders/files to playlists. PLAN.md was updated (user request 2026-10-08):
-configurable single / double / middle click + Enter, each with a folder action and a file action,
-any of them "None"; single click always selects and its action (default None) runs in addition,
-immediately (no double-click delay timer). Indentation guides / tree lines were added to M5.
+Click/Enter bindings (folder + file action per gesture, None allowed), send via
+`process_locations_async`, Shift = invert recursion, Ctrl = active playlist. All four user
+checks passed; 3511-file folder: only fb2k's own progress dialog, UI never froze. Double-click
+on a folder keeps toggling (user chose "keep as is"). Leftover: archives in the playable set.
+Finding: `pfc_infinite` is `int` -> C4245; use `SIZE_MAX` (in sdk-quirks.md).
+
+## Current task: M4 - context menu
+
+Goal: right-click menu with our items, the fb2k context menu (files), the Shell menu, rename,
+delete, copy path, open in Explorer, refresh. Item choice/order is a setting in M5.
 
 Design:
-- `actions/action.{h,cpp}` - pure: `Action{kind none/toggle/send, target temp/active/new,
-  mode replace/add, play, recursion default/always/never}`, `Bindings` (4 gestures x
-  folder/file), defaults, versioned byte encoding (tolerant: bad bytes -> that action's default).
-  Covered by the offline tests.
-- `actions/action_settings.{h,cpp}` - cfg vars (fresh GUIDs): bindings blob, temp playlist name
-  ("Folder Tree"), recursive by default (true). Cached in memory; M5 edits them.
-- `actions/playlist_send.{h,cpp}` - Shift inverts recursion, Ctrl targets the active playlist.
-  Recursive folder: the folder path goes straight to
-  `playlist_incoming_item_filter_v2::process_locations_async` (fb2k recurses, sorts, reads tags
-  off the main thread, `op_flag_delay_ui`). Non-recursive folder: our worker lists its playable
-  files first. Completion: resolve target, undo backup + clear on replace, add, and for play:
-  activate, focus first new item, `playlist_execute_default_action` (honours the user's default
-  action; `track_command_settrack` is marked internal in the SDK).
-- View: gestures -> binding lookup; expander clicks stay pure toggles. Middle click selects too.
-
-Defaults: single = None/None; double = toggle (folder) / temp replace+play (file); middle = add
-to active (both); Enter = same as double.
-
-Status: **user-tested 2026-10-08: 1-4 all pass** (2560-track / 3511-file folder: only fb2k's
-own processing dialog, UI never froze). Open question to the user: double-click on a folder
-toggles by design (default table); they noticed it does not replace+play. Waiting for their
-choice of default before closing M3.
+- Menu: Play / Add to active playlist / Send to new playlist | Open in Explorer (file: show in
+  folder) / Copy path | Rename (F2) / Delete (Del) / Refresh (F5) | foobar2000 > (files) /
+  Shell >. Right-click selects the row first; Apps key / Shift+F10 opens at the selection.
+  DUI layout-edit mode still gets Default UI's menu.
+- Disk-touching shell work (open in Explorer, recycle, rename) runs on a worker with its own
+  STA COM init (`IFileOperation`, undoable, shell conflict UI). `EnumerationService::submit()`
+  exposes the pool for that. Copy path is main thread (clipboard only).
+- Shell submenu: built on demand on the main thread (STA), `SHParseDisplayName` +
+  `SHBindToParent` + `IContextMenu`(2/3), menu messages forwarded while it is open, never cached.
+- fb2k submenu: `contextmenu_manager` over a handle made from the file path (no tag read).
+- Rename: inline EDIT over the row (dark-themed, host font), Enter commits, Esc / focus loss /
+  scroll cancels.
+- After rename/delete/refresh: `Tree::reload(node)` drops the folder's rows, marks it unloaded
+  and re-lists it; the view re-selects by name (renamed item, or the next sibling after delete).
+  Old children stay orphaned in the pool until M7 compaction.
 
 Steps:
-- [x] action model + encoding + tests (`actions/action.*`)
-- [x] settings (`actions/action_settings.*`) + send (`actions/playlist_send.*`) + view wiring
-      (`view/tree_view_input.cpp`, split out of tree_view.cpp to stay under 600 lines)
-- [x] build, commit
-- [ ] user test:
-  1. double-click a file: "Folder Tree" playlist replaced with it, playback starts
-  2. Enter on a file: same; Enter / double-click on a folder: expand/collapse
-  3. middle-click a folder: its files (with subfolders) appended to the active playlist;
-     Shift+middle: only its own files; Ctrl+middle on anything: active playlist
-  4. big folder: fb2k's progress dialog appears only if slow; UI never freezes
-- [ ] then: archives in the playable set? M3 leftover; decide with M4.
-
-Findings:
-- `pfc_infinite` is an `int` constant; passing it as `t_size` trips C4245 under /W4. Use
-  `SIZE_MAX` (same value).
+- [ ] Tree::reload + tests; EnumerationService::submit
+- [ ] shell ops, shell menu, fb2k menu
+- [ ] view: context menu, shortcuts, inline rename, reselect
+- [ ] build, commit, hand to user

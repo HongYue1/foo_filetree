@@ -114,6 +114,8 @@ private:
     void on_dpi_changed() noexcept;
     //! Sends a node to a playlist per `action` (Kind::send).
     void send_node(const actions::Action& action, std::uint32_t node) noexcept;
+    //! Drags a node out of the panel (playlists, playlist tabs, Explorer).
+    void drag_node(std::uint32_t node) noexcept;
 
     // tree_view_menu.cpp
     struct MenuSession;
@@ -228,3 +230,4 @@ private:
 };
 
 } // namespace filetree::view
+

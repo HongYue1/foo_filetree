@@ -94,9 +94,20 @@ Steps:
 - [x] M5b screenshots light + dark look right. User asked: live preview -> settings::preview()
   / end_preview() (current() = preview, stored() = saved), page previews 250 ms after an edit,
   WM_DESTROY without Apply reverts. Pattern hint now explains * ? ; and @eaDir (Synology).
-- [ ] user asked: drag & drop out (to playlists, playlist tabs, Explorer) -> moved from M7 to
+- [x] user asked: drag & drop out (to playlists, playlist tabs, Explorer) -> moved from M7 to
   the start of M6 (PLAN.md updated).
 - [x] M5b user test: Apply effects live (lines, padding,
   extensions, sort, filter, hidden drives, patterns); Reset
 - [x] M5c: Actions tab (binding editor) + Menu tab; menu honours layout
 - [x] M5d: CUI colour client tree lines (Group foreground); M5 user-tested
+
+## Current task: M6 - navigation and drag out
+
+- [~] M6a: drag out (actions/drag_out.*): DragDetect in on_button_down, shell data object via
+  SHCreateShellItemArrayFromIDLists + BHID_DataObject, SHDoDragDrop, copy/link only (never move).
+  Built; awaiting user test (playlist, playlist tabs CUI+DUI, Explorer, Esc cancels, click and
+  double click still work).
+- [ ] M6b: type-ahead find
+- [ ] M6c: main-menu commands (keyboard shortcuts), optional Total Commander preset
+- [ ] M6d: address bar / breadcrumb, filter box
+- [ ] M6e: favourites as roots, startup modes, per-instance state

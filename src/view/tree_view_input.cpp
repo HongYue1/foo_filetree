@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "../actions/action_settings.h"
+#include "../actions/drag_out.h"
 #include "../actions/playlist_send.h"
 
 namespace filetree::view {
@@ -127,6 +128,16 @@ void TreeView::on_button_down(int x, int y, bool double_click) noexcept {
     // Single click always selects; a bound single-click action runs in addition, at once (no
     // double-click delay timer), so it also runs on the first click of a double click.
     select_row(static_cast<std::size_t>(row));
+    // Press and move starts a drag out instead of the click action. DragDetect returns at once
+    // on movement past the system drag threshold or on button up (a plain click).
+    if (!double_click && wnd_ != nullptr) {
+        POINT screen{x, y};
+        ClientToScreen(wnd_, &screen);
+        if (DragDetect(wnd_, screen)) {
+            drag_node(node);
+            return;
+        }
+    }
     run_gesture(double_click ? actions::Gesture::double_click : actions::Gesture::single_click,
                 node);
 }
@@ -178,6 +189,17 @@ void TreeView::send_node(const actions::Action& action, std::uint32_t node) noex
     }
 }
 
+void TreeView::drag_node(std::uint32_t node) noexcept {
+    try {
+        std::wstring path;
+        tree_.build_path(node, path);
+        actions::drag_out(wnd_, path);
+    } catch (...) {
+    }
+    // The drag loop swallowed the mouse messages: the hover row is stale.
+    on_mouse_leave();
+}
+
 void TreeView::on_mouse_move(int, int y) noexcept {
     if (!tracking_mouse_ && wnd_ != nullptr) {
         TRACKMOUSEEVENT track{sizeof(track), TME_LEAVE, wnd_, 0};
@@ -197,3 +219,4 @@ void TreeView::on_mouse_leave() noexcept {
 }
 
 } // namespace filetree::view
+

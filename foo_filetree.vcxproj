@@ -145,6 +145,7 @@
     <ClCompile Include="src\actions\fb2k_menu.cpp" />
     <ClCompile Include="src\view\tree_view_menu.cpp" />
     <ClCompile Include="src\view\inline_edit.cpp" />
+    <ClCompile Include="src\actions\drag_out.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\guids.h" />
@@ -168,6 +169,7 @@
     <ClInclude Include="src\actions\action_settings.h" />
     <ClInclude Include="src\actions\playlist_send.h" />
     <ClInclude Include="src\actions\shell_ops.h" />
+    <ClInclude Include="src\actions\drag_out.h" />
     <ClInclude Include="src\actions\presets.h" />
     <ClInclude Include="src\model\filter_rules.h" />
     <ClInclude Include="src\settings\settings_model.h" />
@@ -182,3 +184,4 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
+

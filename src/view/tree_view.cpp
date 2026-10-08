@@ -425,8 +425,21 @@ bool TreeView::on_key(WPARAM key) noexcept {
     switch (key) {
     case VK_UP: select_row(has_selection && current > 0 ? current - 1 : current); return true;
     case VK_DOWN: select_row(has_selection ? std::min(current + 1, rows - 1) : current); return true;
-    case VK_PRIOR: select_row(current > page ? current - page : 0); return true;
-    case VK_NEXT: select_row(std::min(current + page, rows - 1)); return true;
+    // Explorer paging: first move to the edge of the view, then a page at a time.
+    case VK_PRIOR: {
+        const std::size_t first_visible = top_row_;
+        const bool inside = has_selection && current > first_visible &&
+                            current < top_row_ + static_cast<std::size_t>(visible_rows());
+        select_row(inside ? first_visible : (current > page ? current - page : 0));
+        return true;
+    }
+    case VK_NEXT: {
+        const std::size_t last_visible =
+            std::min(top_row_ + static_cast<std::size_t>(visible_rows()) - 1, rows - 1);
+        const bool inside = has_selection && current >= top_row_ && current < last_visible;
+        select_row(inside ? last_visible : std::min(current + page, rows - 1));
+        return true;
+    }
     case VK_HOME: select_row(0); return true;
     case VK_END: select_row(rows - 1); return true;
     case VK_LEFT:
@@ -536,9 +549,16 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
         return true;
     case WM_KEYDOWN:
         return on_key(wp);
-    case WM_GETDLGCODE:
+    case WM_GETDLGCODE: {
+        // DLGC_WANTARROWS covers the arrow keys only. Enter is a dialog key: without
+        // DLGC_WANTMESSAGE for it, the host's dialog navigation eats it before WM_KEYDOWN.
         result = DLGC_WANTARROWS | DLGC_WANTCHARS;
+        const auto* message = reinterpret_cast<const MSG*>(lp);
+        if (message != nullptr && message->message == WM_KEYDOWN && message->wParam == VK_RETURN) {
+            result |= DLGC_WANTMESSAGE;
+        }
         return true;
+    }
     case WM_SETFOCUS:
     case WM_KILLFOCUS:
         focused_ = msg == WM_SETFOCUS;

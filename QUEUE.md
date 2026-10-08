@@ -4,7 +4,7 @@ Interruption-safe handoff. A new thread should be able to read this file, then `
 continue. Update it *while* working (after each finished step), not at the end. When a task is
 done, replace this file's contents with the next task from `PLAN.md`.
 
-## Pending from M0 (fix first if the user reports anything)
+## M0 (done, user-tested)
 
 M0 (project skeleton, empty CUI panel + DUI element) is built and committed (`1b662d2`). The user
 has not yet confirmed it loads. Check: loads; panel in CUI Layout > Panels; element in DUI
@@ -56,8 +56,15 @@ Plan:
 - CUI: font client (new GUID) + selection colours in the colour client. DUI: `query_font_ex`,
   `ui_color_selection`/`highlight`.
 
-Status: **code complete, built (0 warnings, 335 KB), waiting for the user's test.** Do not
-start M3 before the user has tried M0+M2 together; fix reported problems first.
+Status: **user-tested 2026-10-08: everything works except two key issues, fixed, awaiting
+re-test.** (M0 load test also passed: both UIs, two instances, dark mode, colour/font pages.)
+- Enter did nothing. Likely cause: Enter is a dialog key, and the host's dialog navigation ate
+  it because WM_GETDLGCODE did not return DLGC_WANTMESSAGE for it. Fixed; if the re-test passes,
+  record it in the columns-ui-sdk / foobar2000-component-dev skill. (Enter on a file still does
+  nothing by design until M3.)
+- PgUp/PgDn behaved like Home/End. Probably the list was shorter than the panel, so one page
+  reached the end. Now Explorer-style anyway: first to the edge of the view, then a page at a time.
+- "(unavailable)" untested: the user has no offline drive.
 
 Steps:
 - [x] `view/tree_view.{h,cpp}` (state, layout, scroll, input, async loading) and

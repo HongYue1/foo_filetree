@@ -103,9 +103,9 @@ Steps:
 
 ## Current task: M6 - navigation and drag out
 
-- [~] M6a: drag out (actions/drag_out.*): DragDetect in on_button_down, shell data object via
+- [x] M6a: drag out (actions/drag_out.*): DragDetect in on_button_down, shell data object via
   SHCreateShellItemArrayFromIDLists + BHID_DataObject, SHDoDragDrop, copy/link only (never move).
-  Built; awaiting user test (playlist, playlist tabs CUI+DUI, Explorer, Esc cancels, click and
+  User-tested OK (playlist, playlist tabs CUI+DUI, Explorer, Esc cancels, click and
   double click still work).
 - [ ] M6b: type-ahead find
 - [ ] M6c: main-menu commands (keyboard shortcuts), optional Total Commander preset

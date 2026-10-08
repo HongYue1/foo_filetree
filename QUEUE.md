@@ -32,64 +32,41 @@ M1 findings:
 - `Tree::build_path` handles at most 256 levels.
 - Archives are not in the playable set yet (M3).
 
-## Current task: M2 - tree view
+## Done: M2 - tree view (user-tested 2026-10-08)
 
-Goal: the panel shows drives as roots and browses the disk. Virtualised paint over
-`Tree::rows()`, scrolling, expand/collapse (async loading through `fs::enumeration()`), keyboard,
-mouse, per-monitor DPI, host colours and fonts, dark mode. Same view in both hosts.
+Virtualised view in `view/`, both hosts. User confirmed: drives, expand/collapse (mouse, Enter,
+arrows), filtering, natural sort, scrolling, keys, colours, hover, dark mode, CUI colour/font
+pages, two instances. PgUp/PgDn = parent folder / past the parent's subtree (user's choice;
+`9a7a4cb`, confirmed). "(unavailable)" state untested (no offline drive). Enter needed
+`DLGC_WANTMESSAGE` (recorded in foobar2000-component-dev/references/sdk-quirks.md).
 
-Plan:
-- `view/tree_view.{h,cpp}` - owns a `model::Tree`, outstanding tickets per node, scroll position,
-  focus/selection row, hover row. Host-agnostic: hosts pass a `ViewTheme` (colours, HFONT,
-  dark) and forward messages. No allocation in paint/scroll.
-- `view/layout.h` - row height from font metrics + padding (DIPs), indent per depth, expander box.
-- `view/paint.cpp` - one cached DIB (resize only on WM_SIZE), paint rows intersecting rcPaint,
-  `ExtTextOutW` with the host font, expander glyphs (GDI lines/triangles), selection/hover fill,
-  ellipsis via `DrawTextW(DT_END_ELLIPSIS)` only when the name does not fit (measure cached?).
-- Scrolling: `WS_VSCROLL`, `SetScrollInfo`, `ScrollWindowEx` on wheel/keys, dark scrollbars via
-  `SetWindowTheme(DarkMode_Explorer)` (already set by the hosts).
-- Keyboard: Up/Down/PgUp/PgDn/Home/End, Left (collapse / go to parent), Right (expand / first
-  child), `*` / `+` / `-` on numpad, type-ahead later (M6).
-- Mouse: click selects, click on expander or double-click on folder toggles, wheel scrolls,
-  hover tracking with `TrackMouseEvent` (no timers).
-- DPI: `GetDpiForWindow`, re-layout on `WM_DPICHANGED_AFTERPARENT`.
-- CUI: font client (new GUID) + selection colours in the colour client. DUI: `query_font_ex`,
-  `ui_color_selection`/`highlight`.
+## Current task: M3 - actions
 
-Status: **user-tested 2026-10-08: everything works except two key issues, fixed, awaiting
-re-test.** (M0 load test also passed: both UIs, two instances, dark mode, colour/font pages.)
-- Enter did nothing. Likely cause: Enter is a dialog key, and the host's dialog navigation ate
-  it because WM_GETDLGCODE did not return DLGC_WANTMESSAGE for it. Fixed; if the re-test passes,
-  record it in the columns-ui-sdk / foobar2000-component-dev skill. (Enter on a file still does
-  nothing by design until M3.)
-- Enter fix confirmed by the user (DLGC_WANTMESSAGE). Record in a skill once M2 closes.
-- PgUp/PgDn: Explorer paging worked as designed (user screenshots), but the user chose folder
-  jumps instead: PgUp = parent folder, PgDn = row after the parent's subtree (parent's next
-  sibling). Implemented, awaiting re-test. Keep this behaviour; M5 may make it a setting.
-- "(unavailable)" untested: the user has no offline drive.
+Goal: send folders/files to playlists. PLAN.md was updated (user request 2026-10-08):
+configurable single / double / middle click + Enter, each with a folder action and a file action,
+any of them "None"; single click always selects and its action (default None) runs in addition,
+immediately (no double-click delay timer). Indentation guides / tree lines were added to M5.
+
+Design:
+- `actions/action.{h,cpp}` - pure: `Action{kind none/toggle/send, target temp/active/new,
+  mode replace/add, play, recursion default/always/never}`, `Bindings` (4 gestures x
+  folder/file), defaults, versioned byte encoding (tolerant: bad bytes -> that action's default).
+  Covered by the offline tests.
+- `actions/action_settings.{h,cpp}` - cfg vars (fresh GUIDs): bindings blob, temp playlist name
+  ("Folder Tree"), recursive by default (true). Cached in memory; M5 edits them.
+- `actions/playlist_send.{h,cpp}` - Shift inverts recursion, Ctrl targets the active playlist.
+  Recursive folder: the folder path goes straight to
+  `playlist_incoming_item_filter_v2::process_locations_async` (fb2k recurses, sorts, reads tags
+  off the main thread, `op_flag_delay_ui`). Non-recursive folder: our worker lists its playable
+  files first. Completion: resolve target, undo backup + clear on replace, add, and for play:
+  activate, focus first new item, `playlist_execute_default_action` (honours the user's default
+  action; `track_command_settrack` is marked internal in the SDK).
+- View: gestures -> binding lookup; expander clicks stay pure toggles. Middle click selects too.
+
+Defaults: single = None/None; double = toggle (folder) / temp replace+play (file); middle = add
+to active (both); Enter = same as double.
 
 Steps:
-- [x] `view/tree_view.{h,cpp}` (state, layout, scroll, input, async loading) and
-      `view/tree_view_paint.cpp` (cached DIB, rows in rcPaint only, DC brush/pen, DrawTextW
-      ellipsis); `view/theme.h` (colours + blend helpers). Layout lives in `TreeView::Metrics`
-      (no separate layout.h): row = tmHeight + 2x3 DIP, indent 16 DIP, expander 8 DIP triangle.
-- [x] Hosts forward messages; roots = drives ("C:" shown, stored "C:\").
-- [x] Expand/collapse via expander click, double-click, Enter, Left/Right, numpad +/-. Loading
-      dims the expander; a failed listing shows "(unavailable)" and retries on next expand.
-- [x] Keyboard: arrows, PgUp/PgDn, Home/End. Unused keys go to fb2k shortcuts
-      (CUI `g_process_keydown_keyboard_shortcuts`, DUI `keyboard_shortcut_manager_v2`).
-- [x] CUI font client (new GUID) + all six selection colours; DUI uses the CUI font when CUI is
-      installed, else `ui_font_lists`; DUI selection text picked by contrast.
-- [x] Per-monitor DPI: `GetDpiForWindow` looked up at run time (Win7-safe), font scaled from
-      system DPI, re-measure on `WM_DPICHANGED_AFTERPARENT`.
-- [x] Build, commit.
-- [ ] User test (list below), then fix.
-
-What to ask the user to check:
-1. Both UIs: drives listed; click triangle / double-click opens folders; big folders open fast.
-2. Only playable files shown; hidden/system files hidden.
-3. Wheel, scroll bar drag, keyboard navigation; selection colours focused vs unfocused; hover.
-4. Dark mode toggle live (incl. scroll bar); CUI colours/fonts pages show "Folder Tree".
-5. Move the window to a monitor with a different scale: rows re-measure.
-6. A drive with no disc / denied folder (e.g. `C:\System Volume Information` with hidden+system
-   shown - not possible yet; try an offline network drive) shows "(unavailable)".
+- [ ] action model + encoding + tests
+- [ ] settings + send + view wiring
+- [ ] build, commit, hand to user

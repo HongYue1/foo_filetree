@@ -99,7 +99,7 @@ by Preferences tab.
 ### Display
 | Setting | Old | New |
 | --- | --- | --- |
-| Tree lines | checkbox | none / lines / indentation guides |
+| Tree lines | checkbox | none / connector lines / indentation guides; thickness (1-4 DIP, DPI-scaled) and colour (follow text colour at a set opacity, or a custom colour; CUI colour client entry) |
 | Icons | checkbox | none / system icons / built-in glyphs; custom folder icon file |
 | File extensions | checkbox | checkbox, plus "only for non-audio files" |
 | Hidden / system files | checkbox (hidden only) | two checkboxes |
@@ -124,7 +124,7 @@ by Preferences tab.
 ### Actions
 | Setting | Old | New |
 | --- | --- | --- |
-| Mouse bindings | left/double/middle + Ctrl/Alt/Shift/Win -> action list | same model, cleaner editor; also Enter, Space, middle-click; sensible defaults preset |
+| Mouse bindings | left/double/middle + Ctrl/Alt/Shift/Win -> action list | single click, double click, middle click and Enter, each with its own action for folders and for files; every gesture can be set to "None". Single click always selects; its action (default None) runs in addition. Defaults: double click = expand/collapse on folders, play in the temp playlist on files; middle click = add to active playlist; Enter = same as double click |
 | Keyboard bindings | per-panel hotkeys | per-panel keys + fb2k main-menu commands so global keyboard shortcuts work |
 | Action list | ~45 combinations | one action = target (active / default / named / new / "Tree view" temp playlist) x mode (replace / add / insert) x play (yes / no) x recursive (yes / no / per setting) |
 | Recursive by default, Shift overrides | checkbox | same |
@@ -158,9 +158,9 @@ user (we cannot run foobar2000).
 | M0 | Project skeleton: vcxproj, build.bat, component identity, empty CUI panel + DUI element that paint the host background. Loads in both UIs. |
 | M1 | Model + workers: node pool, async enumeration, drives as roots, natural sort, playable filter. Unit tests for model and sort. |
 | M2 | Tree view: virtualised paint, scrolling, expand/collapse, keyboard, mouse, DPI, colours, fonts, dark mode. |
-| M3 | Actions: double-click / Enter / middle-click to playlists via `process_locations_async`, Shift/Ctrl overrides, temp playlist. |
+| M3 | Actions: action model (target x mode x play x recursive, plus None / expand-collapse), configurable single / double / middle click and Enter bindings for folders and files (stored in cfg vars now, edited in M5), playlists via `process_locations_async`, Shift/Ctrl overrides, temp playlist. |
 | M4 | Context menu: own items, shell menu, fb2k context menu, rename, delete, copy path, open in Explorer. |
-| M5 | Preferences pages (General, Display, Filter, Actions, Menu & Commands, Favourites). Run `scripts/dialog_check.bat` after every layout change. |
+| M5 | Preferences pages (General, Display, Filter, Actions, Menu & Commands, Favourites). Display includes tree lines / indentation guides (style, thickness, colour), drawn per visible row with the DC pen (no allocation). Actions includes the click-binding editor. Run `scripts/dialog_check.bat` after every layout change. |
 | M6 | Address bar / breadcrumb, filter box, favourites as roots, startup modes, per-instance state. |
 | M7 | Change watching, now-playing follow, footer status, performance counters, drag & drop. |
 | M8 | Polish: accessibility (UIA), tooltips, x86 build, packaging, README, release. |

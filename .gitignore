@@ -1,0 +1,29 @@
+# Build output
+x64/
+Win32/
+Release/
+Debug/
+bin/
+obj/
+dist/
+*.log
+*.tlog/
+*.obj
+*.pdb
+*.idb
+*.ipdb
+*.iobj
+*.ilk
+*.exp
+*.lib
+*.dll
+*.res
+*.pch
+*.fb2k-component
+test/out/
+
+# Editor / OS
+.vs/
+*.user
+*.suo
+Thumbs.db

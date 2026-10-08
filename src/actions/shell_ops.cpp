@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "../fs/fb2k_glue.h"
+#include "recycle_bin.h"
 
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "ole32.lib")
@@ -38,28 +39,29 @@ HWND top_level(HWND wnd) noexcept {
     return root != nullptr ? root : wnd;
 }
 
-void finish(ShellDone& done, bool changed) {
+void finish(ShellDone& done, ShellResult result) {
     if (!done) return;
     // std::function needs a copyable callable.
     auto shared = std::make_shared<ShellDone>(std::move(done));
-    fs::post_to_main([shared, changed] { (*shared)(changed); });
+    fs::post_to_main([shared, result] { (*shared)(result); });
 }
 
-//! Runs one IFileOperation. Returns true once PerformOperations ran (even if the user
-//! cancelled part of it: something may have changed).
+//! Runs one IFileOperation. Failures are reported by the shell's own UI.
 template <typename Queue>
-bool run_file_operation(const std::wstring& path, HWND owner, DWORD flags, Queue&& queue) {
+ShellResult run_file_operation(const std::wstring& path, HWND owner, DWORD flags, Queue&& queue) {
     CComPtr<IFileOperation> op;
-    if (FAILED(op.CoCreateInstance(CLSID_FileOperation, nullptr, CLSCTX_ALL))) return false;
+    if (FAILED(op.CoCreateInstance(CLSID_FileOperation, nullptr, CLSCTX_ALL))) return {};
     CComPtr<IShellItem> item;
     if (FAILED(SHCreateItemFromParsingName(path.c_str(), nullptr, IID_PPV_ARGS(&item)))) {
-        return false;
+        return {};
     }
     if (owner != nullptr) op->SetOwnerWindow(owner);
-    if (FAILED(op->SetOperationFlags(flags))) return false;
-    if (FAILED(queue(*op, item.p))) return false;
-    op->PerformOperations(); // failures were already reported by the shell's own UI
-    return true;
+    if (FAILED(op->SetOperationFlags(flags))) return {};
+    if (FAILED(queue(*op, item.p))) return {};
+    const HRESULT hr = op->PerformOperations();
+    BOOL aborted = FALSE;
+    op->GetAnyOperationsAborted(&aborted);
+    return {true, SUCCEEDED(hr) && !aborted};
 }
 
 } // namespace
@@ -112,14 +114,14 @@ void delete_path(std::wstring path, bool permanent, HWND owner, ShellDone done) 
             ComScope com;
             const DWORD flags = permanent ? FOF_WANTNUKEWARNING
                                           : FOF_ALLOWUNDO | FOFX_RECYCLEONDELETE;
-            bool changed = false;
+            ShellResult result;
             try {
-                changed = run_file_operation(path, owner, flags, [](IFileOperation& op, IShellItem* item) {
+                result = run_file_operation(path, owner, flags, [](IFileOperation& op, IShellItem* item) {
                     return op.DeleteItem(item, nullptr);
                 });
             } catch (...) {
             }
-            finish(done, changed);
+            finish(done, result);
         });
     } catch (...) {
     }
@@ -130,15 +132,30 @@ void rename_path(std::wstring path, std::wstring new_name, HWND owner, ShellDone
         fs::shell_worker().submit([path = std::move(path), new_name = std::move(new_name),
                                    owner = top_level(owner), done = std::move(done)]() mutable {
             ComScope com;
-            bool changed = false;
+            ShellResult result;
             try {
-                changed = run_file_operation(
+                result = run_file_operation(
                     path, owner, FOF_ALLOWUNDO, [&](IFileOperation& op, IShellItem* item) {
                         return op.RenameItem(item, new_name.c_str(), nullptr);
                     });
             } catch (...) {
             }
-            finish(done, changed);
+            finish(done, result);
+        });
+    } catch (...) {
+    }
+}
+
+void restore_recycled(std::wstring path, ShellDone done) noexcept {
+    try {
+        fs::shell_worker().submit([path = std::move(path), done = std::move(done)]() mutable {
+            ShellResult result;
+            try {
+                result.succeeded = restore_from_recycle_bin(path);
+                result.ran = result.succeeded;
+            } catch (...) {
+            }
+            finish(done, result);
         });
     } catch (...) {
     }

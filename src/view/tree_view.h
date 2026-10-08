@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "../actions/action.h"
+#include "../actions/shell_ops.h"
 #include "../fs/enumerate.h"
 #include "../fs/enumeration_service.h"
 #include "../model/tree.h"
@@ -117,7 +118,10 @@ private:
     void reload_and_select(std::uint32_t folder, std::wstring name, std::wstring fallback) noexcept;
     void apply_pending_select(std::uint32_t folder) noexcept;
     //! Runs `work` on the main thread later if this view and its tree still exist.
-    [[nodiscard]] std::function<void(bool)> guard(std::function<void(TreeView&, bool)> work);
+    [[nodiscard]] actions::ShellDone guard(
+        std::function<void(TreeView&, actions::ShellResult)> work);
+    //! Ctrl+Z: reverts the last rename or Recycle Bin delete made in this panel.
+    void undo() noexcept;
 
     // inline_edit.cpp
     void begin_rename(std::uint32_t node) noexcept;
@@ -183,6 +187,17 @@ private:
         std::wstring fallback;
     };
     PendingSelect pending_select_;
+
+    // One level of undo for this panel's own rename/delete (Explorer's undo history is private
+    // to Explorer). Paths, not nodes: the tree may have been reloaded since.
+    struct UndoRecord {
+        enum class Kind : std::uint8_t { none, rename, recycle } kind{Kind::none};
+        std::uint32_t folder{model::no_node}; //!< to refresh, if still in this generation
+        std::wstring folder_path;
+        std::wstring name;     //!< rename: current name; recycle: the deleted item's name
+        std::wstring old_name; //!< rename: the name to go back to
+    };
+    UndoRecord undo_;
 
     // Inline rename (inline_edit.cpp).
     HWND edit_{};

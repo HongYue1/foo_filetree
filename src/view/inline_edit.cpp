@@ -89,8 +89,19 @@ void TreeView::end_rename(bool commit) noexcept {
         tree_.build_path(node, path);
         const std::uint32_t parent = n.parent;
         actions::rename_path(std::move(path), text, wnd_,
-                             guard([parent, text, old_name](TreeView& view, bool changed) {
-                                 if (changed) view.reload_and_select(parent, text, old_name);
+                             guard([parent, text, old_name](TreeView& view,
+                                                            actions::ShellResult result) {
+                                 if (!result.ran) return;
+                                 if (result.succeeded) {
+                                     UndoRecord record;
+                                     record.kind = UndoRecord::Kind::rename;
+                                     record.folder = parent;
+                                     view.tree_.build_path(parent, record.folder_path);
+                                     record.name = text;
+                                     record.old_name = old_name;
+                                     view.undo_ = std::move(record);
+                                 }
+                                 view.reload_and_select(parent, text, old_name);
                              }));
     } catch (...) {
     }

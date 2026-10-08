@@ -133,6 +133,7 @@
     <ClCompile Include="src\actions\action_settings.cpp" />
     <ClCompile Include="src\actions\playlist_send.cpp" />
     <ClCompile Include="src\actions\shell_ops.cpp" />
+    <ClCompile Include="src\actions\recycle_bin.cpp" />
     <ClCompile Include="src\actions\shell_menu.cpp" />
     <ClCompile Include="src\actions\fb2k_menu.cpp" />
     <ClCompile Include="src\view\tree_view_menu.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="src\actions\action_settings.h" />
     <ClInclude Include="src\actions\playlist_send.h" />
     <ClInclude Include="src\actions\shell_ops.h" />
+    <ClInclude Include="src\actions\recycle_bin.h" />
     <ClInclude Include="src\actions\shell_menu.h" />
     <ClInclude Include="src\actions\fb2k_menu.h" />
   </ItemGroup>

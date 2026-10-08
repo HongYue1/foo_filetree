@@ -83,4 +83,8 @@ Steps:
   pass. Apps key untested (user has none; Shift+F10 uses the same path).
 - [x] user asked: document Shift for Explorer's extra verbs -> README.md + greyed hint at the
   bottom of Explorer > when Shift was not held. Undo explained in README.
+- [x] Ctrl+Z works in Explorer (FOF_ALLOWUNDO records it) but not in fb2k -> own one-level undo
+  per panel: Ctrl+Z / "Undo ..." menu item. Rename: rename back. Recycle delete: restore from
+  X:\$Recycle.Bin\<SID>\ by reading the $I index (actions/recycle_bin.*). Builds clean.
+- [ ] user test: undo rename, undo delete (file and folder), undo after Shift+Del (nothing)
 - [ ] next: plan M5 from PLAN.md in this file

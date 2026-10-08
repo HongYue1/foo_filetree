@@ -23,6 +23,7 @@ enum MenuId : UINT {
     id_rename,
     id_delete,
     id_refresh,
+    id_undo,
 };
 
 } // namespace
@@ -80,6 +81,13 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
         AppendMenuW(menu, MF_STRING | root_flags, id_rename, L"Rename\tF2");
         AppendMenuW(menu, MF_STRING | root_flags, id_delete, L"Delete\tDel");
         AppendMenuW(menu, MF_STRING, id_refresh, L"Refresh\tF5");
+        if (undo_.kind != UndoRecord::Kind::none) {
+            const bool rename = undo_.kind == UndoRecord::Kind::rename;
+            std::wstring label = rename ? L"Undo rename of \"" + undo_.old_name + L"\""
+                                        : L"Undo delete of \"" + undo_.name + L"\"";
+            label += L"\tCtrl+Z";
+            AppendMenuW(menu, MF_STRING, id_undo, label.c_str());
+        }
         AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
 
         MenuSession session;
@@ -141,19 +149,56 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
     case id_rename: begin_rename(node); break;
     case id_delete: delete_node(node, GetKeyState(VK_SHIFT) < 0); break;
     case id_refresh: refresh_node(node); break;
+    case id_undo: undo(); break;
     default: break;
     }
 }
 
-std::function<void(bool)> TreeView::guard(std::function<void(TreeView&, bool)> work) {
+actions::ShellDone TreeView::guard(std::function<void(TreeView&, actions::ShellResult)> work) {
     std::weak_ptr<TreeView*> weak = alive_;
-    return [weak, generation = generation_, work = std::move(work)](bool changed) {
+    return [weak, generation = generation_, work = std::move(work)](actions::ShellResult result) {
         const auto alive = weak.lock();
         if (!alive) return;
         TreeView& view = **alive;
         if (view.wnd_ == nullptr || view.generation_ != generation) return;
-        work(view, changed);
+        work(view, result);
     };
+}
+
+void TreeView::undo() noexcept {
+    if (undo_.kind == UndoRecord::Kind::none) {
+        MessageBeep(MB_ICONWARNING);
+        return;
+    }
+    try {
+        UndoRecord record = std::move(undo_);
+        undo_ = {};
+        std::wstring path = record.folder_path;
+        if (!path.empty() && path.back() != L'\\') path.push_back(L'\\');
+        path += record.name;
+        const std::uint32_t folder = record.folder;
+        if (record.kind == UndoRecord::Kind::rename) {
+            actions::rename_path(
+                std::move(path), record.old_name, wnd_,
+                guard([folder, record](TreeView& view, actions::ShellResult result) {
+                    if (result.ran) view.reload_and_select(folder, record.old_name, record.name);
+                }));
+        } else {
+            actions::restore_recycled(
+                path, guard([folder, record, path](TreeView& view, actions::ShellResult result) {
+                    if (result.succeeded) {
+                        view.reload_and_select(folder, record.name, {});
+                        return;
+                    }
+                    MessageBeep(MB_ICONWARNING);
+                    FB2K_console_formatter()
+                        << "Folder Tree: could not restore "
+                        << pfc::stringcvt::string_utf8_from_wide(path.c_str()).get_ptr()
+                        << " from the Recycle Bin (gone, or something exists there now).";
+                }));
+        }
+    } catch (...) {
+    }
 }
 
 void TreeView::open_in_explorer(std::uint32_t node) noexcept {
@@ -195,10 +240,19 @@ void TreeView::delete_node(std::uint32_t node, bool permanent) noexcept {
         std::wstring name(n.name_view());
         actions::delete_path(
             std::move(path), permanent, wnd_,
-            guard([parent, next = std::move(next), name = std::move(name)](TreeView& view,
-                                                                         bool changed) {
+            guard([parent, next = std::move(next), name = std::move(name), permanent](
+                      TreeView& view, actions::ShellResult result) {
                 // If the delete was cancelled the item is still there: keep it selected.
-                if (changed) view.reload_and_select(parent, name, next);
+                if (!result.ran) return;
+                if (result.succeeded && !permanent) {
+                    UndoRecord record;
+                    record.kind = UndoRecord::Kind::recycle;
+                    record.folder = parent;
+                    view.tree_.build_path(parent, record.folder_path);
+                    record.name = name;
+                    view.undo_ = std::move(record);
+                }
+                view.reload_and_select(parent, name, next);
             }));
     } catch (...) {
     }

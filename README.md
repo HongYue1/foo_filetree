@@ -17,6 +17,7 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 | Del / Shift+Del | Delete to the Recycle Bin / delete permanently |
 | F5 | Refresh the folder (a file refreshes its folder) |
 | Ctrl+C | Copy the full path |
+| Ctrl+Z | Undo the last rename or delete |
 | Right click, Apps key, Shift+F10 | Context menu |
 
 ## Context menu
@@ -32,9 +33,9 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 
 ## Undoing a delete or rename
 
-Deletes go to the Recycle Bin unless you use Shift+Del. To get a file back, open the Recycle Bin
-and choose **Restore**. Renames and Recycle Bin deletes are also recorded in Windows' shared undo
-history: open any Explorer window and press **Ctrl+Z** (only straight after the change; later
-Explorer actions are undone first).
+Press **Ctrl+Z** in the panel (or use **Undo ...** in the context menu) to undo the last rename
+or delete made in Folder Tree. One step only. A deleted item comes back from the Recycle Bin;
+Shift+Del deletes permanently and cannot be undone. The same changes can also be undone with
+Ctrl+Z in an Explorer window, or restored from the Recycle Bin by hand.
 
 Changes made through **Explorer >** are not picked up automatically yet; press F5.

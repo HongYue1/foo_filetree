@@ -101,6 +101,10 @@ bool TreeView::on_key(WPARAM key) noexcept {
         if (!has_selection || !ctrl || alt || shift) return false;
         copy_path(node);
         return true;
+    case 'Z':
+        if (!ctrl || alt || shift) return false;
+        undo();
+        return true;
     default:
         return false;
     }

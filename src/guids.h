@@ -23,4 +23,9 @@ inline constexpr GUID cui_panel = {
 inline constexpr GUID cui_colour_client = {
     0x03117098, 0x09b8, 0x46a6, {0x94, 0xe6, 0x00, 0xf1, 0x99, 0x3c, 0xbd, 0x27}};
 
+// Columns UI font client (cui::fonts::client): our entry on the CUI Fonts page, and the font id
+// passed to cui::fonts::get_log_font*(). The Default UI element uses it too when CUI is installed.
+inline constexpr GUID cui_font_client = {
+    0x23cebd68, 0x8587, 0x4619, {0xb0, 0x78, 0xc1, 0x50, 0xea, 0x1a, 0x51, 0xe8}};
+
 } // namespace filetree::guids

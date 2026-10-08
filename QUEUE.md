@@ -15,7 +15,7 @@ M0 findings:
 - `dumpbin` is not on PATH in Git Bash and `cmd //c "\"...vcvars64.bat\" && dumpbin"` fails on
   quoting. Call it by path: `ls -d "/c/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/"*/bin/Hostx64/x64`.
 
-## Done: M1 - model + workers (commit after this edit)
+## Done: M1 - model + workers (`2577e75`)
 
 `model/` (sort, extension_set, name_pool, tree), `platform/worker_pool`, `fs/` (enumerate,
 enumeration_service, drives, fb2k_glue with the only `initquit`). Offline tests:
@@ -56,10 +56,31 @@ Plan:
 - CUI: font client (new GUID) + selection colours in the colour client. DUI: `query_font_ex`,
   `ui_color_selection`/`highlight`.
 
+Status: **code complete, built (0 warnings, 335 KB), waiting for the user's test.** Do not
+start M3 before the user has tried M0+M2 together; fix reported problems first.
+
 Steps:
-- [ ] view/layout + view/tree_view skeleton, hooked into both hosts, roots = drives
-- [ ] paint (visible rows only), scroll bar, wheel
-- [ ] expand/collapse via mouse + async loading + "loading..." / error state
-- [ ] keyboard navigation, focus, selection
-- [ ] fonts + colours + DPI in both hosts
-- [ ] build, commit, hand DLL to user
+- [x] `view/tree_view.{h,cpp}` (state, layout, scroll, input, async loading) and
+      `view/tree_view_paint.cpp` (cached DIB, rows in rcPaint only, DC brush/pen, DrawTextW
+      ellipsis); `view/theme.h` (colours + blend helpers). Layout lives in `TreeView::Metrics`
+      (no separate layout.h): row = tmHeight + 2x3 DIP, indent 16 DIP, expander 8 DIP triangle.
+- [x] Hosts forward messages; roots = drives ("C:" shown, stored "C:\").
+- [x] Expand/collapse via expander click, double-click, Enter, Left/Right, numpad +/-. Loading
+      dims the expander; a failed listing shows "(unavailable)" and retries on next expand.
+- [x] Keyboard: arrows, PgUp/PgDn, Home/End. Unused keys go to fb2k shortcuts
+      (CUI `g_process_keydown_keyboard_shortcuts`, DUI `keyboard_shortcut_manager_v2`).
+- [x] CUI font client (new GUID) + all six selection colours; DUI uses the CUI font when CUI is
+      installed, else `ui_font_lists`; DUI selection text picked by contrast.
+- [x] Per-monitor DPI: `GetDpiForWindow` looked up at run time (Win7-safe), font scaled from
+      system DPI, re-measure on `WM_DPICHANGED_AFTERPARENT`.
+- [x] Build, commit.
+- [ ] User test (list below), then fix.
+
+What to ask the user to check:
+1. Both UIs: drives listed; click triangle / double-click opens folders; big folders open fast.
+2. Only playable files shown; hidden/system files hidden.
+3. Wheel, scroll bar drag, keyboard navigation; selection colours focused vs unfocused; hover.
+4. Dark mode toggle live (incl. scroll bar); CUI colours/fonts pages show "Folder Tree".
+5. Move the window to a monitor with a different scale: rows re-measure.
+6. A drive with no disc / denied folder (e.g. `C:\System Volume Information` with hidden+system
+   shown - not possible yet; try an offline network drive) shows "(unavailable)".

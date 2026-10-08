@@ -1,0 +1,165 @@
+// TreeView painting. Only rows that intersect the invalid rectangle are drawn, into one cached
+// DIB, then copied to the window in one BitBlt. Nothing here allocates: colours go through the
+// stock DC brush and pen, text through DrawTextW on the node's pooled name.
+
+#include "tree_view.h"
+
+#include <algorithm>
+
+namespace filetree::view {
+namespace {
+
+void fill(HDC dc, const RECT& rect, COLORREF colour) noexcept {
+    SetDCBrushColor(dc, colour);
+    FillRect(dc, &rect, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+}
+
+//! A small solid triangle: pointing right (collapsed) or down (expanded), centred on (cx, cy).
+void draw_expander(HDC dc, int cx, int cy, int size, bool expanded, COLORREF colour) noexcept {
+    const int half = size / 2;
+    const int quarter = std::max(size / 4, 1);
+    POINT points[3];
+    if (expanded) {
+        points[0] = {cx - half, cy - quarter};
+        points[1] = {cx + half, cy - quarter};
+        points[2] = {cx, cy + quarter + 1};
+    } else {
+        points[0] = {cx - quarter, cy - half};
+        points[1] = {cx - quarter, cy + half};
+        points[2] = {cx + quarter + 1, cy};
+    }
+    SetDCBrushColor(dc, colour);
+    SetDCPenColor(dc, colour);
+    Polygon(dc, points, 3);
+}
+
+constexpr wchar_t failed_suffix[] = L"  (unavailable)";
+
+} // namespace
+
+void TreeView::ensure_buffer(int width, int height) noexcept {
+    if (wnd_ == nullptr || width <= 0 || height <= 0) return;
+    if (buffer_dc_ != nullptr && width <= buffer_width_ && height <= buffer_height_) return;
+
+    // Grow only, with some slack, so dragging a splitter does not reallocate on every WM_SIZE.
+    const int new_width = std::max(width + 64, buffer_width_);
+    const int new_height = std::max(height + 64, buffer_height_);
+    release_buffer();
+
+    HDC screen = GetDC(wnd_);
+    buffer_dc_ = CreateCompatibleDC(screen);
+    buffer_bitmap_ = CreateCompatibleBitmap(screen, new_width, new_height);
+    ReleaseDC(wnd_, screen);
+    if (buffer_dc_ == nullptr || buffer_bitmap_ == nullptr) {
+        release_buffer();
+        return;
+    }
+    buffer_old_bitmap_ = SelectObject(buffer_dc_, buffer_bitmap_);
+    SelectObject(buffer_dc_, GetStockObject(DC_BRUSH));
+    SelectObject(buffer_dc_, GetStockObject(DC_PEN));
+    SetBkMode(buffer_dc_, TRANSPARENT);
+    buffer_width_ = new_width;
+    buffer_height_ = new_height;
+}
+
+void TreeView::release_buffer() noexcept {
+    if (buffer_dc_ != nullptr) {
+        if (buffer_old_bitmap_ != nullptr) SelectObject(buffer_dc_, buffer_old_bitmap_);
+        DeleteDC(buffer_dc_);
+    }
+    if (buffer_bitmap_ != nullptr) DeleteObject(buffer_bitmap_);
+    buffer_dc_ = nullptr;
+    buffer_bitmap_ = nullptr;
+    buffer_old_bitmap_ = nullptr;
+    buffer_width_ = buffer_height_ = 0;
+}
+
+void TreeView::paint(HDC target, const RECT& dirty) noexcept {
+    if (client_width_ <= 0 || client_height_ <= 0) return;
+    ensure_buffer(client_width_, client_height_);
+    // No buffer (out of GDI resources): draw straight to the window rather than not at all.
+    HDC dc = buffer_dc_ != nullptr ? buffer_dc_ : target;
+    if (dc == target) {
+        SelectObject(dc, GetStockObject(DC_BRUSH));
+        SelectObject(dc, GetStockObject(DC_PEN));
+        SetBkMode(dc, TRANSPARENT);
+    }
+    const HGDIOBJ old_font = SelectObject(dc, font_ != nullptr ? font_ : GetStockObject(DEFAULT_GUI_FONT));
+
+    const int row_height = metrics_.row_height;
+    const int first = std::max<int>(dirty.top, 0) / row_height;
+    const int last = std::max<int>(dirty.bottom - 1, 0) / row_height;
+    const std::size_t rows = tree_.row_count();
+
+    int bottom = std::max<int>(dirty.top, 0);
+    for (int offset = first; offset <= last; ++offset) {
+        const std::size_t row = top_row_ + static_cast<std::size_t>(offset);
+        if (row >= rows) break;
+        const RECT rect{0, offset * row_height, client_width_, (offset + 1) * row_height};
+        paint_row(dc, row, rect);
+        bottom = rect.bottom;
+    }
+    if (bottom < dirty.bottom) {
+        fill(dc, RECT{dirty.left, bottom, dirty.right, dirty.bottom}, colours_.background);
+    }
+
+    SelectObject(dc, old_font);
+    if (dc != target) {
+        BitBlt(target, dirty.left, dirty.top, dirty.right - dirty.left, dirty.bottom - dirty.top,
+               dc, dirty.left, dirty.top, SRCCOPY);
+    }
+}
+
+void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
+    const std::uint32_t index = tree_.node_at_row(row);
+    const model::Node& node = tree_.node(index);
+    const bool selected = static_cast<std::ptrdiff_t>(row) == selected_row_;
+    const bool hovered = static_cast<std::ptrdiff_t>(row) == hover_row_;
+
+    COLORREF background = colours_.background;
+    COLORREF text = colours_.text;
+    COLORREF glyph = expander_colour_;
+    if (selected) {
+        background = focused_ ? colours_.selection_background : colours_.inactive_selection_background;
+        text = focused_ ? colours_.selection_text : colours_.inactive_selection_text;
+        glyph = text;
+    } else if (hovered) {
+        background = hover_background_;
+    }
+    fill(dc, rect, background);
+
+    // Expander: folders that might have children. A loaded empty folder has none to show.
+    const bool expandable = node.has(model::node_container) &&
+                            !(node.has(model::node_loaded) && node.child_count == 0);
+    if (expandable) {
+        const bool open = node.has(model::node_expanded) && !node.has(model::node_load_failed);
+        const int cx = expander_left(node.depth) + metrics_.indent / 2;
+        const int cy = (rect.top + rect.bottom) / 2;
+        const COLORREF colour = node.has(model::node_loading) ? dim_text_ : glyph;
+        draw_expander(dc, cx, cy, metrics_.expander, open, colour);
+    }
+
+    // Roots are stored as "C:\"; show "C:".
+    std::wstring_view name = node.name_view();
+    if (node.has(model::node_root) && name.size() == 3 && name[1] == L':') name.remove_suffix(1);
+
+    RECT text_rect{text_left(node.depth), rect.top, rect.right - metrics_.text_gap, rect.bottom};
+    if (text_rect.left >= text_rect.right) return;
+    SetTextColor(dc, text);
+    constexpr UINT format = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_END_ELLIPSIS;
+    DrawTextW(dc, name.data(), static_cast<int>(name.size()), &text_rect, format);
+
+    if (node.has(model::node_load_failed)) {
+        SIZE extent{};
+        GetTextExtentPoint32W(dc, name.data(), static_cast<int>(name.size()), &extent);
+        RECT suffix_rect = text_rect;
+        suffix_rect.left += extent.cx;
+        if (suffix_rect.left < suffix_rect.right) {
+            SetTextColor(dc, selected ? text : dim_text_);
+            DrawTextW(dc, failed_suffix, static_cast<int>(std::size(failed_suffix) - 1),
+                      &suffix_rect, format);
+        }
+    }
+}
+
+} // namespace filetree::view

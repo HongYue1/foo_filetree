@@ -126,6 +126,8 @@
     <ClCompile Include="src\fs\enumeration_service.cpp" />
     <ClCompile Include="src\fs\drives.cpp" />
     <ClCompile Include="src\fs\fb2k_glue.cpp" />
+    <ClCompile Include="src\view\tree_view.cpp" />
+    <ClCompile Include="src\view\tree_view_paint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\guids.h" />
@@ -140,6 +142,9 @@
     <ClInclude Include="src\fs\enumeration_service.h" />
     <ClInclude Include="src\fs\drives.h" />
     <ClInclude Include="src\fs\fb2k_glue.h" />
+    <ClInclude Include="src\view\theme.h" />
+    <ClInclude Include="src\view\tree_view.h" />
+    <ClInclude Include="src\hosts\host_shared.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

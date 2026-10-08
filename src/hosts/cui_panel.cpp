@@ -1,9 +1,7 @@
-// Columns UI host. M0: an empty panel that paints the Columns UI background colour and follows
-// dark mode. The tree view arrives in M2 and plugs in here; this file keeps no drawing logic
-// beyond the background fill.
+// Columns UI host. Owns a window and a TreeView; feeds the view colours, the font and messages.
+// No drawing logic of its own.
 //
-// Idle cost: none. No timers, no callbacks except Columns UI's own colour notifications, and
-// WM_PAINT fills only the invalid rectangle with a cached brush.
+// Idle cost: none. No timers; Columns UI's colour/font notifications are the only callbacks.
 
 #include <helpers/foobar2000+atl.h>
 
@@ -15,8 +13,9 @@
 #include <vector>
 
 #include "../guids.h"
-#include "../platform/gdi.h"
 #include "../version.h"
+#include "../view/tree_view.h"
+#include "host_shared.h"
 
 #pragma comment(lib, "uxtheme.lib")
 
@@ -24,9 +23,8 @@ namespace {
 
 class FolderTreePanel;
 
-// The colour client is a single service instance with const callbacks, so a change notification
-// is fanned out to the live panels by hand. Main thread only, which is where Columns UI raises
-// these and where panels are created and destroyed.
+// The colour and font clients are single service instances with const callbacks, so a change is
+// fanned out to the live panels by hand. Main thread only.
 std::vector<FolderTreePanel*>& live_panels() {
     static std::vector<FolderTreePanel*> panels;
     return panels;
@@ -59,8 +57,11 @@ public:
 
     // uie::container_uie_window_v3_t
     uie::container_window_v3_config get_window_config() override {
-        // We paint our own background (opaque), so the parent's is not needed underneath.
-        return {L"foo_filetree_cui_panel", false};
+        // Opaque: the view paints every pixel.
+        uie::container_window_v3_config config(L"foo_filetree_cui_panel", false,
+                                               filetree::view::TreeView::class_styles);
+        config.window_styles |= filetree::view::TreeView::window_styles;
+        return config;
     }
 
     // Columns UI calls this from layout code that cannot unwind, so nothing may escape.
@@ -69,29 +70,32 @@ public:
             switch (msg) {
             case WM_CREATE:
                 wnd_ = wnd;
-                refresh();
+                view_.attach(wnd);
+                refresh_colours();
+                refresh_font();
                 return 0;
 
             case WM_DESTROY:
+                view_.detach();
                 wnd_ = nullptr;
-                background_.reset();
                 return 0;
 
-            case WM_ERASEBKGND:
-                // WM_PAINT fills the invalid area; erasing first would only flicker.
-                return TRUE;
-
-            case WM_PAINT: {
-                PAINTSTRUCT paint{};
-                if (HDC dc = BeginPaint(wnd, &paint); dc != nullptr) {
-                    filetree::gdi::fill_paint_rect(dc, paint.rcPaint, background_.get());
-                    EndPaint(wnd, &paint);
+            case WM_KEYDOWN:
+            case WM_SYSKEYDOWN: {
+                LRESULT result = 0;
+                if (msg == WM_KEYDOWN && view_.handle_message(wnd, msg, wp, lp, result)) {
+                    return result;
                 }
-                return 0;
+                // Keys the tree does not use go to foobar2000's keyboard shortcuts.
+                if (uie::window::g_process_keydown_keyboard_shortcuts(wp)) return 0;
+                break;
             }
 
-            default:
+            default: {
+                LRESULT result = 0;
+                if (view_.handle_message(wnd, msg, wp, lp, result)) return result;
                 break;
+            }
             }
         } catch (const std::exception& exception) {
             FB2K_console_formatter() << FILETREE_NAME << ": panel message failed: "
@@ -103,47 +107,58 @@ public:
         return DefWindowProc(wnd, msg, wp, lp);
     }
 
-    //! Re-read colours and dark mode from Columns UI. A no-op before the window exists.
-    void refresh() noexcept {
+    //! Re-read colours and dark mode. A no-op before the window exists.
+    void refresh_colours() noexcept {
         if (wnd_ == nullptr) return;
-
         const cui::colours::helper colours(filetree::guids::cui_colour_client);
-        const bool brush_changed =
-            background_.set(colours.get_colour(cui::colours::colour_background));
+        filetree::view::ViewColours out;
+        out.text = colours.get_colour(cui::colours::colour_text);
+        out.background = colours.get_colour(cui::colours::colour_background);
+        out.selection_text = colours.get_colour(cui::colours::colour_selection_text);
+        out.selection_background = colours.get_colour(cui::colours::colour_selection_background);
+        out.inactive_selection_text =
+            colours.get_colour(cui::colours::colour_inactive_selection_text);
+        out.inactive_selection_background =
+            colours.get_colour(cui::colours::colour_inactive_selection_background);
+        out.dark = colours.is_dark_mode_active();
 
-        const bool dark = colours.is_dark_mode_active();
-        if (dark != dark_ || !theme_applied_) {
-            // Our scroll bars (M2) follow this window's theme.
-            SetWindowTheme(wnd_, dark ? L"DarkMode_Explorer" : nullptr, nullptr);
-            dark_ = dark;
+        if (out.dark != dark_ || !theme_applied_) {
+            // Our scroll bar follows this window's theme.
+            SetWindowTheme(wnd_, out.dark ? L"DarkMode_Explorer" : nullptr, nullptr);
+            dark_ = out.dark;
             theme_applied_ = true;
         }
+        view_.set_colours(out);
+    }
 
-        if (brush_changed) InvalidateRect(wnd_, nullptr, FALSE);
+    void refresh_font() noexcept {
+        if (wnd_ == nullptr) return;
+        try {
+            view_.set_font(cui::fonts::get_log_font_with_fallback(filetree::guids::cui_font_client));
+        } catch (...) {
+        }
     }
 
 private:
     HWND wnd_{};
-    filetree::gdi::SolidBrush background_;
+    filetree::view::TreeView view_;
     bool dark_{};
     bool theme_applied_{};
 };
 
-void refresh_all_panels() noexcept {
-    for (FolderTreePanel* panel : live_panels()) panel->refresh();
-}
-
 uie::window_factory<FolderTreePanel> g_folder_tree_panel_factory;
 
-// Our entry on Columns UI's Colours page. Without it the panel would ignore the user's colours
-// and never hear about a dark-mode switch. M2 adds the selection colours when they are drawn.
 class FolderTreeColourClient : public cui::colours::client {
 public:
     const GUID& get_client_guid() const override { return filetree::guids::cui_colour_client; }
     void get_name(pfc::string_base& out) const override { out = FILETREE_NAME; }
 
     uint32_t get_supported_colours() const override {
-        return cui::colours::colour_flag_background | cui::colours::colour_flag_text;
+        return cui::colours::colour_flag_background | cui::colours::colour_flag_text |
+               cui::colours::colour_flag_selection_text |
+               cui::colours::colour_flag_selection_background |
+               cui::colours::colour_flag_inactive_selection_text |
+               cui::colours::colour_flag_inactive_selection_background;
     }
 
     uint32_t get_supported_bools() const override {
@@ -153,16 +168,50 @@ public:
     // We draw with GDI ourselves, not with the Theme API.
     bool get_themes_supported() const override { return false; }
 
-    void on_colour_changed(uint32_t) const override { refresh_all_panels(); }
+    void on_colour_changed(uint32_t) const override {
+        for (FolderTreePanel* panel : live_panels()) panel->refresh_colours();
+    }
 
-    // The mask says what changed, not the new values; refresh() re-reads them.
+    // The mask says what changed, not the new values; refresh_colours() re-reads them.
     void on_bool_changed(uint32_t changed_items_mask) const override {
         if ((changed_items_mask & cui::colours::bool_flag_dark_mode_enabled) != 0) {
-            refresh_all_panels();
+            for (FolderTreePanel* panel : live_panels()) panel->refresh_colours();
         }
     }
 };
 
 cui::colours::client::factory<FolderTreeColourClient> g_folder_tree_colour_client;
 
+class FolderTreeFontClient : public cui::fonts::client {
+public:
+    const GUID& get_client_guid() const override { return filetree::guids::cui_font_client; }
+    void get_name(pfc::string_base& out) const override { out = FILETREE_NAME; }
+
+    cui::fonts::font_type_t get_default_font_type() const override {
+        return cui::fonts::font_type_items;
+    }
+
+    // Metrics change: the view re-measures rows in set_font().
+    void on_font_changed() const override {
+        for (FolderTreePanel* panel : live_panels()) panel->refresh_font();
+        filetree::host::refresh_dui_elements();
+    }
+};
+
+cui::fonts::client::factory<FolderTreeFontClient> g_folder_tree_font_client;
+
 } // namespace
+
+namespace filetree::host {
+
+std::optional<LOGFONTW> cui_font() noexcept {
+    try {
+        if (auto font = cui::fonts::get_log_font(filetree::guids::cui_font_client)) {
+            if (font->lfFaceName[0] != L'\0') return font;
+        }
+    } catch (...) {
+    }
+    return std::nullopt;
+}
+
+} // namespace filetree::host

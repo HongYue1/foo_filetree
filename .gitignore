@@ -27,3 +27,4 @@ test/out/
 *.user
 *.suo
 Thumbs.db
+test/*.out

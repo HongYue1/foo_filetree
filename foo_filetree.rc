@@ -1,0 +1,107 @@
+// Folder Tree resources. Hand-written, not generated. Coordinates are dialog units.
+
+#include "resource.h"
+#include "winres.h"
+
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+// Preferences style profile (keep every tab consistent with this; see
+// foobar2000-component-dev/references/preferences-pages.md):
+//   sections : header + etched line, no group boxes, no bold
+//   fields   : labels in a left column at x 12, 70 wide, colon after; fields at x 85
+//   rhythm   : check boxes 14 DU apart, field rows 16 DU, 12 DU before a new section header
+//   hints    : plain text under the field (x 85), units right of the field
+//   columns  : one column 7..293; content indented 5
+//   colours  : swatch button that opens the colour picker + hex edit
+
+/////////////////////////////////////////////////////////////////////////////
+// Preferences page: the tab strip and the area the tabs are placed in (never shown).
+
+IDD_PREFERENCES DIALOGEX 0, 0, 300, 246
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    CONTROL         "",IDC_TABS,"SysTabControl32",WS_CLIPSIBLINGS | WS_TABSTOP,7,3,286,17
+    LTEXT           "",IDC_PAGE_HOST,0,24,300,222,NOT WS_VISIBLE
+END
+
+// Tabs: child dialogs, 300 x 222, created once and shown one at a time.
+
+IDD_TAB_GENERAL DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Playlists",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LTEXT           "Temporary playlist:",IDC_STATIC,12,23,70,8
+    EDITTEXT        IDC_TEMP_PLAYLIST,85,21,120,12,ES_AUTOHSCROLL
+    LTEXT           "Filled by Play and by the default double click on a file.",IDC_STATIC,85,36,208,8
+    CONTROL         "Include subfolders when sending a folder (hold Shift for the opposite)",IDC_RECURSIVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,50,281,10
+
+    LTEXT           "Drives",IDC_STATIC,7,72,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,82,286,1
+    LTEXT           "Drives shown as roots in every Folder Tree panel:",IDC_DRIVES_LABEL,12,89,281,8
+END
+
+IDD_TAB_DISPLAY DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Tree lines",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LTEXT           "Style:",IDC_STATIC,12,23,70,8
+    COMBOBOX        IDC_LINES,85,21,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Thickness:",IDC_STATIC,12,39,70,8
+    EDITTEXT        IDC_LINE_THICKNESS,85,37,28,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "px at 100% scaling (1-4)",IDC_STATIC,117,39,176,8
+    LTEXT           "Colour:",IDC_STATIC,12,55,70,8
+    CONTROL         "Text colour at",IDC_LINE_FOLLOW,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,85,54,60,10
+    EDITTEXT        IDC_LINE_OPACITY,147,53,24,12,ES_AUTOHSCROLL | ES_NUMBER | WS_GROUP
+    LTEXT           "% opacity (10-100)",IDC_STATIC,175,55,118,8
+    CONTROL         "Custom colour",IDC_LINE_CUSTOM,"Button",BS_AUTORADIOBUTTON,85,70,60,10
+    CONTROL         "",IDC_LINE_SWATCH,"Button",BS_OWNERDRAW | WS_TABSTOP | WS_GROUP,147,69,24,12
+    EDITTEXT        IDC_LINE_HEX,175,69,36,12,ES_AUTOHSCROLL | ES_UPPERCASE
+
+    LTEXT           "Rows",IDC_STATIC,7,93,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,103,286,1
+    LTEXT           "Row padding:",IDC_STATIC,12,112,70,8
+    EDITTEXT        IDC_ROW_PADDING,85,110,28,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "px above and below the name (0-12)",IDC_STATIC,117,112,176,8
+    LTEXT           "File extensions:",IDC_STATIC,12,128,70,8
+    COMBOBOX        IDC_EXTENSIONS,85,126,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    LTEXT           "Sorting",IDC_STATIC,7,150,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,160,286,1
+    LTEXT           "Sort by:",IDC_STATIC,12,169,70,8
+    COMBOBOX        IDC_SORT_FIELD,85,167,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Folders first",IDC_FOLDERS_FIRST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,185,100,10
+    CONTROL         "Reverse order",IDC_SORT_REVERSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,199,100,10
+END
+
+IDD_TAB_FILTER DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Files",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LTEXT           "Show files:",IDC_STATIC,12,23,70,8
+    COMBOBOX        IDC_FILES,85,21,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Show hidden files and folders",IDC_SHOW_HIDDEN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,39,208,10
+    CONTROL         "Show system files and folders",IDC_SHOW_SYSTEM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,53,208,10
+
+    LTEXT           "Exceptions",IDC_STATIC,7,75,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,85,286,1
+    LTEXT           "Always show:",IDC_STATIC,12,94,70,8
+    EDITTEXT        IDC_ALWAYS_SHOW,85,92,208,12,ES_AUTOHSCROLL
+    LTEXT           "Extensions listed even when only playable files are shown, for example: cue; log",IDC_STATIC,85,107,208,16
+    LTEXT           "Never show:",IDC_STATIC,12,128,70,8
+    EDITTEXT        IDC_NEVER_SHOW,85,126,208,12,ES_AUTOHSCROLL
+    LTEXT           "Extensions that are never listed.",IDC_STATIC,85,141,208,8
+
+    LTEXT           "Hide by name",IDC_STATIC,7,161,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,171,286,1
+    LTEXT           "Patterns:",IDC_STATIC,12,180,70,8
+    EDITTEXT        IDC_HIDE_PATTERNS,85,178,208,12,ES_AUTOHSCROLL
+    LTEXT           "Hides matching files and folders. Wildcards * and ?, separated by ; for example: @eaDir; *.tmp",IDC_STATIC,85,193,208,16
+END

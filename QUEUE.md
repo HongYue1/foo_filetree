@@ -88,6 +88,10 @@ Steps:
   test/settings_test.cpp); settings_store (18 cfg vars); view applies settings
   (tree_view_settings.cpp: relist_all restores expanded paths + selection; hidden drives; row
   padding; extension display; tree lines in paint_lines). Not user-visible until M5b.
-- [ ] M5b: Preferences page + General / Display / Filter tabs; dialog_check; user screenshots
+- [x] M5b: Preferences page (src/prefs/preferences.cpp, prefs_util.*, foo_filetree.rc,
+  resource.h; Display > Folder Tree) with General / Display / Filter tabs. dialog_check 0
+  problems. Drive check boxes are created at run time (before the dark hooks).
+- [ ] M5b user test: screenshots of all tabs light + dark; Apply effects live (lines, padding,
+  extensions, sort, filter, hidden drives, patterns); Reset
 - [ ] M5c: Actions tab (binding editor) + Menu tab; menu honours layout
 - [ ] M5d: CUI colour client "Tree lines" entry; user test; commit

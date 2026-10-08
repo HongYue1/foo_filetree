@@ -133,6 +133,8 @@
     <ClCompile Include="src\actions\action_settings.cpp" />
     <ClCompile Include="src\actions\playlist_send.cpp" />
     <ClCompile Include="src\actions\shell_ops.cpp" />
+    <ClCompile Include="src\prefs\preferences.cpp" />
+    <ClCompile Include="src\prefs\prefs_util.cpp" />
     <ClCompile Include="src\model\filter_rules.cpp" />
     <ClCompile Include="src\settings\settings_model.cpp" />
     <ClCompile Include="src\settings\settings_store.cpp" />
@@ -145,6 +147,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\guids.h" />
+    <ClInclude Include="src\prefs\prefs_util.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="src\version.h" />
     <ClInclude Include="src\platform\gdi.h" />
     <ClInclude Include="src\platform\worker_pool.h" />
@@ -169,6 +173,10 @@
     <ClInclude Include="src\actions\recycle_bin.h" />
     <ClInclude Include="src\actions\shell_menu.h" />
     <ClInclude Include="src\actions\fb2k_menu.h" />
+  </ItemGroup>
+  <!-- The Preferences dialogs. One hand-written .rc; ids in resource.h. -->
+  <ItemGroup>
+    <ResourceCompile Include="foo_filetree.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

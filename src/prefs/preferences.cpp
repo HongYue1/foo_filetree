@@ -363,6 +363,7 @@ private:
             state.temp_playlist = L"Folder Tree";
         }
         state.recursive = get_check(page, IDC_RECURSIVE);
+        s.show_address_bar = get_check(page, IDC_SHOW_ADDRESS_BAR);
 
         s.lines = static_cast<settings::TreeLines>(get_combo(page, IDC_LINES, 0));
         s.line_thickness = get_int(page, IDC_LINE_THICKNESS, 1, 4, s.line_thickness);
@@ -404,6 +405,7 @@ private:
         }
         set_text(page, IDC_TEMP_PLAYLIST, state.temp_playlist);
         set_check(page, IDC_RECURSIVE, state.recursive);
+        set_check(page, IDC_SHOW_ADDRESS_BAR, s.show_address_bar);
 
         set_combo(page, IDC_LINES, static_cast<int>(s.lines));
         set_int(page, IDC_LINE_THICKNESS, s.line_thickness);
@@ -459,3 +461,4 @@ preferences_page_factory_t<PreferencesPageFactory> g_preferences_page_factory;
 
 } // namespace
 } // namespace filetree::prefs
+

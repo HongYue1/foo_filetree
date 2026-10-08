@@ -11,6 +11,7 @@
 
 #include "../fs/drives.h"
 #include "../fs/fb2k_glue.h"
+#include "../platform/dpi.h"
 
 #ifndef WM_DPICHANGED_AFTERPARENT
 #define WM_DPICHANGED_AFTERPARENT 0x02E3
@@ -19,29 +20,8 @@
 namespace filetree::view {
 namespace {
 
-// GetDpiForWindow is Windows 10 1607+. foobar2000 v2 still runs on Windows 7, where a static
-// import would stop the DLL from loading at all, so it is looked up once at run time.
-UINT window_dpi(HWND wnd) noexcept {
-    using GetDpiForWindowFn = UINT(WINAPI*)(HWND);
-    static const auto get_dpi_for_window = reinterpret_cast<GetDpiForWindowFn>(
-        reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"user32.dll"), "GetDpiForWindow")));
-    if (get_dpi_for_window != nullptr && wnd != nullptr) {
-        if (const UINT dpi = get_dpi_for_window(wnd); dpi != 0) return dpi;
-    }
-    HDC screen = GetDC(nullptr);
-    const int dpi = GetDeviceCaps(screen, LOGPIXELSY);
-    ReleaseDC(nullptr, screen);
-    return dpi > 0 ? static_cast<UINT>(dpi) : 96;
-}
-
-//! The DPI host fonts are reported at (system DPI for a per-monitor-aware process).
-int system_dpi() noexcept {
-    HDC screen = GetDC(nullptr);
-    const int dpi = GetDeviceCaps(screen, LOGPIXELSY);
-    ReleaseDC(nullptr, screen);
-    return dpi > 0 ? dpi : 96;
-}
-
+UINT window_dpi(HWND wnd) noexcept { return dpi::of_window(wnd); }
+int system_dpi() noexcept { return dpi::system(); }
 int scale(int dips, int dpi) noexcept { return MulDiv(dips, dpi, 96); }
 
 } // namespace
@@ -100,6 +80,7 @@ void TreeView::populate_roots() {
     }
     selected_row_ = hover_row_ = -1;
     top_row_ = 0;
+    notify_selection();
 }
 
 void TreeView::set_colours(const ViewColours& colours) noexcept {
@@ -308,24 +289,29 @@ void TreeView::on_dpi_changed() noexcept {
 void TreeView::select_row(std::size_t row) noexcept {
     if (row >= tree_.row_count()) return;
     if (selected_row_ >= 0) invalidate_row(static_cast<std::size_t>(selected_row_));
+    const bool changed = selected_row_ != static_cast<std::ptrdiff_t>(row);
     selected_row_ = static_cast<std::ptrdiff_t>(row);
     invalidate_row(row);
     ensure_visible(row);
+    if (changed) notify_selection();
 }
 
 void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
     if (splice.empty()) return;
     end_rename(false);
+    bool moved_to_parent = false;
     const auto shift = [&](std::ptrdiff_t& row) {
         if (row < 0 || static_cast<std::size_t>(row) < splice.row) return;
         if (static_cast<std::size_t>(row) < splice.row + splice.removed) {
             row = static_cast<std::ptrdiff_t>(splice.row) - 1; // collapsed into the parent
+            moved_to_parent = true;
         } else {
             row += static_cast<std::ptrdiff_t>(splice.inserted) -
                    static_cast<std::ptrdiff_t>(splice.removed);
         }
     };
     shift(selected_row_);
+    if (moved_to_parent) notify_selection();
     hover_row_ = -1;
 
     // Rows inserted or removed above the viewport must not move what the user is looking at.

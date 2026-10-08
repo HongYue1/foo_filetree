@@ -14,7 +14,7 @@
 
 #include "../guids.h"
 #include "../version.h"
-#include "../view/tree_view.h"
+#include "../view/panel.h"
 #include "host_shared.h"
 
 #pragma comment(lib, "uxtheme.lib")
@@ -57,10 +57,10 @@ public:
 
     // uie::container_uie_window_v3_t
     uie::container_window_v3_config get_window_config() override {
-        // Opaque: the view paints every pixel.
+        // Opaque: the panel's children paint every pixel.
         uie::container_window_v3_config config(L"foo_filetree_cui_panel", false,
-                                               filetree::view::TreeView::class_styles);
-        config.window_styles |= filetree::view::TreeView::window_styles;
+                                               filetree::view::Panel::class_styles);
+        config.window_styles |= filetree::view::Panel::window_styles;
         return config;
     }
 
@@ -70,7 +70,12 @@ public:
             switch (msg) {
             case WM_CREATE:
                 wnd_ = wnd;
-                view_.attach(wnd);
+                view_.attach(wnd, filetree::view::Panel::HostHooks{
+                                      [](WPARAM key) {
+                                          return uie::window::g_process_keydown_keyboard_shortcuts(
+                                              key);
+                                      },
+                                      {}});
                 refresh_colours();
                 refresh_font();
                 return 0;
@@ -79,17 +84,6 @@ public:
                 view_.detach();
                 wnd_ = nullptr;
                 return 0;
-
-            case WM_KEYDOWN:
-            case WM_SYSKEYDOWN: {
-                LRESULT result = 0;
-                if (msg == WM_KEYDOWN && view_.handle_message(wnd, msg, wp, lp, result)) {
-                    return result;
-                }
-                // Keys the tree does not use go to foobar2000's keyboard shortcuts.
-                if (uie::window::g_process_keydown_keyboard_shortcuts(wp)) return 0;
-                break;
-            }
 
             default: {
                 LRESULT result = 0;
@@ -121,13 +115,6 @@ public:
         out.inactive_selection_background =
             colours.get_colour(cui::colours::colour_inactive_selection_background);
         out.dark = colours.is_dark_mode_active();
-
-        if (out.dark != dark_ || !theme_applied_) {
-            // Our scroll bar follows this window's theme.
-            SetWindowTheme(wnd_, out.dark ? L"DarkMode_Explorer" : nullptr, nullptr);
-            dark_ = out.dark;
-            theme_applied_ = true;
-        }
         view_.set_colours(out);
     }
 
@@ -141,9 +128,7 @@ public:
 
 private:
     HWND wnd_{};
-    filetree::view::TreeView view_;
-    bool dark_{};
-    bool theme_applied_{};
+    filetree::view::Panel view_;
 };
 
 uie::window_factory<FolderTreePanel> g_folder_tree_panel_factory;
@@ -215,3 +200,4 @@ std::optional<LOGFONTW> cui_font() noexcept {
 }
 
 } // namespace filetree::host
+

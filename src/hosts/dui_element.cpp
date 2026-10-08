@@ -15,7 +15,7 @@
 
 #include "../guids.h"
 #include "../version.h"
-#include "../view/tree_view.h"
+#include "../view/panel.h"
 #include "host_shared.h"
 
 #pragma comment(lib, "uxtheme.lib")
@@ -33,7 +33,7 @@ std::vector<FolderTreeElement*>& live_elements() {
 class FolderTreeElement : public ui_element_instance, public CWindowImpl<FolderTreeElement> {
 public:
     DECLARE_WND_CLASS_EX(TEXT("foo_filetree_dui_element"),
-                         filetree::view::TreeView::class_styles, (-1));
+                         filetree::view::Panel::class_styles, (-1));
 
     FolderTreeElement(ui_element_config::ptr config, ui_element_instance_callback_ptr callback)
         : config_(config), m_callback(callback) {
@@ -50,15 +50,13 @@ public:
 
     void initialize_window(HWND parent) {
         constexpr DWORD style = WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS |
-                                filetree::view::TreeView::window_styles;
+                                filetree::view::Panel::window_styles;
         WIN32_OP(Create(parent, nullptr, nullptr, style) != NULL);
     }
 
     BEGIN_MSG_MAP_EX(FolderTreeElement)
         MSG_WM_CREATE(on_create)
         MSG_WM_DESTROY(on_destroy)
-        MESSAGE_HANDLER_EX(WM_KEYDOWN, on_key_down)
-        MESSAGE_HANDLER_EX(WM_SYSKEYDOWN, on_key_down)
         // In layout-edit mode WM_CONTEXTMENU must reach DefWindowProc, which forwards it to
         // Default UI's edit menu.
         if (uMsg == WM_CONTEXTMENU && m_callback->is_edit_mode_enabled()) return FALSE;
@@ -95,28 +93,18 @@ public:
 
 private:
     int on_create(LPCREATESTRUCT) {
-        view_.attach(*this);
+        view_.attach(*this, filetree::view::Panel::HostHooks{
+                                [](WPARAM key) {
+                                    return keyboard_shortcut_manager_v2::get()->process_keydown_simple(
+                                        static_cast<t_uint32>(key));
+                                },
+                                [this] { return m_callback->is_edit_mode_enabled(); }});
         apply_colours();
         apply_font();
         return 0;
     }
 
     void on_destroy() { view_.detach(); }
-
-    LRESULT on_key_down(UINT msg, WPARAM wp, LPARAM lp) {
-        LRESULT result = 0;
-        if (msg == WM_KEYDOWN && view_.handle_message(*this, msg, wp, lp, result)) return result;
-        // Keys the tree does not use go to foobar2000's keyboard shortcuts.
-        try {
-            if (keyboard_shortcut_manager_v2::get()->process_keydown_simple(
-                    static_cast<t_uint32>(wp))) {
-                return 0;
-            }
-        } catch (...) {
-        }
-        SetMsgHandled(FALSE);
-        return 0;
-    }
 
     void apply_colours() {
         if (m_hWnd == nullptr) return;
@@ -133,13 +121,6 @@ private:
         out.inactive_selection_text =
             more_contrast(out.inactive_selection_background, out.text, out.background);
         out.dark = m_callback->is_dark_mode();
-
-        if (out.dark != dark_ || !theme_applied_) {
-            // Our scroll bar follows this window's theme.
-            SetWindowTheme(*this, out.dark ? L"DarkMode_Explorer" : nullptr, nullptr);
-            dark_ = out.dark;
-            theme_applied_ = true;
-        }
         view_.set_colours(out);
     }
 
@@ -154,9 +135,7 @@ private:
     }
 
     ui_element_config::ptr config_;
-    filetree::view::TreeView view_;
-    bool dark_{};
-    bool theme_applied_{};
+    filetree::view::Panel view_;
 
 protected:
     // Must be protected for ui_element_impl_withpopup<>.
@@ -176,3 +155,4 @@ void refresh_dui_elements() noexcept {
 }
 
 } // namespace filetree::host
+

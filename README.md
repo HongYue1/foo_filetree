@@ -23,6 +23,13 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 - Type letters to jump to the next visible row whose name starts with them; press the same letter
   again to step through matches. A pause of one second starts a new search.
 
+## Address bar
+
+Shows the selected item's path; click a part to go there. Click the empty part or press Ctrl+L
+to type a path (environment variables like %USERPROFILE% work), Enter goes there, Esc cancels.
+Back, Forward and Up are also Alt+Left, Alt+Right, Alt+Up and the mouse side buttons. Places you
+stay on for a moment are remembered; quick arrow-key moves are not. Hide it on the General tab.
+
 ## Context menu
 
 - **Play**, **Add to active playlist**, **Send to new playlist**

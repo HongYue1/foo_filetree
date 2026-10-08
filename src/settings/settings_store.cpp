@@ -27,6 +27,7 @@ constexpr GUID guid_files = {0xad7371b1, 0x9160, 0x4e7e, {0x82, 0xed, 0xbc, 0x93
 constexpr GUID guid_always_show = {0xfeb7d3e3, 0xe0dd, 0x4434, {0xbd, 0x6f, 0x92, 0xe8, 0x21, 0xeb, 0xd3, 0x78}};
 constexpr GUID guid_never_show = {0x50c7f182, 0x6ac2, 0x49e9, {0xba, 0x2d, 0x6f, 0x68, 0xaf, 0x30, 0x48, 0xd3}};
 constexpr GUID guid_hide_patterns = {0x262e73df, 0x1412, 0x4717, {0x96, 0x7e, 0xb6, 0x56, 0x4b, 0xd3, 0x0c, 0x87}};
+constexpr GUID guid_show_address_bar = {0x961ca913, 0xd41f, 0x43e8, {0x8b, 0x68, 0x5b, 0xd9, 0x1e, 0xbf, 0xff, 0x75}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
 using cfg_int = cfg_var_modern::cfg_int;
@@ -53,6 +54,7 @@ cfg_string cfg_always_show(guid_always_show, "");
 cfg_string cfg_never_show(guid_never_show, "");
 cfg_string cfg_hide_patterns(guid_hide_patterns, "");
 cfg_string cfg_menu(guid_menu, "");
+cfg_bool cfg_show_address_bar(guid_show_address_bar, defaults.show_address_bar);
 
 std::optional<Settings> g_current; //!< saved
 std::optional<Settings> g_preview;
@@ -96,6 +98,7 @@ Settings load() {
     s.never_show = wide(cfg_never_show.get());
     s.hide_patterns = wide(cfg_hide_patterns.get());
     s.menu = MenuLayout::decode(wide(cfg_menu.get()));
+    s.show_address_bar = cfg_show_address_bar.get();
     s.sanitize();
     return s;
 }
@@ -119,6 +122,7 @@ void save(const Settings& s) {
     cfg_never_show.set(utf8(s.never_show));
     cfg_hide_patterns.set(utf8(s.hide_patterns));
     cfg_menu.set(utf8(s.menu.encode()));
+    cfg_show_address_bar.set(s.show_address_bar);
 }
 
 std::shared_ptr<const model::FilterRules> build_rules(const Settings& s) {
@@ -198,3 +202,4 @@ void unsubscribe(Listener* listener) noexcept {
 }
 
 } // namespace filetree::settings
+

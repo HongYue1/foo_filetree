@@ -15,6 +15,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <vector>
 
@@ -50,6 +51,29 @@ public:
     //! it in layout-edit mode). Returns false for anything else, including keys it does not use,
     //! so the host can try fb2k's keyboard shortcuts.
     bool handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept;
+
+    // Navigation (tree_view_nav.cpp), for the address bar and history.
+    struct Crumb {
+        std::wstring name; //!< as shown: "C:" for a drive
+        std::uint32_t node;
+    };
+    //! Called whenever the selected node changes (or the selection is cleared).
+    void set_selection_listener(std::function<void()> listener) {
+        selection_listener_ = std::move(listener);
+    }
+    //! The selected node and its ancestors, root first. Empty without a selection.
+    void selection_crumbs(std::vector<Crumb>& out) const;
+    [[nodiscard]] std::wstring selected_path() const;
+    //! Expands down to `path` (listing folders as needed) and selects it. False when no root
+    //! holds the path or it is not an absolute path; nothing changes then.
+    bool navigate_to(std::wstring_view path, bool expand_target) noexcept;
+    //! Selects a visible node (an address bar crumb). Ignored if it is not visible.
+    void select_node(std::uint32_t node) noexcept;
+    void select_parent() noexcept;
+    [[nodiscard]] HWND wnd() const noexcept { return wnd_; }
+    //! The font the rows are drawn in, at the window's DPI. Owned by the view.
+    [[nodiscard]] HFONT font() const noexcept { return font_; }
+    [[nodiscard]] int dpi() const noexcept { return metrics_.dpi; }
 
     //! Window styles the hosts must create the window with (beyond WS_CHILD etc.).
     //! WS_CLIPCHILDREN keeps paint off the inline rename editor.
@@ -118,6 +142,9 @@ private:
     void send_node(const actions::Action& action, std::uint32_t node) noexcept;
     //! Drags a node out of the panel (playlists, playlist tabs, Explorer).
     void drag_node(std::uint32_t node) noexcept;
+
+    // tree_view_nav.cpp
+    void notify_selection() noexcept;
 
     // tree_view_menu.cpp
     struct MenuSession;
@@ -227,6 +254,8 @@ private:
         std::wstring old_name; //!< rename: the name to go back to
     };
     UndoRecord undo_;
+
+    std::function<void()> selection_listener_;
 
     // Inline rename (inline_edit.cpp).
     HWND edit_{};

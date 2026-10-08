@@ -18,6 +18,7 @@
 #define IDC_TEMP_PLAYLIST 1010
 #define IDC_RECURSIVE 1011
 #define IDC_DRIVES_LABEL 1012
+#define IDC_SHOW_ADDRESS_BAR 1013
 // Drive check boxes are created at run time: IDC_DRIVE_FIRST + 0 (A:) ... + 25 (Z:).
 #define IDC_DRIVE_FIRST 1100
 
@@ -51,3 +52,4 @@
 #define IDC_MENU_UP 1061
 #define IDC_MENU_DOWN 1062
 #define IDC_MENU_SHOW 1063
+

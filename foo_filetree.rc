@@ -39,9 +39,13 @@ BEGIN
     LTEXT           "Filled by Play and by the default double click on a file.",IDC_STATIC,85,36,208,8
     CONTROL         "Include subfolders when sending a folder (hold Shift for the opposite)",IDC_RECURSIVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,50,281,10
 
-    LTEXT           "Drives",IDC_STATIC,7,72,286,8
+    LTEXT           "Panel",IDC_STATIC,7,72,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,82,286,1
-    LTEXT           "Drives shown as roots in every Folder Tree panel:",IDC_DRIVES_LABEL,12,89,281,8
+    CONTROL         "Show the address bar (Ctrl+L types a path)",IDC_SHOW_ADDRESS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,89,281,10
+
+    LTEXT           "Drives",IDC_STATIC,7,110,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,120,286,1
+    LTEXT           "Drives shown as roots in every Folder Tree panel:",IDC_DRIVES_LABEL,12,127,281,8
 END
 
 IDD_TAB_DISPLAY DIALOGEX 0, 0, 300, 222
@@ -142,3 +146,4 @@ BEGIN
     CONTROL         "Show the selected item",IDC_MENU_SHOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,177,226,10
     LTEXT           "Separators are added between groups automatically. Undo only appears when there is something to undo.",IDC_STATIC,12,191,226,16
 END
+

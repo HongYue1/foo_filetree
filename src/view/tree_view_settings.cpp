@@ -79,9 +79,19 @@ void TreeView::try_restore(std::uint32_t node) {
         restore_select_.clear();
         if (const auto row = tree_.row_of(node)) select_row(*row);
     }
-    if (const auto found = restore_expand_.find(path); found != restore_expand_.end()) {
-        restore_expand_.erase(found);
-        expand(node);
+    const auto found = restore_expand_.find(path);
+    if (found == restore_expand_.end()) return;
+    restore_expand_.erase(found);
+    expand(node);
+    // Already listed (navigating through folders opened before): go on into the children now.
+    // Otherwise on_listing() does when the listing arrives.
+    const model::Node& n = tree_.node(node);
+    if (!n.has(model::node_loaded) || n.has(model::node_loading)) return;
+    const std::uint32_t first = n.first_child;
+    const std::uint32_t count = n.child_count;
+    for (std::uint32_t child = first; child < first + count; ++child) {
+        if (restore_expand_.empty() && restore_select_.empty()) break;
+        try_restore(child);
     }
 }
 

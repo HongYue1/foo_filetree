@@ -58,6 +58,7 @@ struct MenuLayout {
 struct Settings {
     // General
     std::uint32_t hidden_drives{0}; //!< bit 0 = A: ... bit 25 = Z:
+    bool show_address_bar{true};
 
     // Display
     TreeLines lines{TreeLines::none};
@@ -91,9 +92,11 @@ enum Change : std::uint32_t {
     change_remeasure = 1 << 1, //!< row height
     change_relist = 1 << 2,    //!< filter or sort: listings must be redone
     change_roots = 1 << 3,     //!< the root list (hidden drives)
+    change_layout = 1 << 4,    //!< panel parts shown or hidden (address bar)
 };
 
 //! What a view must do to go from `before` to `after`.
 [[nodiscard]] std::uint32_t diff(const Settings& before, const Settings& after) noexcept;
 
 } // namespace filetree::settings
+

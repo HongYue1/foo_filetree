@@ -111,4 +111,5 @@ Steps:
 - [ ] M6c: moved to M7 after file operations (F5 copy, F6 move, F7 new folder need them first)
 - [x] M6d: address bar (view/panel.* hosts address bar + tree as child windows; view/address_bar.*: Back/Forward/Up, crumbs, click blank or Ctrl+L to type a path; tree_view_nav.cpp navigate_to via restore sets; history keeps selections held >= 0.8 s; Alt+Left/Right/Up, mouse side buttons; General tab "Show the address bar"). User-tested OK (CUI+DUI, dark)
 - [~] M6d2: filter box (right of the address bar; Tree::set_filter rebuilds rows: name contains text, or whole-name * ? glob; matching folders keep contents, ancestors shown; RowSplice::full + previous_node_at keeps selection/top; Ctrl+F, Esc clears, address navigation clears; General tab "Show the filter box"). 179 checks, dialog_check 0; awaiting user test
+- [~] fix: hover highlight stayed on the old row after a wheel scroll (ScrollWindowEx moved it); now the hovered row is repainted plain before the scroll and the row under the mouse is hovered after. Awaiting user test
 - [ ] M6e: favourites as roots, startup modes, per-instance state

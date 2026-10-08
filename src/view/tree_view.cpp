@@ -245,6 +245,13 @@ void TreeView::scroll_to(std::size_t top_row) noexcept {
     if (top_row == top_row_ || wnd_ == nullptr) return;
     end_rename(false); // the editor would no longer sit on its row
 
+    // The scroll moves pixels: paint the hovered row plain first, or its highlight moves along.
+    if (hover_row_ >= 0) {
+        const auto old_hover = static_cast<std::size_t>(hover_row_);
+        hover_row_ = -1;
+        invalidate_row(old_hover);
+        UpdateWindow(wnd_);
+    }
     const std::ptrdiff_t delta = static_cast<std::ptrdiff_t>(top_row_) -
                                  static_cast<std::ptrdiff_t>(top_row);
     top_row_ = top_row;
@@ -255,7 +262,12 @@ void TreeView::scroll_to(std::size_t top_row) noexcept {
     } else {
         InvalidateRect(wnd_, nullptr, FALSE);
     }
-    hover_row_ = -1; // re-evaluated on the next mouse move
+    // Like Explorer: the row now under the mouse is the hovered one.
+    POINT cursor{};
+    if (GetCursorPos(&cursor) && WindowFromPoint(cursor) == wnd_ && ScreenToClient(wnd_, &cursor)) {
+        hover_row_ = row_at(cursor.y);
+        if (hover_row_ >= 0) invalidate_row(static_cast<std::size_t>(hover_row_));
+    }
 
     SCROLLINFO info{sizeof(info)};
     info.fMask = SIF_POS;
@@ -560,4 +572,5 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
 }
 
 } // namespace filetree::view
+
 

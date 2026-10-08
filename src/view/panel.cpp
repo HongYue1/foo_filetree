@@ -32,7 +32,7 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
     host_ = host;
     hooks_ = std::move(hooks);
     show_address_ = settings::current().show_address_bar;
-    show_filter_ = settings::current().show_filter_box;
+    filter_mode_ = settings::current().filter_box;
     settings::subscribe(this);
 
     static const ATOM atom = [] {
@@ -51,7 +51,8 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
                               [this](std::uint32_t node) { tree_.select_node(node); },
                               [this](const std::wstring& path) {
                                   // Like Explorer: going somewhere ends the filter.
-                                  address_.clear_filter();
+                                  filter_.clear();
+                                  close_floating_filter();
                                   return tree_.navigate_to(path, true);
                               },
                               [this](AddressBar::Button button) {
@@ -61,12 +62,27 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
                               },
                               [this] {
                                   if (tree_wnd_ != nullptr) SetFocus(tree_wnd_);
-                              },
-                              [this](const std::wstring& text) { tree_.set_filter(text); }});
-    address_.set_parts(show_address_, show_filter_);
+                              }});
+    filter_.create(host, FilterBox::Hooks{
+                             [this](const std::wstring& text) { tree_.set_filter(text); },
+                             [this](bool cleared) {
+                                 if (filter_mode_ == settings::FilterBox::floating &&
+                                     (cleared || !filter_.active())) {
+                                     close_floating_filter();
+                                 }
+                                 if (tree_wnd_ != nullptr) SetFocus(tree_wnd_);
+                             },
+                             [this] {
+                                 if (filter_mode_ == settings::FilterBox::floating &&
+                                     !filter_.active()) {
+                                     close_floating_filter();
+                                 }
+                             }});
     // WM_CREATE attaches the tree (it needs the window).
     tree_wnd_ = CreateWindowExW(0, tree_class, L"",
-                                WS_CHILD | WS_VISIBLE | WS_TABSTOP | TreeView::window_styles, 0, 0,
+                                WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_CLIPSIBLINGS |
+                                    TreeView::window_styles,
+                                0, 0,
                                 0, 0, host, nullptr, core_api::get_my_instance(), this);
     layout();
 }
@@ -83,6 +99,7 @@ void Panel::detach() noexcept {
         tree_wnd_ = nullptr;
     }
     tree_.set_selection_listener(nullptr);
+    filter_.destroy();
     address_.destroy();
     history_.clear();
     history_at_ = 0;
@@ -100,11 +117,13 @@ void Panel::set_colours(const ViewColours& colours) noexcept {
     }
     tree_.set_colours(colours);
     address_.set_colours(colours);
+    filter_.set_colours(colours);
 }
 
 void Panel::set_font(const LOGFONTW& font) noexcept {
     tree_.set_font(font);
     address_.set_font(font);
+    filter_.set_font(font);
     layout();
 }
 
@@ -112,8 +131,10 @@ void Panel::layout() noexcept {
     if (host_ == nullptr) return;
     RECT client{};
     GetClientRect(host_, &client);
+    const bool in_bar = filter_mode_ == settings::FilterBox::bar;
+    address_.set_parts(show_address_, in_bar ? filter_.height() : 0);
     const int bar =
-        (show_address_ || show_filter_) && address_.wnd() != nullptr ? address_.height() : 0;
+        (show_address_ || in_bar) && address_.wnd() != nullptr ? address_.height() : 0;
     if (address_.wnd() != nullptr) {
         SetWindowPos(address_.wnd(), nullptr, 0, 0, client.right, bar,
                      SWP_NOZORDER | SWP_NOACTIVATE | (bar > 0 ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
@@ -122,13 +143,69 @@ void Panel::layout() noexcept {
         SetWindowPos(tree_wnd_, nullptr, 0, bar, client.right, std::max<int>(client.bottom - bar, 0),
                      SWP_NOZORDER | SWP_NOACTIVATE);
     }
+    place_filter();
+}
+
+void Panel::place_filter() noexcept {
+    HWND box = filter_.wnd();
+    if (box == nullptr || host_ == nullptr) return;
+    filter_.set_floating(filter_mode_ == settings::FilterBox::floating);
+    if (filter_mode_ == settings::FilterBox::bar && address_.wnd() != nullptr) {
+        if (GetParent(box) != address_.wnd()) SetParent(box, address_.wnd());
+        const RECT rect = address_.filter_rect();
+        SetWindowPos(box, HWND_TOP, rect.left, rect.top, rect.right - rect.left,
+                     rect.bottom - rect.top, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+        return;
+    }
+    if (GetParent(box) != host_) SetParent(box, host_);
+    if (filter_mode_ != settings::FilterBox::floating || !floating_open_) {
+        ShowWindow(box, SW_HIDE);
+        return;
+    }
+    // Floating: over the top right of the rows, clear of the scroll bar.
+    RECT client{};
+    GetClientRect(host_, &client);
+    RECT tree{};
+    if (tree_wnd_ != nullptr) {
+        GetWindowRect(tree_wnd_, &tree);
+        MapWindowPoints(nullptr, host_, reinterpret_cast<POINT*>(&tree), 2);
+    }
+    RECT inner{};
+    if (tree_wnd_ != nullptr) GetClientRect(tree_wnd_, &inner);
+    const int dpi = tree_.dpi();
+    const int margin = MulDiv(8, dpi, 96);
+    const int right = tree.left + inner.right - margin;
+    const int width = std::clamp<int>(client.right * 4 / 10, MulDiv(140, dpi, 96),
+                                      MulDiv(300, dpi, 96));
+    const int left = std::max<int>(right - width, tree.left + margin);
+    SetWindowPos(box, HWND_TOP, left, tree.top + margin, std::max<int>(right - left, 0),
+                 filter_.height(), SWP_NOACTIVATE | SWP_SHOWWINDOW);
+}
+
+void Panel::open_filter() noexcept {
+    if (filter_mode_ == settings::FilterBox::off) return;
+    if (filter_mode_ == settings::FilterBox::floating && !floating_open_) {
+        floating_open_ = true;
+        place_filter();
+    }
+    filter_.focus();
+}
+
+void Panel::close_floating_filter() noexcept {
+    if (!floating_open_) return;
+    floating_open_ = false;
+    place_filter();
 }
 
 void Panel::on_settings_changed(std::uint32_t changes) noexcept {
     if ((changes & settings::change_layout) == 0) return;
     show_address_ = settings::current().show_address_bar;
-    show_filter_ = settings::current().show_filter_box;
-    address_.set_parts(show_address_, show_filter_);
+    const settings::FilterBox mode = settings::current().filter_box;
+    if (mode != filter_mode_) {
+        filter_.clear();
+        floating_open_ = false;
+        filter_mode_ = mode;
+    }
     layout();
 }
 
@@ -196,12 +273,16 @@ bool Panel::on_panel_key(UINT msg, WPARAM key) noexcept {
     if (msg != WM_KEYDOWN) return false;
     switch (key) {
     case VK_ESCAPE:
-        if (!address_.filter_active()) return false;
-        address_.clear_filter();
+        if (!filter_.active()) return false;
+        filter_.clear();
+        close_floating_filter();
         return true;
     case 'F':
-        if (!ctrl || shift || GetKeyState(VK_MENU) < 0 || !show_filter_) return false;
-        address_.focus_filter();
+        if (!ctrl || shift || GetKeyState(VK_MENU) < 0 ||
+            filter_mode_ == settings::FilterBox::off) {
+            return false;
+        }
+        open_filter();
         return true;
     case VK_BROWSER_BACK: go_back(); return true;
     case VK_BROWSER_FORWARD: go_forward(); return true;
@@ -228,6 +309,7 @@ bool Panel::handle_message(HWND, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result
         return true;
     case WM_DPICHANGED_AFTERPARENT:
         address_.refresh_dpi();
+        filter_.refresh_dpi();
         layout();
         return true;
     case WM_SETTINGCHANGE:

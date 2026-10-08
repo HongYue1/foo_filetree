@@ -149,6 +149,7 @@
     <ClCompile Include="src\view\tree_view_nav.cpp" />
     <ClCompile Include="src\view\address_bar.cpp" />
     <ClCompile Include="src\view\panel.cpp" />
+    <ClCompile Include="src\view\filter_box.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\guids.h" />
@@ -175,6 +176,8 @@
     <ClInclude Include="src\actions\drag_out.h" />
     <ClInclude Include="src\view\address_bar.h" />
     <ClInclude Include="src\view\panel.h" />
+    <ClInclude Include="src\view\filter_box.h" />
+    <ClInclude Include="src\view\edit_util.h" />
     <ClInclude Include="src\platform\dpi.h" />
     <ClInclude Include="src\actions\presets.h" />
     <ClInclude Include="src\model\filter_rules.h" />

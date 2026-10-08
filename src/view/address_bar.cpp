@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "../platform/dpi.h"
+#include "edit_util.h"
 
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "uxtheme.lib")
@@ -18,8 +19,7 @@ namespace {
 
 constexpr wchar_t class_name[] = L"foo_filetree_address_bar";
 constexpr UINT_PTR edit_subclass_id = 1;
-constexpr UINT_PTR filter_subclass_id = 2;
-constexpr wchar_t filter_cue[] = L"Filter (Ctrl+F)";
+
 constexpr wchar_t placeholder[] = L"Type a path (Ctrl+L)";
 constexpr wchar_t overflow_text[] = L"\u2026";
 
@@ -65,40 +65,16 @@ bool AddressBar::create(HWND parent, Hooks hooks) noexcept {
     if (wnd_ == nullptr) return false;
     SetWindowLongPtrW(wnd_, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
     dpi_ = static_cast<int>(dpi::of_window(wnd_));
-    create_filter();
     rebuild_font();
     return true;
 }
 
-void AddressBar::create_filter() noexcept {
-    filter_ = CreateWindowExW(0, WC_EDITW, L"", WS_CHILD | ES_AUTOHSCROLL | ES_LEFT, 0, 0, 0, 0,
-                              wnd_, nullptr, core_api::get_my_instance(), nullptr);
-    if (filter_ == nullptr) return;
-    SendMessageW(filter_, EM_SETCUEBANNER, FALSE, reinterpret_cast<LPARAM>(filter_cue));
-    SetWindowSubclass(filter_, filter_proc, filter_subclass_id, reinterpret_cast<DWORD_PTR>(this));
-}
-
-int AddressBar::edit_height() const noexcept {
-    return std::min(text_height_ + dpi::scale(6, dpi_), height_ - 4);
-}
-
-void AddressBar::set_parts(bool address, bool filter) noexcept {
-    if (address == show_address_ && filter == show_filter_) return;
+void AddressBar::set_parts(bool address, int filter_height) noexcept {
+    if (address == show_address_ && filter_height == filter_height_) return;
     show_address_ = address;
-    show_filter_ = filter;
+    filter_height_ = filter_height;
     if (!address) end_edit(false);
-    if (!filter) clear_filter();
     layout();
-}
-
-void AddressBar::focus_filter() noexcept {
-    if (filter_ == nullptr || !show_filter_) return;
-    SetFocus(filter_);
-    SendMessageW(filter_, EM_SETSEL, 0, -1);
-}
-
-void AddressBar::clear_filter() noexcept {
-    if (filter_ != nullptr && GetWindowTextLengthW(filter_) > 0) SetWindowTextW(filter_, L"");
 }
 
 void AddressBar::destroy() noexcept {
@@ -111,7 +87,6 @@ void AddressBar::destroy() noexcept {
         SetWindowLongPtrW(wnd_, GWLP_USERDATA, 0);
         DestroyWindow(wnd_);
         wnd_ = nullptr;
-        filter_ = nullptr; // a child: destroyed with the bar
     }
     if (font_ != nullptr) {
         DeleteObject(font_);
@@ -127,10 +102,7 @@ void AddressBar::set_colours(const ViewColours& colours) noexcept {
     dim_text_ = blend(colours.text, colours.background, 0.45);
     border_ = blend(colours.background, colours.text, 0.15);
     if (edit_ != nullptr) SetWindowTheme(edit_, colours.dark ? L"DarkMode_CFD" : nullptr, nullptr);
-    if (filter_ != nullptr) {
-        SetWindowTheme(filter_, colours.dark ? L"DarkMode_CFD" : nullptr, nullptr);
-        InvalidateRect(filter_, nullptr, TRUE);
-    }
+
     if (wnd_ != nullptr) InvalidateRect(wnd_, nullptr, TRUE);
 }
 
@@ -165,11 +137,6 @@ void AddressBar::rebuild_font() noexcept {
     }
     height_ = std::max(text_height_ + dpi::scale(10, dpi_), dpi::scale(24, dpi_));
     if (edit_ != nullptr) SendMessageW(edit_, WM_SETFONT, reinterpret_cast<WPARAM>(font_), TRUE);
-    if (filter_ != nullptr) {
-        SendMessageW(filter_, WM_SETFONT, reinterpret_cast<WPARAM>(font_), TRUE);
-        const int pad = dpi::scale(4, dpi_);
-        SendMessageW(filter_, EM_SETMARGINS, EC_LEFTMARGIN | EC_RIGHTMARGIN, MAKELPARAM(pad, pad));
-    }
     layout();
 }
 
@@ -202,22 +169,16 @@ void AddressBar::layout() noexcept {
 
     // The filter box: on the right, or the whole bar when the address part is hidden.
     filter_rect_ = {};
-    if (show_filter_) {
+    if (filter_height_ > 0) {
         const int margin = dpi::scale(4, dpi_);
         const int width = show_address_ ? std::clamp<int>(client.right * 3 / 10, dpi::scale(120, dpi_),
                                                           dpi::scale(260, dpi_))
                                         : client.right - 2 * margin;
-        const int box = edit_height() + 2;
+        const int box = std::min(filter_height_, height_ - 3);
         const int top = (height_ - 1 - box) / 2;
         filter_rect_ = {std::max<int>(client.right - margin - width, 0), top,
                         client.right - margin, top + box};
         right = filter_rect_.left - dpi::scale(8, dpi_);
-    }
-    if (filter_ != nullptr) {
-        SetWindowPos(filter_, nullptr, filter_rect_.left + 1, filter_rect_.top + 1,
-                     std::max<int>(filter_rect_.right - filter_rect_.left - 2, 0),
-                     std::max<int>(filter_rect_.bottom - filter_rect_.top - 2, 0),
-                     SWP_NOZORDER | SWP_NOACTIVATE | (show_filter_ ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
     }
     if (!show_address_) {
         InvalidateRect(wnd_, nullptr, FALSE);
@@ -275,12 +236,6 @@ int AddressBar::hit(int x, int y) const noexcept {
 void AddressBar::paint(HDC dc, const RECT& client) noexcept {
     fill(dc, client, bar_background_);
     fill(dc, RECT{client.left, client.bottom - 1, client.right, client.bottom}, border_);
-    if (filter_rect_.right > filter_rect_.left) {
-        fill(dc, filter_rect_, border_);
-        fill(dc, RECT{filter_rect_.left + 1, filter_rect_.top + 1, filter_rect_.right - 1,
-                      filter_rect_.bottom - 1},
-             colours_.background);
-    }
     if (!show_address_) return;
     const int pen = std::max(dpi::scale(3, dpi_) / 2, 1);
     const int glyph = dpi::scale(10, dpi_);
@@ -351,7 +306,8 @@ void AddressBar::begin_edit() noexcept {
     RECT client{};
     GetClientRect(wnd_, &client);
     const int left = height_ * button_count + dpi::scale(4, dpi_);
-    const int edit_height = this->edit_height();
+    // One line high and centred: a single-line EDIT draws its text at the top.
+    const int edit_height = text_height_;
     const int top = (height_ - 1 - edit_height) / 2;
     const int right = filter_rect_.right > filter_rect_.left ? filter_rect_.left - dpi::scale(8, dpi_)
                                                              : client.right - dpi::scale(4, dpi_);
@@ -406,6 +362,7 @@ void AddressBar::end_edit(bool commit) noexcept {
 LRESULT CALLBACK AddressBar::edit_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR,
                                        DWORD_PTR data) noexcept {
     auto* bar = reinterpret_cast<AddressBar*>(data);
+    if (edit::ctrl_backspace(wnd, msg, wp)) return 0;
     switch (msg) {
     case WM_GETDLGCODE:
         return DefSubclassProc(wnd, msg, wp, lp) | DLGC_WANTALLKEYS;
@@ -437,38 +394,6 @@ LRESULT CALLBACK AddressBar::edit_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp,
     return DefSubclassProc(wnd, msg, wp, lp);
 }
 
-LRESULT CALLBACK AddressBar::filter_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR,
-                                         DWORD_PTR data) noexcept {
-    auto* bar = reinterpret_cast<AddressBar*>(data);
-    switch (msg) {
-    case WM_GETDLGCODE:
-        return DefSubclassProc(wnd, msg, wp, lp) | DLGC_WANTALLKEYS;
-    case WM_KEYDOWN:
-        // Esc empties the box, a second Esc (or Enter, Down) goes back to the tree.
-        if (wp == VK_ESCAPE && GetWindowTextLengthW(wnd) > 0) {
-            SetWindowTextW(wnd, L"");
-            return 0;
-        }
-        if (wp == VK_ESCAPE || wp == VK_RETURN || wp == VK_DOWN) {
-            try {
-                if (bar->hooks_.done) bar->hooks_.done();
-            } catch (...) {
-            }
-            return 0;
-        }
-        break;
-    case WM_CHAR:
-        if (wp == L'\r' || wp == 0x1b) return 0; // no beep
-        break;
-    case WM_NCDESTROY:
-        RemoveWindowSubclass(wnd, filter_proc, filter_subclass_id);
-        break;
-    default:
-        break;
-    }
-    return DefSubclassProc(wnd, msg, wp, lp);
-}
-
 LRESULT CALLBACK AddressBar::wnd_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept {
     auto* bar = reinterpret_cast<AddressBar*>(GetWindowLongPtrW(wnd, GWLP_USERDATA));
     if (bar == nullptr) return DefWindowProcW(wnd, msg, wp, lp);
@@ -492,21 +417,6 @@ LRESULT AddressBar::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcep
                          rect.bottom - rect.top, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
         }
         return 0;
-    case WM_COMMAND:
-        if (reinterpret_cast<HWND>(lp) == filter_ && filter_ != nullptr &&
-            HIWORD(wp) == EN_CHANGE) {
-            std::wstring text;
-            const int length = GetWindowTextLengthW(filter_);
-            text.resize(static_cast<std::size_t>(std::max(length, 0)) + 1);
-            text.resize(static_cast<std::size_t>(
-                GetWindowTextW(filter_, text.data(), static_cast<int>(text.size()))));
-            try {
-                if (hooks_.filter) hooks_.filter(text);
-            } catch (...) {
-            }
-            return 0;
-        }
-        break;
     case WM_ERASEBKGND:
         return 1;
     case WM_PAINT: {
@@ -561,7 +471,7 @@ LRESULT AddressBar::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcep
         pressed_ = hit_none;
         return 0;
     case WM_CTLCOLOREDIT:
-        if (reinterpret_cast<HWND>(lp) == edit_ || reinterpret_cast<HWND>(lp) == filter_) {
+        if (reinterpret_cast<HWND>(lp) == edit_) {
             HDC dc = reinterpret_cast<HDC>(wp);
             SetTextColor(dc, colours_.text);
             SetBkColor(dc, colours_.background);

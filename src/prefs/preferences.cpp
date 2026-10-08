@@ -117,6 +117,8 @@ private:
         dark_.AddDialogWithControls(*this);
         create_tabs();
         const HWND page = m_hWnd;
+        fill_combo(page, IDC_FILTER_BOX,
+                   {L"In the address bar", L"Floating over the tree", L"Off"});
         fill_combo(page, IDC_LINES, {L"None", L"Connector lines", L"Indentation guides"});
         fill_combo(page, IDC_EXTENSIONS,
                    {L"Always show", L"Never show", L"Hide for playable files"});
@@ -364,7 +366,7 @@ private:
         }
         state.recursive = get_check(page, IDC_RECURSIVE);
         s.show_address_bar = get_check(page, IDC_SHOW_ADDRESS_BAR);
-        s.show_filter_box = get_check(page, IDC_SHOW_FILTER_BOX);
+        s.filter_box = static_cast<settings::FilterBox>(get_combo(page, IDC_FILTER_BOX, 0));
 
         s.lines = static_cast<settings::TreeLines>(get_combo(page, IDC_LINES, 0));
         s.line_thickness = get_int(page, IDC_LINE_THICKNESS, 1, 4, s.line_thickness);
@@ -407,7 +409,7 @@ private:
         set_text(page, IDC_TEMP_PLAYLIST, state.temp_playlist);
         set_check(page, IDC_RECURSIVE, state.recursive);
         set_check(page, IDC_SHOW_ADDRESS_BAR, s.show_address_bar);
-        set_check(page, IDC_SHOW_FILTER_BOX, s.show_filter_box);
+        set_combo(page, IDC_FILTER_BOX, static_cast<int>(s.filter_box));
 
         set_combo(page, IDC_LINES, static_cast<int>(s.lines));
         set_int(page, IDC_LINE_THICKNESS, s.line_thickness);

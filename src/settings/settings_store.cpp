@@ -28,7 +28,7 @@ constexpr GUID guid_always_show = {0xfeb7d3e3, 0xe0dd, 0x4434, {0xbd, 0x6f, 0x92
 constexpr GUID guid_never_show = {0x50c7f182, 0x6ac2, 0x49e9, {0xba, 0x2d, 0x6f, 0x68, 0xaf, 0x30, 0x48, 0xd3}};
 constexpr GUID guid_hide_patterns = {0x262e73df, 0x1412, 0x4717, {0x96, 0x7e, 0xb6, 0x56, 0x4b, 0xd3, 0x0c, 0x87}};
 constexpr GUID guid_show_address_bar = {0x961ca913, 0xd41f, 0x43e8, {0x8b, 0x68, 0x5b, 0xd9, 0x1e, 0xbf, 0xff, 0x75}};
-constexpr GUID guid_show_filter_box = {0xdf01b858, 0xdb64, 0x4d22, {0xbb, 0xde, 0x1b, 0xb3, 0xc6, 0x57, 0x66, 0x7b}};
+constexpr GUID guid_filter_box = {0x95efa8c6, 0x13ae, 0x4993, {0xbf, 0xaf, 0x74, 0x7a, 0xeb, 0xa7, 0x74, 0xe3}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
 using cfg_int = cfg_var_modern::cfg_int;
@@ -56,7 +56,7 @@ cfg_string cfg_never_show(guid_never_show, "");
 cfg_string cfg_hide_patterns(guid_hide_patterns, "");
 cfg_string cfg_menu(guid_menu, "");
 cfg_bool cfg_show_address_bar(guid_show_address_bar, defaults.show_address_bar);
-cfg_bool cfg_show_filter_box(guid_show_filter_box, defaults.show_filter_box);
+cfg_int cfg_filter_box(guid_filter_box, static_cast<int>(defaults.filter_box));
 
 std::optional<Settings> g_current; //!< saved
 std::optional<Settings> g_preview;
@@ -101,7 +101,7 @@ Settings load() {
     s.hide_patterns = wide(cfg_hide_patterns.get());
     s.menu = MenuLayout::decode(wide(cfg_menu.get()));
     s.show_address_bar = cfg_show_address_bar.get();
-    s.show_filter_box = cfg_show_filter_box.get();
+    s.filter_box = as_enum<FilterBox>(cfg_filter_box.get());
     s.sanitize();
     return s;
 }
@@ -126,7 +126,7 @@ void save(const Settings& s) {
     cfg_hide_patterns.set(utf8(s.hide_patterns));
     cfg_menu.set(utf8(s.menu.encode()));
     cfg_show_address_bar.set(s.show_address_bar);
-    cfg_show_filter_box.set(s.show_filter_box);
+    cfg_filter_box.set(static_cast<int>(s.filter_box));
 }
 
 std::shared_ptr<const model::FilterRules> build_rules(const Settings& s) {

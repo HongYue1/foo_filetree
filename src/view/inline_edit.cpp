@@ -9,6 +9,7 @@
 #include <uxtheme.h>
 
 #include "../actions/shell_ops.h"
+#include "edit_util.h"
 
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "uxtheme.lib")
@@ -119,6 +120,7 @@ bool TreeView::on_edit_colour(HDC dc, HWND control, LRESULT& result) noexcept {
 LRESULT CALLBACK TreeView::edit_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR,
                                      DWORD_PTR data) noexcept {
     auto* view = reinterpret_cast<TreeView*>(data);
+    if (edit::ctrl_backspace(wnd, msg, wp)) return 0;
     switch (msg) {
     case WM_GETDLGCODE:
         // Enter and Esc must reach us, not the host's dialog navigation.
@@ -148,3 +150,4 @@ LRESULT CALLBACK TreeView::edit_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, U
 }
 
 } // namespace filetree::view
+

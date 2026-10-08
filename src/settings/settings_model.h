@@ -17,6 +17,7 @@ namespace filetree::settings {
 
 enum class TreeLines : std::uint8_t { none, connectors, guides };
 enum class Extensions : std::uint8_t { always, never, non_playable };
+enum class FilterBox : std::uint8_t { bar, floating, off };
 
 //! Context menu entries a user can show, hide and reorder. Append only (stored by number).
 enum class MenuItem : std::uint8_t {
@@ -59,7 +60,7 @@ struct Settings {
     // General
     std::uint32_t hidden_drives{0}; //!< bit 0 = A: ... bit 25 = Z:
     bool show_address_bar{true};
-    bool show_filter_box{true};
+    FilterBox filter_box{FilterBox::bar};
 
     // Display
     TreeLines lines{TreeLines::none};

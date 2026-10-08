@@ -32,7 +32,7 @@ stay on for a moment are remembered; quick arrow-key moves are not. Hide it on t
 
 ## Filter box
 
-On the right of the address bar (Ctrl+F). Typing narrows the open folders to names containing the
+On the right of the address bar, or floating over the tree (General tab; Ctrl+F opens it). Typing narrows the open folders to names containing the
 text, or matching it with * and ? (`*.flac`). Folders above a match stay, a matching folder keeps
 its contents. Esc clears it; Enter or Down goes back to the tree. It filters what is open, it does
 not search the disk.

@@ -114,6 +114,7 @@ void Settings::sanitize() noexcept {
     row_padding = std::clamp(row_padding, 0, 12);
     sort.field = clamp_enum(sort.field, model::SortField::type);
     files = clamp_enum(files, fs::FileMode::none);
+    filter_box = clamp_enum(filter_box, FilterBox::off);
 }
 
 std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
@@ -125,7 +126,7 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         out |= change_repaint;
     }
     if (a.row_padding != b.row_padding) out |= change_remeasure;
-    if (a.show_address_bar != b.show_address_bar || a.show_filter_box != b.show_filter_box) {
+    if (a.show_address_bar != b.show_address_bar || a.filter_box != b.filter_box) {
         out |= change_layout;
     }
     if (a.sort.field != b.sort.field || a.sort.folders_first != b.sort.folders_first ||

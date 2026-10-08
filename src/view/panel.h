@@ -13,6 +13,7 @@
 
 #include "../settings/settings_store.h"
 #include "address_bar.h"
+#include "filter_box.h"
 #include "theme.h"
 #include "tree_view.h"
 
@@ -60,14 +61,20 @@ private:
     void go_back() noexcept;
     void go_forward() noexcept;
     void go_to_history() noexcept;
+    //! Puts the filter box where the setting wants it (bar / floating / hidden).
+    void place_filter() noexcept;
+    void open_filter() noexcept;
+    void close_floating_filter() noexcept;
 
     HWND host_{};
     HWND tree_wnd_{};
     TreeView tree_;
     AddressBar address_;
+    FilterBox filter_;
     HostHooks hooks_;
     bool show_address_{true};
-    bool show_filter_{true};
+    settings::FilterBox filter_mode_{settings::FilterBox::bar};
+    bool floating_open_{false}; //!< floating mode: the box is shown
     bool dark_{false};
     bool theme_applied_{false};
 

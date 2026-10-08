@@ -32,6 +32,7 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
     host_ = host;
     hooks_ = std::move(hooks);
     show_address_ = settings::current().show_address_bar;
+    show_filter_ = settings::current().show_filter_box;
     settings::subscribe(this);
 
     static const ATOM atom = [] {
@@ -49,6 +50,8 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
     address_.create(host, AddressBar::Hooks{
                               [this](std::uint32_t node) { tree_.select_node(node); },
                               [this](const std::wstring& path) {
+                                  // Like Explorer: going somewhere ends the filter.
+                                  address_.clear_filter();
                                   return tree_.navigate_to(path, true);
                               },
                               [this](AddressBar::Button button) {
@@ -58,7 +61,9 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
                               },
                               [this] {
                                   if (tree_wnd_ != nullptr) SetFocus(tree_wnd_);
-                              }});
+                              },
+                              [this](const std::wstring& text) { tree_.set_filter(text); }});
+    address_.set_parts(show_address_, show_filter_);
     // WM_CREATE attaches the tree (it needs the window).
     tree_wnd_ = CreateWindowExW(0, tree_class, L"",
                                 WS_CHILD | WS_VISIBLE | WS_TABSTOP | TreeView::window_styles, 0, 0,
@@ -107,7 +112,8 @@ void Panel::layout() noexcept {
     if (host_ == nullptr) return;
     RECT client{};
     GetClientRect(host_, &client);
-    const int bar = show_address_ && address_.wnd() != nullptr ? address_.height() : 0;
+    const int bar =
+        (show_address_ || show_filter_) && address_.wnd() != nullptr ? address_.height() : 0;
     if (address_.wnd() != nullptr) {
         SetWindowPos(address_.wnd(), nullptr, 0, 0, client.right, bar,
                      SWP_NOZORDER | SWP_NOACTIVATE | (bar > 0 ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
@@ -121,6 +127,8 @@ void Panel::layout() noexcept {
 void Panel::on_settings_changed(std::uint32_t changes) noexcept {
     if ((changes & settings::change_layout) == 0) return;
     show_address_ = settings::current().show_address_bar;
+    show_filter_ = settings::current().show_filter_box;
+    address_.set_parts(show_address_, show_filter_);
     layout();
 }
 
@@ -187,6 +195,14 @@ bool Panel::on_panel_key(UINT msg, WPARAM key) noexcept {
     }
     if (msg != WM_KEYDOWN) return false;
     switch (key) {
+    case VK_ESCAPE:
+        if (!address_.filter_active()) return false;
+        address_.clear_filter();
+        return true;
+    case 'F':
+        if (!ctrl || shift || GetKeyState(VK_MENU) < 0 || !show_filter_) return false;
+        address_.focus_filter();
+        return true;
     case VK_BROWSER_BACK: go_back(); return true;
     case VK_BROWSER_FORWARD: go_forward(); return true;
     case 'L':

@@ -70,6 +70,8 @@ public:
     //! Selects a visible node (an address bar crumb). Ignored if it is not visible.
     void select_node(std::uint32_t node) noexcept;
     void select_parent() noexcept;
+    //! Name filter (filter box); empty shows everything again.
+    void set_filter(std::wstring_view text) noexcept;
     [[nodiscard]] HWND wnd() const noexcept { return wnd_; }
     //! The font the rows are drawn in, at the window's DPI. Owned by the view.
     [[nodiscard]] HFONT font() const noexcept { return font_; }
@@ -124,6 +126,7 @@ private:
     void request_listing(std::uint32_t node);
     void on_listing(std::uint32_t node, std::uint64_t generation, fs::Listing& listing) noexcept;
     void apply_splice(const model::RowSplice& splice) noexcept;
+    void apply_full_splice() noexcept;
 
     void on_size() noexcept;
     void on_vscroll(int code) noexcept;
@@ -256,6 +259,7 @@ private:
     UndoRecord undo_;
 
     std::function<void()> selection_listener_;
+    std::uint32_t filter_hidden_selection_{model::no_node}; //!< selected, then filtered out
 
     // Inline rename (inline_edit.cpp).
     HWND edit_{};

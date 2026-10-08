@@ -59,6 +59,8 @@ struct RowSplice {
     std::size_t row{};
     std::size_t removed{};
     std::size_t inserted{};
+    //! Every row was rebuilt (a name filter is active): map rows through previous_node_at().
+    bool full{false};
 
     [[nodiscard]] bool empty() const noexcept { return removed == 0 && inserted == 0; }
 };
@@ -126,6 +128,19 @@ public:
     //! Full path of a node: the root's path plus each component, '\' separated.
     void build_path(std::uint32_t index, std::wstring& out) const;
 
+    //! Name filter. Empty shows every expanded row; otherwise a row shows when its name contains
+    //! the text (or matches it as a whole, with * and ?), when it is inside a matching folder, or
+    //! when a shown row is below it. Applies to listed, expanded folders only. While a filter is
+    //! active, row changes rebuild the whole list (RowSplice::full).
+    RowSplice set_filter(std::wstring_view text);
+    [[nodiscard]] bool filtered() const noexcept { return !filter_.empty(); }
+    //! Rebuilds the rows from the expanded state (after the roots were re-added).
+    RowSplice rebuild_rows();
+    //! The node a row showed before the last full rebuild, or no_node.
+    [[nodiscard]] std::uint32_t previous_node_at(std::size_t row) const noexcept {
+        return row < previous_rows_.size() ? previous_rows_[row] : no_node;
+    }
+
     //! Bytes held by nodes, rows and names. For the performance counters (M7).
     [[nodiscard]] std::size_t memory_bytes() const noexcept;
 
@@ -133,11 +148,18 @@ private:
     void append_visible_subtree(std::uint32_t index);
     RowSplice splice_children_in(std::uint32_t index);
     void orphan_children(std::uint32_t index) noexcept;
+    [[nodiscard]] bool matches_filter(const Node& node) noexcept;
+    bool collect_filtered(std::uint32_t index, bool inside_match);
 
     std::vector<Node> nodes_;
     std::vector<std::uint32_t> rows_;
     std::vector<std::uint32_t> scratch_; //!< reused by expand; grows, never shrinks
+    std::vector<std::uint32_t> previous_rows_;
+    std::wstring filter_;                //!< upper-cased
+    bool filter_glob_{false};
+    wchar_t upper_[256]{};               //!< a name upper-cased for matching
     NamePool names_;
 };
 
 } // namespace filetree::model
+

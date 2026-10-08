@@ -222,6 +222,47 @@ void test_tree_reload() {
     CHECK(tree.expand(d) == Tree::ExpandResult::needs_load);
 }
 
+void test_tree_filter() {
+    using model::Tree;
+    Tree tree;
+    const auto c = tree.add_root(L"C:\\");
+    tree.add_root(L"D:\\");
+    tree.expand(c);
+    tree.apply_children(c, records({L"Music", L"Users"}, {L"a.mp3"}));
+    const auto music = tree.find_child(c, L"Music");
+    tree.expand(music);
+    tree.apply_children(music, records({L"Album"}, {L"x.flac", L"song.mp3"}));
+    CHECK(tree.row_count() == 8); // C, Music, Album, x.flac, song.mp3, Users, a.mp3, D
+
+    // "mp3": matches and their ancestors only.
+    auto splice = tree.set_filter(L"Mp3");
+    CHECK(splice.full && splice.removed == 8);
+    CHECK(tree.filtered());
+    CHECK(tree.row_count() == 4); // C, Music, song.mp3, a.mp3
+    CHECK(row_name(tree, 2) == L"song.mp3");
+    CHECK(row_name(tree, 3) == L"a.mp3");
+    CHECK(tree.previous_node_at(7) == 1); // D was the last row
+    CHECK(tree.set_filter(L"MP3").empty()); // same text, nothing to do
+
+    // A matching folder keeps its (expanded) contents.
+    tree.set_filter(L"music");
+    CHECK(tree.row_count() == 5); // C, Music, Album, x.flac, song.mp3
+
+    // Wildcards match whole names.
+    tree.set_filter(L"*.flac");
+    CHECK(tree.row_count() == 3 && row_name(tree, 2) == L"x.flac");
+
+    // Row changes while filtered rebuild everything.
+    splice = tree.collapse(music);
+    CHECK(splice.full && tree.row_count() == 0);
+    tree.expand(music);
+    CHECK(tree.row_count() == 3);
+
+    // Clearing shows every expanded row again.
+    splice = tree.set_filter(L"");
+    CHECK(splice.full && !tree.filtered() && tree.row_count() == 8);
+}
+
 void test_tree_large() {
     model::Tree tree;
     const auto root = tree.add_root(L"C:\\");
@@ -452,6 +493,7 @@ int main() {
     test_extensions();
     test_tree();
     test_tree_reload();
+    test_tree_filter();
     test_tree_large();
     test_search_pattern();
     const auto base = make_fixture();
@@ -465,3 +507,4 @@ int main() {
     std::printf("%d checks, %d failures\n", g_checks, g_failures);
     return g_failures == 0 ? 0 : 1;
 }
+

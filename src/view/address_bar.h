@@ -26,6 +26,7 @@ public:
         std::function<bool(const std::wstring& path)> navigate; //!< Enter; false keeps editing
         std::function<void(Button button)> button;
         std::function<void()> done; //!< editing ended with Enter or Esc: focus the tree
+        std::function<void(const std::wstring& text)> filter; //!< the filter box text changed
     };
 
     AddressBar() = default;
@@ -48,6 +49,15 @@ public:
     void set_enabled(bool back_enabled, bool forward_enabled, bool up_enabled) noexcept;
     void begin_edit() noexcept;
 
+    //! Which parts show: the address (buttons + crumbs) and the filter box on the right.
+    void set_parts(bool address, bool filter) noexcept;
+    void focus_filter() noexcept;
+    //! Empties the filter box (the filter hook runs with an empty text).
+    void clear_filter() noexcept;
+    [[nodiscard]] bool filter_active() const noexcept {
+        return filter_ != nullptr && GetWindowTextLengthW(filter_) > 0;
+    }
+
 private:
     // Hit codes: buttons are 0..2, crumbs crumb_hit + index.
     static constexpr int hit_none = -1;
@@ -58,6 +68,11 @@ private:
     static LRESULT CALLBACK wnd_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept;
     static LRESULT CALLBACK edit_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR id,
                                       DWORD_PTR data) noexcept;
+    static LRESULT CALLBACK filter_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR id,
+                                        DWORD_PTR data) noexcept;
+    void create_filter() noexcept;
+    //! Height of the edit boxes, and their top inside the bar.
+    [[nodiscard]] int edit_height() const noexcept;
     LRESULT on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept;
     void rebuild_font() noexcept;
     void layout() noexcept;
@@ -69,6 +84,10 @@ private:
 
     HWND wnd_{};
     HWND edit_{};
+    HWND filter_{};
+    bool show_address_{true};
+    bool show_filter_{true};
+    RECT filter_rect_{}; //!< the filter box frame (1 px border around the edit)
     Hooks hooks_;
     ViewColours colours_{};
     COLORREF bar_background_{};

@@ -67,6 +67,7 @@ private:
     AddressBar address_;
     HostHooks hooks_;
     bool show_address_{true};
+    bool show_filter_{true};
     bool dark_{false};
     bool theme_applied_{false};
 

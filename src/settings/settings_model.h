@@ -59,6 +59,7 @@ struct Settings {
     // General
     std::uint32_t hidden_drives{0}; //!< bit 0 = A: ... bit 25 = Z:
     bool show_address_bar{true};
+    bool show_filter_box{true};
 
     // Display
     TreeLines lines{TreeLines::none};

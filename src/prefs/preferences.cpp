@@ -364,6 +364,7 @@ private:
         }
         state.recursive = get_check(page, IDC_RECURSIVE);
         s.show_address_bar = get_check(page, IDC_SHOW_ADDRESS_BAR);
+        s.show_filter_box = get_check(page, IDC_SHOW_FILTER_BOX);
 
         s.lines = static_cast<settings::TreeLines>(get_combo(page, IDC_LINES, 0));
         s.line_thickness = get_int(page, IDC_LINE_THICKNESS, 1, 4, s.line_thickness);
@@ -406,6 +407,7 @@ private:
         set_text(page, IDC_TEMP_PLAYLIST, state.temp_playlist);
         set_check(page, IDC_RECURSIVE, state.recursive);
         set_check(page, IDC_SHOW_ADDRESS_BAR, s.show_address_bar);
+        set_check(page, IDC_SHOW_FILTER_BOX, s.show_filter_box);
 
         set_combo(page, IDC_LINES, static_cast<int>(s.lines));
         set_int(page, IDC_LINE_THICKNESS, s.line_thickness);

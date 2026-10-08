@@ -125,7 +125,9 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         out |= change_repaint;
     }
     if (a.row_padding != b.row_padding) out |= change_remeasure;
-    if (a.show_address_bar != b.show_address_bar) out |= change_layout;
+    if (a.show_address_bar != b.show_address_bar || a.show_filter_box != b.show_filter_box) {
+        out |= change_layout;
+    }
     if (a.sort.field != b.sort.field || a.sort.folders_first != b.sort.folders_first ||
         a.sort.reverse != b.sort.reverse || a.show_hidden != b.show_hidden ||
         a.show_system != b.show_system || a.files != b.files || a.always_show != b.always_show ||

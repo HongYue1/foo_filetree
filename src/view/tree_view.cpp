@@ -80,7 +80,52 @@ void TreeView::populate_roots() {
     }
     selected_row_ = hover_row_ = -1;
     top_row_ = 0;
+    filter_hidden_selection_ = model::no_node;
+    if (tree_.filtered()) tree_.rebuild_rows();
     notify_selection();
+}
+
+void TreeView::apply_full_splice() noexcept {
+    // Rows were rebuilt (name filter): find the selected and top nodes again.
+    const auto relocate = [&](std::ptrdiff_t row) -> std::ptrdiff_t {
+        if (row < 0) return -1;
+        const std::uint32_t node = tree_.previous_node_at(static_cast<std::size_t>(row));
+        if (node == model::no_node) return -1;
+        const auto found = tree_.row_of(node);
+        return found ? static_cast<std::ptrdiff_t>(*found) : -1;
+    };
+    const std::ptrdiff_t old_selected = selected_row_;
+    const std::uint32_t old_node =
+        old_selected >= 0 ? tree_.previous_node_at(static_cast<std::size_t>(old_selected))
+                          : model::no_node;
+    selected_row_ = relocate(selected_row_);
+    if (selected_row_ < 0 && old_node != model::no_node) {
+        filter_hidden_selection_ = old_node; // filtered out: select it again when it reappears
+    } else if (selected_row_ < 0 && filter_hidden_selection_ != model::no_node) {
+        if (const auto row = tree_.row_of(filter_hidden_selection_)) {
+            selected_row_ = static_cast<std::ptrdiff_t>(*row);
+            filter_hidden_selection_ = model::no_node;
+        }
+    }
+    const std::ptrdiff_t top = relocate(static_cast<std::ptrdiff_t>(top_row_));
+    top_row_ = top >= 0 ? static_cast<std::size_t>(top) : std::min(top_row_, max_top_row());
+    top_row_ = std::min(top_row_, max_top_row());
+    hover_row_ = -1;
+    update_scrollbar();
+    InvalidateRect(wnd_, nullptr, FALSE);
+    if (selected_row_ >= 0) ensure_visible(static_cast<std::size_t>(selected_row_));
+    const std::uint32_t new_node =
+        selected_row_ >= 0 ? tree_.node_at_row(static_cast<std::size_t>(selected_row_))
+                           : model::no_node;
+    if (new_node != old_node) notify_selection();
+}
+
+void TreeView::set_filter(std::wstring_view text) noexcept {
+    try {
+        const model::RowSplice splice = tree_.set_filter(text);
+        apply_splice(splice);
+    } catch (...) {
+    }
 }
 
 void TreeView::set_colours(const ViewColours& colours) noexcept {
@@ -290,6 +335,7 @@ void TreeView::select_row(std::size_t row) noexcept {
     if (row >= tree_.row_count()) return;
     if (selected_row_ >= 0) invalidate_row(static_cast<std::size_t>(selected_row_));
     const bool changed = selected_row_ != static_cast<std::ptrdiff_t>(row);
+    filter_hidden_selection_ = model::no_node;
     selected_row_ = static_cast<std::ptrdiff_t>(row);
     invalidate_row(row);
     ensure_visible(row);
@@ -299,6 +345,10 @@ void TreeView::select_row(std::size_t row) noexcept {
 void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
     if (splice.empty()) return;
     end_rename(false);
+    if (splice.full) {
+        apply_full_splice();
+        return;
+    }
     bool moved_to_parent = false;
     const auto shift = [&](std::ptrdiff_t& row) {
         if (row < 0 || static_cast<std::size_t>(row) < splice.row) return;

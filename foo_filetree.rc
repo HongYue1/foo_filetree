@@ -42,10 +42,11 @@ BEGIN
     LTEXT           "Panel",IDC_STATIC,7,72,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,82,286,1
     CONTROL         "Show the address bar (Ctrl+L types a path)",IDC_SHOW_ADDRESS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,89,281,10
+    CONTROL         "Show the filter box (Ctrl+F)",IDC_SHOW_FILTER_BOX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,103,281,10
 
-    LTEXT           "Drives",IDC_STATIC,7,110,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,120,286,1
-    LTEXT           "Drives shown as roots in every Folder Tree panel:",IDC_DRIVES_LABEL,12,127,281,8
+    LTEXT           "Drives",IDC_STATIC,7,124,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,134,286,1
+    LTEXT           "Drives shown as roots in every Folder Tree panel:",IDC_DRIVES_LABEL,12,141,281,8
 END
 
 IDD_TAB_DISPLAY DIALOGEX 0, 0, 300, 222

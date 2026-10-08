@@ -30,6 +30,13 @@ to type a path (environment variables like %USERPROFILE% work), Enter goes there
 Back, Forward and Up are also Alt+Left, Alt+Right, Alt+Up and the mouse side buttons. Places you
 stay on for a moment are remembered; quick arrow-key moves are not. Hide it on the General tab.
 
+## Filter box
+
+On the right of the address bar (Ctrl+F). Typing narrows the open folders to names containing the
+text, or matching it with * and ? (`*.flac`). Folders above a match stay, a matching folder keeps
+its contents. Esc clears it; Enter or Down goes back to the tree. It filters what is open, it does
+not search the disk.
+
 ## Context menu
 
 - **Play**, **Add to active playlist**, **Send to new playlist**

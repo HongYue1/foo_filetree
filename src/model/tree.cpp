@@ -1,5 +1,7 @@
 #include "tree.h"
 
+#include "filter_rules.h"
+
 #include <windows.h>
 
 #include <algorithm>
@@ -17,6 +19,7 @@ std::uint16_t clamp16(std::size_t value) noexcept {
 void Tree::clear() noexcept {
     nodes_.clear();
     rows_.clear();
+    previous_rows_.clear();
     names_.clear();
 }
 
@@ -49,6 +52,7 @@ void Tree::append_visible_subtree(std::uint32_t index) {
 }
 
 RowSplice Tree::splice_children_in(std::uint32_t index) {
+    if (filtered()) return rebuild_rows();
     const auto row = row_of(index);
     if (!row) return {};
 
@@ -80,6 +84,7 @@ RowSplice Tree::collapse(std::uint32_t index) {
     Node& node = nodes_[index];
     if (!node.has(node_expanded)) return {};
     node.flags = static_cast<std::uint16_t>(node.flags & ~(node_expanded | node_load_failed));
+    if (filtered()) return rebuild_rows();
 
     const auto row = row_of(index);
     if (!row) return {};
@@ -150,7 +155,7 @@ Tree::ReloadResult Tree::reload(std::uint32_t index) {
     Node& node = nodes_[index];
     if (!node.has(node_container) || node.has(node_loading)) return result;
 
-    if (node.has(node_expanded)) {
+    if (node.has(node_expanded) && !filtered()) {
         if (const auto row = row_of(index)) {
             const std::uint16_t depth = node.depth;
             std::size_t end = *row + 1;
@@ -168,6 +173,7 @@ Tree::ReloadResult Tree::reload(std::uint32_t index) {
         node.flags |= node_loading;
         result.needs_load = true;
     }
+    if (filtered()) result.splice = rebuild_rows();
     return result;
 }
 
@@ -205,9 +211,68 @@ void Tree::build_path(std::uint32_t index, std::wstring& out) const {
     }
 }
 
+RowSplice Tree::set_filter(std::wstring_view text) {
+    wchar_t upper[256];
+    const std::size_t length = to_upper(text, upper, std::size(upper));
+    std::wstring next(upper, length);
+    if (next == filter_) return {};
+    filter_ = std::move(next);
+    filter_glob_ = filter_.find_first_of(L"*?") != std::wstring::npos;
+    return rebuild_rows();
+}
+
+bool Tree::matches_filter(const Node& node) noexcept {
+    const std::size_t length = to_upper(node.name_view(), upper_, std::size(upper_));
+    const std::wstring_view name(upper_, length);
+    return filter_glob_ ? glob_match(filter_, name) : name.find(filter_) != std::wstring_view::npos;
+}
+
+bool Tree::collect_filtered(std::uint32_t index, bool inside_match) {
+    const bool self = inside_match || matches_filter(nodes_[index]);
+    const std::size_t mark = rows_.size();
+    rows_.push_back(index);
+    bool any_child = false;
+    const Node& node = nodes_[index];
+    if (node.has(node_expanded) && node.has(node_loaded)) {
+        const std::uint32_t first = node.first_child;
+        const std::uint32_t count = node.child_count;
+        for (std::uint32_t child = first; child < first + count; ++child) {
+            any_child = collect_filtered(child, self) || any_child;
+        }
+    }
+    if (!self && !any_child) {
+        rows_.resize(mark);
+        return false;
+    }
+    return true;
+}
+
+RowSplice Tree::rebuild_rows() {
+    previous_rows_.swap(rows_);
+    rows_.clear();
+    // Roots come first in the pool (add_root is only called on a cleared tree).
+    for (std::uint32_t root = 0; root < nodes_.size() && nodes_[root].has(node_root); ++root) {
+        if (filtered()) {
+            collect_filtered(root, false);
+        } else {
+            rows_.push_back(root);
+            const Node& node = nodes_[root];
+            if (node.has(node_expanded) && node.has(node_loaded)) {
+                scratch_.clear();
+                append_visible_subtree(root);
+                rows_.insert(rows_.end(), scratch_.begin(), scratch_.end());
+            }
+        }
+    }
+    RowSplice splice{0, previous_rows_.size(), rows_.size()};
+    splice.full = true;
+    return splice;
+}
+
 std::size_t Tree::memory_bytes() const noexcept {
     return nodes_.capacity() * sizeof(Node) + rows_.capacity() * sizeof(std::uint32_t) +
            scratch_.capacity() * sizeof(std::uint32_t) + names_.size_chars() * sizeof(wchar_t);
 }
 
 } // namespace filetree::model
+

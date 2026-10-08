@@ -96,7 +96,7 @@ Steps:
   WM_DESTROY without Apply reverts. Pattern hint now explains * ? ; and @eaDir (Synology).
 - [ ] user asked: drag & drop out (to playlists, playlist tabs, Explorer) -> moved from M7 to
   the start of M6 (PLAN.md updated).
-- [ ] M5b user test: Apply effects live (lines, padding,
+- [x] M5b user test: Apply effects live (lines, padding,
   extensions, sort, filter, hidden drives, patterns); Reset
 - [x] M5c: Actions tab (binding editor) + Menu tab; menu honours layout
 - [x] M5d: CUI colour client tree lines (Group foreground); M5 user-tested

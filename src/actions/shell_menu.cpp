@@ -60,7 +60,13 @@ bool ShellMenu::populate() noexcept {
     // No CMF_CANRENAME: the shell's Rename would need an Explorer view; ours is F2.
     UINT flags = CMF_NORMAL | CMF_EXPLORE;
     if (extended_) flags |= CMF_EXTENDEDVERBS;
-    return SUCCEEDED(menu_->QueryContextMenu(submenu_, 0, first_id, last_id, flags));
+    if (FAILED(menu_->QueryContextMenu(submenu_, 0, first_id, last_id, flags))) return false;
+    if (!extended_) {
+        // Explorer's Shift-only verbs (Copy as path, Open PowerShell here, ...) are easy to miss.
+        AppendMenuW(submenu_, MF_SEPARATOR, 0, nullptr);
+        AppendMenuW(submenu_, MF_STRING | MF_GRAYED, 0, L"Hold Shift while right-clicking for more");
+    }
+    return true;
 }
 
 bool ShellMenu::handle_message(UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept {

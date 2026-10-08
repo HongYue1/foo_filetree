@@ -79,5 +79,8 @@ Steps:
 - [x] shell ops (shell_ops.*), shell menu (shell_menu.*), fb2k menu (fb2k_menu.*)
 - [x] view: context menu (tree_view_menu.cpp), keys, inline rename (inline_edit.cpp), reselect
 - [x] build (/W4 /WX clean)
-- [ ] user test: menu items, both submenus, rename (Enter/Esc/click away), delete + undo
-  (Ctrl+Z in Explorer), Shift+Del, F5, Ctrl+C, Apps key, DUI edit-mode menu, dark mode editor
+- [x] user test: all items, both submenus, rename, delete, F5, Ctrl+C, DUI edit-mode menu
+  pass. Apps key untested (user has none; Shift+F10 uses the same path).
+- [x] user asked: document Shift for Explorer's extra verbs -> README.md + greyed hint at the
+  bottom of Explorer > when Shift was not held. Undo explained in README.
+- [ ] next: plan M5 from PLAN.md in this file

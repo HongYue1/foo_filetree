@@ -48,43 +48,46 @@ checks passed; 3511-file folder: only fb2k's own progress dialog, UI never froze
 on a folder keeps toggling (user chose "keep as is"). Leftover: archives in the playable set.
 Finding: `pfc_infinite` is `int` -> C4245; use `SIZE_MAX` (in sdk-quirks.md).
 
-## Current task: M4 - context menu
+## Done: M4 - context menu (`d7bd810`, `571a576`, `af92e29`, user-tested)
 
-Goal: right-click menu with our items, the fb2k context menu (files), the Shell menu, rename,
-delete, copy path, open in Explorer, refresh. Item choice/order is a setting in M5.
+Own items + lazy foobar2000 / Explorer submenus, inline rename, Recycle Bin delete, refresh,
+copy path, one-level panel undo (Ctrl+Z; Recycle Bin restore via the `$I` index). README.md
+documents keys, menu, Shift for Explorer's extra verbs, undo. Apps key untested (no key).
+
+## Current task: M5 - settings + Preferences
+
+Scope (what exists now; features from M6+ get their settings with them): General, Display,
+Filter, Actions, Menu tabs. Deferred: icons (M8), address bar/startup/favourites (M6),
+"don't send to playlist" list (needs our own recursion; revisit with M7), tooltips (M8).
+
+Settings:
+- General: hidden drives (checklist of detected drives, bitmask A-Z).
+- Display: tree lines none / connectors / guides, thickness 1-4 DIP, colour = text at N%
+  opacity (default 35) or custom (+ CUI colour client entry "Tree lines"); file extensions
+  always / never / only for non-playable files; row padding 0-12 DIP (default 3); sort field,
+  folders first, reverse.
+- Filter: show hidden, show system, files all / playable / none, always-show extensions,
+  never-show extensions, hide patterns (globs on names, files and folders, e.g. `@eaDir`).
+- Actions: binding editor (4 gestures x folder/file: none / expand-collapse / send with target,
+  mode, play, recursion), recursive by default, temp playlist name.
+- Menu: which items appear, their order (separators auto between groups).
 
 Design:
-- Menu: Play / Add to active playlist / Send to new playlist | Open in Explorer (file: show in
-  folder) / Copy path | Rename (F2) / Delete (Del) / Refresh (F5) | foobar2000 > (files) /
-  Shell >. Right-click selects the row first; Apps key / Shift+F10 opens at the selection.
-  DUI layout-edit mode still gets Default UI's menu.
-- Disk-touching shell work (open in Explorer, recycle, rename) runs on a worker with its own
-  STA COM init (`IFileOperation`, undoable, shell conflict UI). Done on a separate one-thread
-  `fs::shell_worker()` (not the enumeration pool) so a delete waiting on its confirmation never
-  stalls listings. Copy path is main thread (clipboard only).
-- Shell submenu ("Explorer"): filled lazily on its WM_INITMENUPOPUP, main thread (STA), so
-  shell extensions only load if the user opens it. `SHParseDisplayName` +
-  `SHBindToParent` + `IContextMenu`(2/3), menu messages forwarded while it is open, never cached.
-- fb2k submenu: `contextmenu_manager` over a handle made from the file path (no tag read),
-  also filled lazily.
-- Keys: F2 rename, Del delete (Shift+Del permanent), F5 refresh, Ctrl+C copy path.
-- Rename: inline EDIT over the row (dark-themed, host font), Enter commits, Esc / focus loss /
-  scroll cancels.
-- After rename/delete/refresh: `Tree::reload(node)` drops the folder's rows, marks it unloaded
-  and re-lists it; the view re-selects by name (renamed item, or the next sibling after delete).
-  Old children stay orphaned in the pool until M7 compaction.
+- Pure, tested: `model/filter_rules.*` (glob match, include/exclude sets, hide patterns, shared
+  read-only with workers via EnumOptions), `settings/settings_model.*` (structs, sanitize,
+  diff -> change mask: repaint / remeasure / relist / roots, menu layout encode/decode).
+- `settings/settings_store.cpp`: one cfg var per setting (fresh GUIDs), `current()`,
+  `apply(new)`: save, diff, notify live views (registry in view). Relist = reload every loaded
+  folder keeping expansion + selection by path (M5a: reload expanded roots; good enough).
+- Preferences: one page "Folder Tree" under Display (preferences_page::guid_display); tabs as child dialogs (skill
+  preferences-pages.md: 300x246 DU, child per tab, dark hooks per child, guarded WM_NOTIFY,
+  style profile comment in the .rc). `dialog_check.bat` zero problems after every layout change.
 
 Steps:
-- [x] Tree::reload + find_child + tests (117 checks pass)
-- [x] shell ops (shell_ops.*), shell menu (shell_menu.*), fb2k menu (fb2k_menu.*)
-- [x] view: context menu (tree_view_menu.cpp), keys, inline rename (inline_edit.cpp), reselect
-- [x] build (/W4 /WX clean)
-- [x] user test: all items, both submenus, rename, delete, F5, Ctrl+C, DUI edit-mode menu
-  pass. Apps key untested (user has none; Shift+F10 uses the same path).
-- [x] user asked: document Shift for Explorer's extra verbs -> README.md + greyed hint at the
-  bottom of Explorer > when Shift was not held. Undo explained in README.
-- [x] Ctrl+Z works in Explorer (FOF_ALLOWUNDO records it) but not in fb2k -> own one-level undo
-  per panel: Ctrl+Z / "Undo ..." menu item. Rename: rename back. Recycle delete: restore from
-  X:\$Recycle.Bin\<SID>\ by reading the $I index (actions/recycle_bin.*). Builds clean.
-- [ ] user test: undo rename, undo delete (file and folder), undo after Shift+Del (nothing)
-- [ ] next: plan M5 from PLAN.md in this file
+- [x] M5a: filter_rules + settings_model + tests (153 checks; test/check.h shared, new
+  test/settings_test.cpp); settings_store (18 cfg vars); view applies settings
+  (tree_view_settings.cpp: relist_all restores expanded paths + selection; hidden drives; row
+  padding; extension display; tree lines in paint_lines). Not user-visible until M5b.
+- [ ] M5b: Preferences page + General / Display / Filter tabs; dialog_check; user screenshots
+- [ ] M5c: Actions tab (binding editor) + Menu tab; menu honours layout
+- [ ] M5d: CUI colour client "Tree lines" entry; user test; commit

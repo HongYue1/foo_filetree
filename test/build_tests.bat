@@ -9,8 +9,8 @@ if not exist out mkdir out
 if exist tests.out del tests.out
 if exist out\model_test.exe del out\model_test.exe
 cl /nologo /EHsc /std:c++latest /O2 /MT /W4 /WX /permissive- /DUNICODE /D_UNICODE /DNOMINMAX ^
-  /Fo:out\ /Fe:out\model_test.exe model_test.cpp ^
-  ..\src\model\sort.cpp ..\src\model\extension_set.cpp ..\src\model\name_pool.cpp ..\src\model\tree.cpp ^
+  /Fo:out\ /Fe:out\model_test.exe model_test.cpp settings_test.cpp ^
+  ..\src\model\sort.cpp ..\src\model\extension_set.cpp ..\src\model\name_pool.cpp ..\src\model\tree.cpp ..\src\model\filter_rules.cpp ..\src\settings\settings_model.cpp ^
   ..\src\platform\worker_pool.cpp ..\src\fs\enumerate.cpp ..\src\fs\enumeration_service.cpp ..\src\fs\drives.cpp ..\src\actions\action.cpp ^
   /link /SUBSYSTEM:CONSOLE > out\build_tests.txt 2>&1
 if errorlevel 1 (

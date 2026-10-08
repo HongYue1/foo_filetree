@@ -15,6 +15,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "../actions/action.h"
@@ -22,11 +23,12 @@
 #include "../fs/enumerate.h"
 #include "../fs/enumeration_service.h"
 #include "../model/tree.h"
+#include "../settings/settings_store.h"
 #include "theme.h"
 
 namespace filetree::view {
 
-class TreeView {
+class TreeView final : private settings::Listener {
 public:
     TreeView();
     ~TreeView();
@@ -64,10 +66,20 @@ private:
         int expander{9};    //!< glyph box size
         int text_gap{4};    //!< between the expander column and the text
         int text_ascent{};
+        int line_width{1};  //!< tree line thickness in pixels
     };
 
     // tree_view.cpp
     void populate_roots();
+    void on_settings_changed(std::uint32_t changes) noexcept override;
+    //! Filter, sort and display options from the settings, for the next listings and paints.
+    void refresh_options() noexcept;
+    //! Rebuilds the tree (new filter, sort or roots), re-expanding what was open and restoring
+    //! the selection by path as the listings come in.
+    void relist_all() noexcept;
+    //! Expands / selects `node` if a pending restore wants it.
+    void try_restore(std::uint32_t node);
+    [[nodiscard]] std::wstring upper_path(std::uint32_t node) const;
     void remeasure() noexcept;
     void rebuild_font() noexcept;
     void update_scrollbar() noexcept;
@@ -133,6 +145,7 @@ private:
     // tree_view_paint.cpp
     void paint(HDC target, const RECT& dirty) noexcept;
     void paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept;
+    void paint_lines(HDC dc, std::uint32_t index, const RECT& rect, bool expandable) noexcept;
     void ensure_buffer(int width, int height) noexcept;
     void release_buffer() noexcept;
 
@@ -143,6 +156,7 @@ private:
     COLORREF hover_background_{};
     COLORREF dim_text_{};
     COLORREF expander_colour_{};
+    COLORREF line_colour_{};
 
     LOGFONTW base_font_{};
     bool has_base_font_{false};
@@ -178,6 +192,15 @@ private:
     std::vector<model::ChildRecord> records_; //!< reused by on_listing
     std::wstring path_;                       //!< reused by request_listing
     fs::EnumOptions options_{};
+
+    // Display options from the settings (refresh_options).
+    settings::TreeLines lines_{settings::TreeLines::none};
+    settings::Extensions extensions_{settings::Extensions::always};
+    std::shared_ptr<const model::ExtensionSet> playable_; //!< for Extensions::non_playable
+
+    // Restore after relist_all(): upper-cased paths still to expand, and the path to select.
+    std::unordered_set<std::wstring> restore_expand_;
+    std::wstring restore_select_;
 
     // Context menu (tree_view_menu.cpp): set only while TrackPopupMenu runs.
     MenuSession* menu_{};

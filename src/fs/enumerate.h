@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "../model/extension_set.h"
+#include "../model/filter_rules.h"
 #include "../model/sort.h"
 #include "../model/tree.h"
 
@@ -31,6 +32,8 @@ struct EnumOptions {
     FileMode files{FileMode::playable};
     //! Used when files == playable. Null means "no filter known yet": every file is shown.
     std::shared_ptr<const model::ExtensionSet> playable;
+    //! Always/never-shown extensions and hide patterns. Null: none.
+    std::shared_ptr<const model::FilterRules> rules;
     model::SortOptions sort{};
 };
 

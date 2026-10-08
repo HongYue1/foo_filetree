@@ -18,8 +18,8 @@ public:
     //! Adds one extension: "flac", ".flac" or "*.flac". Wildcards elsewhere are ignored.
     void add(std::wstring_view extension);
 
-    //! Adds a mask list as fb2k's input_file_type reports it: "*.MP3;*.MP2". Also accepts ',' and
-    //! '|' as separators and surrounding spaces, for user-typed lists.
+    //! Adds a mask list as fb2k's input_file_type reports it: "*.MP3;*.MP2". Also accepts ',', '|',
+    //! spaces and new lines as separators and surrounding spaces, for user-typed lists.
     void add_mask(std::wstring_view mask);
 
     [[nodiscard]] bool contains(std::wstring_view extension) const noexcept;

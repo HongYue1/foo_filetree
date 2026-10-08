@@ -41,7 +41,7 @@ void ExtensionSet::add(std::wstring_view extension) {
 
 void ExtensionSet::add_mask(std::wstring_view mask) {
     while (!mask.empty()) {
-        const std::size_t end = mask.find_first_of(L";,|");
+        const std::size_t end = mask.find_first_of(L";,| \t\r\n");
         add(mask.substr(0, end));
         if (end == std::wstring_view::npos) break;
         mask.remove_prefix(end + 1);

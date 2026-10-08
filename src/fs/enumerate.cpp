@@ -19,7 +19,14 @@ bool keep(const WIN32_FIND_DATAW& data, const EnumOptions& options) noexcept {
     const DWORD attributes = data.dwFileAttributes;
     if (!options.show_hidden && (attributes & FILE_ATTRIBUTE_HIDDEN) != 0) return false;
     if (!options.show_system && (attributes & FILE_ATTRIBUTE_SYSTEM) != 0) return false;
+    const model::FilterRules* rules = options.rules.get();
+    if (rules != nullptr && rules->hidden_by_pattern(data.cFileName)) return false;
     if ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) return true;
+    if (options.files == FileMode::none) return false;
+    if (rules != nullptr) {
+        if (rules->never_show.matches_file(data.cFileName)) return false;
+        if (rules->always_show.matches_file(data.cFileName)) return true;
+    }
 
     switch (options.files) {
     case FileMode::all:

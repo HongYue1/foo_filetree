@@ -128,9 +128,11 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     }
     fill(dc, rect, background);
 
-    // Expander: folders that might have children. A loaded empty folder has none to show.
     const bool expandable = node.has(model::node_container) &&
                             !(node.has(model::node_loaded) && node.child_count == 0);
+    if (lines_ != settings::TreeLines::none) paint_lines(dc, index, rect, expandable);
+
+    // Expander: folders that might have children. A loaded empty folder has none to show.
     if (expandable) {
         const bool open = node.has(model::node_expanded) && !node.has(model::node_load_failed);
         const int cx = expander_left(node.depth) + metrics_.indent / 2;
@@ -142,6 +144,13 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     // Roots are stored as "C:\"; show "C:".
     std::wstring_view name = node.name_view();
     if (node.has(model::node_root) && name.size() == 3 && name[1] == L':') name.remove_suffix(1);
+    if (extensions_ != settings::Extensions::always && !node.has(model::node_container)) {
+        const std::wstring_view extension = model::extension_of(name);
+        const bool hide = !extension.empty() &&
+                          (extensions_ == settings::Extensions::never ||
+                           (playable_ != nullptr && playable_->contains(extension)));
+        if (hide) name.remove_suffix(extension.size() + 1);
+    }
 
     RECT text_rect{text_left(node.depth), rect.top, rect.right - metrics_.text_gap, rect.bottom};
     if (text_rect.left >= text_rect.right) return;
@@ -159,6 +168,61 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
             DrawTextW(dc, failed_suffix, static_cast<int>(std::size(failed_suffix) - 1),
                       &suffix_rect, format);
         }
+    }
+}
+
+void TreeView::paint_lines(HDC dc, std::uint32_t index, const RECT& rect, bool expandable) noexcept {
+    const model::Node& node = tree_.node(index);
+    const int w = metrics_.line_width;
+    const int half = w / 2;
+    const auto column = [&](std::uint16_t depth) {
+        return expander_left(depth) + metrics_.indent / 2 - half;
+    };
+    const auto bar = [&](int left, int top, int right, int bottom) {
+        if (right > left && bottom > top) fill(dc, RECT{left, top, right, bottom}, line_colour_);
+    };
+    const auto has_next_sibling = [&](std::uint32_t n) {
+        const model::Node& item = tree_.node(n);
+        if (item.parent == model::no_node) return false;
+        const model::Node& parent = tree_.node(item.parent);
+        return n + 1 < parent.first_child + parent.child_count;
+    };
+    const int mid = (rect.top + rect.bottom) / 2 - half;
+    const int glyph_half = metrics_.expander / 2 + 1;
+    const bool open_with_children = expandable && node.has(model::node_expanded) &&
+                                    node.has(model::node_loaded) &&
+                                    !node.has(model::node_load_failed);
+
+    if (lines_ == settings::TreeLines::guides) {
+        // One vertical guide per ancestor level, through the whole row.
+        for (std::uint16_t level = 0; level < node.depth; ++level) {
+            const int x = column(level);
+            bar(x, rect.top, x + w, rect.bottom);
+        }
+        return;
+    }
+
+    // Connectors. Roots (drives) have no parent to connect to.
+    if (node.depth > 0) {
+        const int x = column(static_cast<std::uint16_t>(node.depth - 1));
+        bar(x, rect.top, x + w, has_next_sibling(index) ? rect.bottom : mid + w);
+        const int end = expandable ? column(node.depth) + half - glyph_half
+                                   : text_left(node.depth) - metrics_.text_gap;
+        bar(x, mid, end, mid + w);
+        // Ancestors that still have siblings below continue their line through this row.
+        std::uint32_t walk = node.parent;
+        while (walk != model::no_node && tree_.node(walk).depth > 0) {
+            if (has_next_sibling(walk)) {
+                const int ax = column(static_cast<std::uint16_t>(tree_.node(walk).depth - 1));
+                bar(ax, rect.top, ax + w, rect.bottom);
+            }
+            walk = tree_.node(walk).parent;
+        }
+    }
+    // An open folder's line starts under its expander and continues into its first child.
+    if (open_with_children && node.child_count > 0) {
+        const int x = column(node.depth);
+        bar(x, mid + half + glyph_half, x + w, rect.bottom);
     }
 }
 

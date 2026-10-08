@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "check.h"
 #include "../src/actions/action.h"
 #include "../src/fs/drives.h"
 #include "../src/fs/enumerate.h"
@@ -23,19 +24,13 @@
 
 using namespace filetree;
 
+// settings_test.cpp
+void test_filter_rules();
+void test_settings_model();
+void test_enumerate_rules(const std::filesystem::path& base);
+
 namespace {
 
-int g_failures = 0;
-int g_checks = 0;
-
-#define CHECK(cond)                                                                      \
-    do {                                                                                 \
-        ++g_checks;                                                                      \
-        if (!(cond)) {                                                                   \
-            ++g_failures;                                                                \
-            std::printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond);                  \
-        }                                                                                \
-    } while (0)
 
 using Clock = std::chrono::steady_clock;
 double ms_since(Clock::time_point start) {
@@ -449,6 +444,8 @@ void test_actions() {
 
 int main() {
     test_actions();
+    test_filter_rules();
+    test_settings_model();
     test_sort();
     test_extensions();
     test_tree();
@@ -458,6 +455,7 @@ int main() {
     const auto base = make_fixture();
     test_enumerate(base);
     test_service(base);
+    test_enumerate_rules(base);
     test_drives();
     std::error_code ignored;
     std::filesystem::remove_all(base, ignored);

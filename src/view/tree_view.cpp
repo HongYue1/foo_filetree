@@ -53,6 +53,8 @@ TreeView::~TreeView() { detach(); }
 void TreeView::attach(HWND wnd) noexcept {
     wnd_ = wnd;
     alive_ = std::make_shared<TreeView*>(this);
+    settings::subscribe(this);
+    refresh_options();
     SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &wheel_lines_, 0);
     remeasure();
     try {
@@ -64,6 +66,9 @@ void TreeView::attach(HWND wnd) noexcept {
 }
 
 void TreeView::detach() noexcept {
+    settings::unsubscribe(this);
+    restore_expand_.clear();
+    restore_select_.clear();
     end_rename(false);
     pending_select_ = {};
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
@@ -86,7 +91,13 @@ void TreeView::populate_roots() {
     pending_.clear();
     ++generation_;
     tree_.clear();
-    for (const std::wstring& root : fs::drive_roots()) tree_.add_root(root);
+    pending_select_ = {};
+    const std::uint32_t hidden = settings::current().hidden_drives;
+    for (const std::wstring& root : fs::drive_roots()) {
+        const wchar_t letter = root.empty() ? L'\0' : static_cast<wchar_t>(towupper(root[0]));
+        if (letter >= L'A' && letter <= L'Z' && (hidden & (1u << (letter - L'A'))) != 0) continue;
+        tree_.add_root(root);
+    }
     selected_row_ = hover_row_ = -1;
     top_row_ = 0;
 }
@@ -97,6 +108,10 @@ void TreeView::set_colours(const ViewColours& colours) noexcept {
                               colours.dark ? 0.30 : 0.18);
     dim_text_ = blend(colours.text, colours.background, 0.45);
     expander_colour_ = blend(colours.text, colours.background, 0.35);
+    const settings::Settings& s = settings::current();
+    line_colour_ = s.line_custom_colour
+                       ? s.line_colour
+                       : blend(colours.background, colours.text, s.line_opacity / 100.0);
     if (wnd_ != nullptr) InvalidateRect(wnd_, nullptr, FALSE);
 }
 
@@ -132,7 +147,9 @@ void TreeView::remeasure() noexcept {
     ReleaseDC(wnd_, dc);
 
     const int dpi = metrics_.dpi;
-    metrics_.row_height = std::max<int>(tm.tmHeight + 2 * scale(3, dpi), 1);
+    metrics_.row_height =
+        std::max<int>(tm.tmHeight + 2 * scale(settings::current().row_padding, dpi), 1);
+    metrics_.line_width = std::max(scale(settings::current().line_thickness, dpi), 1);
     metrics_.indent = scale(16, dpi);
     metrics_.expander = std::max(scale(8, dpi) | 1, 5); // odd, so the glyph has a centre pixel
     metrics_.text_gap = scale(2, dpi);
@@ -381,7 +398,7 @@ void TreeView::collapse(std::uint32_t node) noexcept {
 
 void TreeView::request_listing(std::uint32_t node) {
     if (options_.files == fs::FileMode::playable && options_.playable == nullptr) {
-        options_.playable = fs::playable_extensions();
+        refresh_options();
     }
     tree_.build_path(node, path_);
     std::weak_ptr<TreeView*> weak = alive_;
@@ -415,6 +432,19 @@ void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
         invalidate_row(*row); // empty folder or error: the expander changes
     }
     apply_pending_select(node);
+    if (!restore_expand_.empty() || !restore_select_.empty()) {
+        try {
+            const model::Node& n = tree_.node(node);
+            for (std::uint32_t child = n.first_child; n.has(model::node_loaded) &&
+                                                      child < n.first_child + n.child_count;
+                 ++child) {
+                try_restore(child);
+            }
+        } catch (...) {
+            restore_expand_.clear();
+            restore_select_.clear();
+        }
+    }
 }
 
 bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept {

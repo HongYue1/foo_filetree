@@ -22,6 +22,8 @@ struct SortOptions {
     SortField field{SortField::name_natural};
     bool folders_first{true};
     bool reverse{false}; //!< reverses within the folder and file groups; folders stay first
+
+    friend bool operator==(const SortOptions&, const SortOptions&) = default;
 };
 
 //! What the comparator needs from an entry. Cheap to build: a view and three integers.

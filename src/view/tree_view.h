@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "../actions/action.h"
 #include "../fs/enumerate.h"
 #include "../fs/enumeration_service.h"
 #include "../model/tree.h"
@@ -89,6 +90,9 @@ private:
     void on_wheel(int delta) noexcept;
     bool on_key(WPARAM key) noexcept;
     void on_button_down(int x, int y, bool double_click) noexcept;
+    void on_middle_button(int y) noexcept;
+    //! Runs the bound action for a gesture on a row's node (actions/action_settings.h).
+    void run_gesture(actions::Gesture gesture, std::uint32_t node) noexcept;
     void on_mouse_move(int x, int y) noexcept;
     void on_mouse_leave() noexcept;
     void on_dpi_changed() noexcept;

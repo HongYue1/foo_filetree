@@ -66,7 +66,21 @@ Design:
 Defaults: single = None/None; double = toggle (folder) / temp replace+play (file); middle = add
 to active (both); Enter = same as double.
 
+Status: **built (0 warnings), tests 98/98, waiting for the user's test.**
+
 Steps:
-- [ ] action model + encoding + tests
-- [ ] settings + send + view wiring
-- [ ] build, commit, hand to user
+- [x] action model + encoding + tests (`actions/action.*`)
+- [x] settings (`actions/action_settings.*`) + send (`actions/playlist_send.*`) + view wiring
+      (`view/tree_view_input.cpp`, split out of tree_view.cpp to stay under 600 lines)
+- [x] build, commit
+- [ ] user test:
+  1. double-click a file: "Folder Tree" playlist replaced with it, playback starts
+  2. Enter on a file: same; Enter / double-click on a folder: expand/collapse
+  3. middle-click a folder: its files (with subfolders) appended to the active playlist;
+     Shift+middle: only its own files; Ctrl+middle on anything: active playlist
+  4. big folder: fb2k's progress dialog appears only if slow; UI never freezes
+- [ ] then: archives in the playable set? M3 leftover; decide with M4.
+
+Findings:
+- `pfc_infinite` is an `int` constant; passing it as `t_size` trips C4245 under /W4. Use
+  `SIZE_MAX` (same value).

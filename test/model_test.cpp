@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "../src/actions/action.h"
 #include "../src/fs/drives.h"
 #include "../src/fs/enumerate.h"
 #include "../src/fs/enumeration_service.h"
@@ -365,9 +366,44 @@ void test_drives() {
     CHECK(!roots.empty() && roots[0].size() == 3 && roots[0][1] == L':' && roots[0][2] == L'\\');
 }
 
+void test_actions() {
+    using namespace filetree::actions;
+    const Bindings defaults = Bindings::defaults();
+    CHECK(defaults.lookup(Gesture::single_click, true).kind == Kind::none);
+    CHECK(defaults.lookup(Gesture::single_click, false).kind == Kind::none);
+    CHECK(defaults.lookup(Gesture::double_click, true).kind == Kind::toggle);
+    CHECK(defaults.lookup(Gesture::double_click, false).play);
+    CHECK(defaults.lookup(Gesture::middle_click, false).target == Target::active);
+
+    Bindings custom = defaults;
+    custom.gestures[0].file = {Kind::send, Target::new_playlist, Mode::add, true, Recursion::never};
+    std::uint8_t blob[encoded_bindings_size];
+    const std::size_t size = encode(custom, blob);
+    CHECK(size == encoded_bindings_size);
+    CHECK(decode(blob, size) == custom);
+
+    CHECK(decode(nullptr, 0) == defaults);
+    CHECK(decode(blob, 3) == defaults);
+    // Truncated after the first gesture: the rest are defaults.
+    const Bindings truncated = decode(blob, 4 + 10);
+    CHECK(truncated.gestures[0] == custom.gestures[0]);
+    CHECK(truncated.gestures[1] == defaults.gestures[1]);
+    // A bad byte in one action resets only that action.
+    std::uint8_t bad[encoded_bindings_size];
+    std::copy(std::begin(blob), std::end(blob), bad);
+    bad[4 + 5] = 99; // gesture 0, file action, kind
+    const Bindings repaired = decode(bad, size);
+    CHECK(repaired.gestures[0].file == defaults.gestures[0].file);
+    CHECK(repaired.gestures[0].folder == custom.gestures[0].folder);
+    // A foreign blob is ignored.
+    bad[0] = 'X';
+    CHECK(decode(bad, size) == defaults);
+}
+
 } // namespace
 
 int main() {
+    test_actions();
     test_sort();
     test_extensions();
     test_tree();

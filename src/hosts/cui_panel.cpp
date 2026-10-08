@@ -120,9 +120,6 @@ public:
             colours.get_colour(cui::colours::colour_inactive_selection_text);
         out.inactive_selection_background =
             colours.get_colour(cui::colours::colour_inactive_selection_background);
-        // Shown as "Group foreground" in the Columns UI colour settings; tints the tree lines.
-        out.lines = colours.get_colour(cui::colours::colour_group_foreground);
-        out.has_lines = true;
         out.dark = colours.is_dark_mode_active();
 
         if (out.dark != dark_ || !theme_applied_) {
@@ -161,8 +158,7 @@ public:
                cui::colours::colour_flag_selection_text |
                cui::colours::colour_flag_selection_background |
                cui::colours::colour_flag_inactive_selection_text |
-               cui::colours::colour_flag_inactive_selection_background |
-               cui::colours::colour_flag_group_foreground;
+               cui::colours::colour_flag_inactive_selection_background;
     }
 
     uint32_t get_supported_bools() const override {

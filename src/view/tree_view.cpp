@@ -111,8 +111,7 @@ void TreeView::set_colours(const ViewColours& colours) noexcept {
     const settings::Settings& s = settings::current();
     line_colour_ = s.line_custom_colour
                        ? s.line_colour
-                       : blend(colours.background, colours.has_lines ? colours.lines : colours.text,
-                               s.line_opacity / 100.0);
+                       : blend(colours.background, colours.text, s.line_opacity / 100.0);
     if (wnd_ != nullptr) InvalidateRect(wnd_, nullptr, FALSE);
 }
 

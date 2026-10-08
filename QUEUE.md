@@ -99,7 +99,7 @@ Steps:
 - [x] M5b user test: Apply effects live (lines, padding,
   extensions, sort, filter, hidden drives, patterns); Reset
 - [x] M5c: Actions tab (binding editor) + Menu tab; menu honours layout
-- [x] M5d: CUI colour client tree lines (Group foreground); M5 user-tested
+- [x] M5d: dropped. CUI group_foreground made Columns UI bug-check (crash) on scheme change and was black in the dark Global scheme; reverted, lines use text colour at N% opacity in both UIs
 
 ## Current task: M6 - navigation and drag out
 

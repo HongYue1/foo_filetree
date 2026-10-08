@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -42,12 +43,14 @@ public:
     //! window's DPI itself.
     void set_font(const LOGFONTW& font) noexcept;
 
-    //! Handles the messages the view owns. Returns false for anything else (including keys it
-    //! does not use, so the host can try fb2k's keyboard shortcuts) and for WM_CONTEXTMENU.
+    //! Handles the messages the view owns, WM_CONTEXTMENU included (the Default UI host keeps
+    //! it in layout-edit mode). Returns false for anything else, including keys it does not use,
+    //! so the host can try fb2k's keyboard shortcuts.
     bool handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept;
 
     //! Window styles the hosts must create the window with (beyond WS_CHILD etc.).
-    static constexpr DWORD window_styles = WS_VSCROLL;
+    //! WS_CLIPCHILDREN keeps paint off the inline rename editor.
+    static constexpr DWORD window_styles = WS_VSCROLL | WS_CLIPCHILDREN;
     //! Class styles the hosts must register (double-click toggles folders).
     static constexpr UINT class_styles = CS_DBLCLKS;
 
@@ -96,6 +99,32 @@ private:
     void on_mouse_move(int x, int y) noexcept;
     void on_mouse_leave() noexcept;
     void on_dpi_changed() noexcept;
+    //! Sends a node to a playlist per `action` (Kind::send).
+    void send_node(const actions::Action& action, std::uint32_t node) noexcept;
+
+    // tree_view_menu.cpp
+    struct MenuSession;
+    void on_context_menu(LPARAM lp) noexcept;
+    void run_menu_command(UINT id, std::uint32_t node) noexcept;
+    bool forward_menu_message(UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept;
+    void open_in_explorer(std::uint32_t node) noexcept;
+    void copy_path(std::uint32_t node) noexcept;
+    void delete_node(std::uint32_t node, bool permanent) noexcept;
+    //! A folder lists itself again, a file its parent folder; the selection is kept by name.
+    void refresh_node(std::uint32_t node) noexcept;
+    //! Reloads `folder` and, once its listing arrives, selects the child called `name` (or
+    //! `fallback`, or the folder itself). An empty `name` selects the folder.
+    void reload_and_select(std::uint32_t folder, std::wstring name, std::wstring fallback) noexcept;
+    void apply_pending_select(std::uint32_t folder) noexcept;
+    //! Runs `work` on the main thread later if this view and its tree still exist.
+    [[nodiscard]] std::function<void(bool)> guard(std::function<void(TreeView&, bool)> work);
+
+    // inline_edit.cpp
+    void begin_rename(std::uint32_t node) noexcept;
+    void end_rename(bool commit) noexcept;
+    bool on_edit_colour(HDC dc, HWND control, LRESULT& result) noexcept;
+    static LRESULT CALLBACK edit_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR id,
+                                      DWORD_PTR data) noexcept;
 
     // tree_view_paint.cpp
     void paint(HDC target, const RECT& dirty) noexcept;
@@ -145,6 +174,19 @@ private:
     std::vector<model::ChildRecord> records_; //!< reused by on_listing
     std::wstring path_;                       //!< reused by request_listing
     fs::EnumOptions options_{};
+
+    // Context menu (tree_view_menu.cpp): set only while TrackPopupMenu runs.
+    MenuSession* menu_{};
+    struct PendingSelect {
+        std::uint32_t folder{model::no_node};
+        std::wstring name;
+        std::wstring fallback;
+    };
+    PendingSelect pending_select_;
+
+    // Inline rename (inline_edit.cpp).
+    HWND edit_{};
+    std::uint32_t edit_node_{model::no_node};
 };
 
 } // namespace filetree::view

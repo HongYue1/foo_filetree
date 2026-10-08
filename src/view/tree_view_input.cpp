@@ -18,6 +18,9 @@ bool TreeView::on_key(WPARAM key) noexcept {
     const std::size_t current = has_selection ? static_cast<std::size_t>(selected_row_) : top_row_;
     const std::uint32_t node = tree_.node_at_row(current);
     const model::Node& n = tree_.node(node);
+    const bool shift = GetKeyState(VK_SHIFT) < 0;
+    const bool ctrl = GetKeyState(VK_CONTROL) < 0;
+    const bool alt = GetKeyState(VK_MENU) < 0;
 
     switch (key) {
     case VK_UP: select_row(has_selection && current > 0 ? current - 1 : current); return true;
@@ -81,6 +84,23 @@ bool TreeView::on_key(WPARAM key) noexcept {
     case VK_RETURN:
         if (has_selection) run_gesture(actions::Gesture::enter, node);
         return true;
+    // Explorer's keys. Ctrl/Alt combinations other than Ctrl+C fall through to fb2k's shortcuts.
+    case VK_F2:
+        if (!has_selection || ctrl || alt) return false;
+        begin_rename(node);
+        return true;
+    case VK_DELETE:
+        if (!has_selection || ctrl || alt) return false;
+        delete_node(node, shift);
+        return true;
+    case VK_F5:
+        if (!has_selection || ctrl || alt) return false;
+        refresh_node(node);
+        return true;
+    case 'C':
+        if (!has_selection || !ctrl || alt || shift) return false;
+        copy_path(node);
+        return true;
     default:
         return false;
     }
@@ -126,23 +146,30 @@ void TreeView::run_gesture(actions::Gesture gesture, std::uint32_t node) noexcep
         case actions::Kind::toggle:
             if (folder) toggle(node);
             return;
-        case actions::Kind::send: {
-            actions::SendRequest request;
-            request.action = action;
-            tree_.build_path(node, request.path);
-            std::wstring_view name = n.name_view();
-            if (n.has(model::node_root) && name.size() == 3 && name[1] == L':') {
-                name.remove_suffix(1);
-            }
-            request.display_name.assign(name);
-            request.is_folder = folder;
-            request.shift = GetKeyState(VK_SHIFT) < 0;
-            request.ctrl = GetKeyState(VK_CONTROL) < 0;
-            request.parent = wnd_;
-            actions::send(request);
+        case actions::Kind::send:
+            send_node(action, node);
             return;
         }
+    } catch (...) {
+    }
+}
+
+void TreeView::send_node(const actions::Action& action, std::uint32_t node) noexcept {
+    try {
+        const model::Node& n = tree_.node(node);
+        actions::SendRequest request;
+        request.action = action;
+        tree_.build_path(node, request.path);
+        std::wstring_view name = n.name_view();
+        if (n.has(model::node_root) && name.size() == 3 && name[1] == L':') {
+            name.remove_suffix(1);
         }
+        request.display_name.assign(name);
+        request.is_folder = n.has(model::node_container);
+        request.shift = GetKeyState(VK_SHIFT) < 0;
+        request.ctrl = GetKeyState(VK_CONTROL) < 0;
+        request.parent = wnd_;
+        actions::send(request);
     } catch (...) {
     }
 }

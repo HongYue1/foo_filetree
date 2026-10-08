@@ -16,12 +16,8 @@ constexpr unsigned worker_threads = 2;
 std::atomic<bool> g_quitting{false};
 
 std::unique_ptr<EnumerationService> g_service;
+std::unique_ptr<platform::WorkerPool> g_shell_worker;
 std::shared_ptr<const model::ExtensionSet> g_playable;
-
-void post_to_main(std::function<void()> work) {
-    if (g_quitting.load(std::memory_order_acquire)) return;
-    fb2k::inMainThread(std::move(work));
-}
 
 void add_utf8(model::ExtensionSet& set, const char* extension) {
     if (extension == nullptr || *extension == '\0') return;
@@ -30,6 +26,16 @@ void add_utf8(model::ExtensionSet& set, const char* extension) {
 }
 
 } // namespace
+
+void post_to_main(std::function<void()> work) {
+    if (g_quitting.load(std::memory_order_acquire)) return;
+    fb2k::inMainThread(std::move(work));
+}
+
+platform::WorkerPool& shell_worker() {
+    if (!g_shell_worker) g_shell_worker = std::make_unique<platform::WorkerPool>(1);
+    return *g_shell_worker;
+}
 
 EnumerationService& enumeration() {
     if (!g_service) g_service = std::make_unique<EnumerationService>(post_to_main, worker_threads);
@@ -62,6 +68,7 @@ public:
     void on_quit() override {
         g_quitting.store(true, std::memory_order_release);
         if (g_service) g_service->shutdown(1500);
+        if (g_shell_worker) g_shell_worker->shutdown(500);
     }
 };
 

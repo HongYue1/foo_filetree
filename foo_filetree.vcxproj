@@ -132,6 +132,11 @@
     <ClCompile Include="src\actions\action.cpp" />
     <ClCompile Include="src\actions\action_settings.cpp" />
     <ClCompile Include="src\actions\playlist_send.cpp" />
+    <ClCompile Include="src\actions\shell_ops.cpp" />
+    <ClCompile Include="src\actions\shell_menu.cpp" />
+    <ClCompile Include="src\actions\fb2k_menu.cpp" />
+    <ClCompile Include="src\view\tree_view_menu.cpp" />
+    <ClCompile Include="src\view\inline_edit.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\guids.h" />
@@ -152,6 +157,9 @@
     <ClInclude Include="src\actions\action.h" />
     <ClInclude Include="src\actions\action_settings.h" />
     <ClInclude Include="src\actions\playlist_send.h" />
+    <ClInclude Include="src\actions\shell_ops.h" />
+    <ClInclude Include="src\actions\shell_menu.h" />
+    <ClInclude Include="src\actions\fb2k_menu.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

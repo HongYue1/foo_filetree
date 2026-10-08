@@ -59,11 +59,15 @@ Design:
   Shell >. Right-click selects the row first; Apps key / Shift+F10 opens at the selection.
   DUI layout-edit mode still gets Default UI's menu.
 - Disk-touching shell work (open in Explorer, recycle, rename) runs on a worker with its own
-  STA COM init (`IFileOperation`, undoable, shell conflict UI). `EnumerationService::submit()`
-  exposes the pool for that. Copy path is main thread (clipboard only).
-- Shell submenu: built on demand on the main thread (STA), `SHParseDisplayName` +
+  STA COM init (`IFileOperation`, undoable, shell conflict UI). Done on a separate one-thread
+  `fs::shell_worker()` (not the enumeration pool) so a delete waiting on its confirmation never
+  stalls listings. Copy path is main thread (clipboard only).
+- Shell submenu ("Explorer"): filled lazily on its WM_INITMENUPOPUP, main thread (STA), so
+  shell extensions only load if the user opens it. `SHParseDisplayName` +
   `SHBindToParent` + `IContextMenu`(2/3), menu messages forwarded while it is open, never cached.
-- fb2k submenu: `contextmenu_manager` over a handle made from the file path (no tag read).
+- fb2k submenu: `contextmenu_manager` over a handle made from the file path (no tag read),
+  also filled lazily.
+- Keys: F2 rename, Del delete (Shift+Del permanent), F5 refresh, Ctrl+C copy path.
 - Rename: inline EDIT over the row (dark-themed, host font), Enter commits, Esc / focus loss /
   scroll cancels.
 - After rename/delete/refresh: `Tree::reload(node)` drops the folder's rows, marks it unloaded
@@ -71,7 +75,9 @@ Design:
   Old children stay orphaned in the pool until M7 compaction.
 
 Steps:
-- [ ] Tree::reload + tests; EnumerationService::submit
-- [ ] shell ops, shell menu, fb2k menu
-- [ ] view: context menu, shortcuts, inline rename, reselect
-- [ ] build, commit, hand to user
+- [x] Tree::reload + find_child + tests (117 checks pass)
+- [x] shell ops (shell_ops.*), shell menu (shell_menu.*), fb2k menu (fb2k_menu.*)
+- [x] view: context menu (tree_view_menu.cpp), keys, inline rename (inline_edit.cpp), reselect
+- [x] build (/W4 /WX clean)
+- [ ] user test: menu items, both submenus, rename (Enter/Esc/click away), delete + undo
+  (Ctrl+Z in Explorer), Shift+Del, F5, Ctrl+C, Apps key, DUI edit-mode menu, dark mode editor

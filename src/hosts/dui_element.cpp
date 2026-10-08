@@ -59,8 +59,10 @@ public:
         MSG_WM_DESTROY(on_destroy)
         MESSAGE_HANDLER_EX(WM_KEYDOWN, on_key_down)
         MESSAGE_HANDLER_EX(WM_SYSKEYDOWN, on_key_down)
-        // Everything else the tree owns; what it declines falls through to DefWindowProc
-        // (WM_CONTEXTMENU included, so Default UI's layout-edit menu still works).
+        // In layout-edit mode WM_CONTEXTMENU must reach DefWindowProc, which forwards it to
+        // Default UI's edit menu.
+        if (uMsg == WM_CONTEXTMENU && m_callback->is_edit_mode_enabled()) return FALSE;
+        // Everything else the tree owns; what it declines falls through to DefWindowProc.
         if (view_.handle_message(hWnd, uMsg, wParam, lParam, lResult)) return TRUE;
     END_MSG_MAP()
 

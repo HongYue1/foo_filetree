@@ -108,6 +108,21 @@ public:
     //! no children, so the view can show the error state; expanding it again retries.
     void fail_load(std::uint32_t index) noexcept;
 
+    struct ReloadResult {
+        RowSplice splice;        //!< the node's visible descendants, removed
+        bool needs_load{false};  //!< expanded: marked loading, request a listing
+    };
+
+    //! Forgets a folder's children so they are listed again (Refresh, after rename/delete).
+    //! Visible descendants are removed; the old child nodes stay in the pool as orphans (no
+    //! longer reachable; their pending listings are ignored because loading is cleared). If the
+    //! folder is expanded it is marked loading; if it is already loading nothing changes.
+    ReloadResult reload(std::uint32_t index);
+
+    //! The child of `parent` with this name (case-insensitive, as NTFS), or no_node. Linear.
+    [[nodiscard]] std::uint32_t find_child(std::uint32_t parent,
+                                           std::wstring_view name) const noexcept;
+
     //! Full path of a node: the root's path plus each component, '\' separated.
     void build_path(std::uint32_t index, std::wstring& out) const;
 
@@ -117,6 +132,7 @@ public:
 private:
     void append_visible_subtree(std::uint32_t index);
     RowSplice splice_children_in(std::uint32_t index);
+    void orphan_children(std::uint32_t index) noexcept;
 
     std::vector<Node> nodes_;
     std::vector<std::uint32_t> rows_;

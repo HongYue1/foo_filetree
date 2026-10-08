@@ -64,6 +64,8 @@ void TreeView::attach(HWND wnd) noexcept {
 }
 
 void TreeView::detach() noexcept {
+    end_rename(false);
+    pending_select_ = {};
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
     pending_.clear();
     ++generation_;
@@ -198,6 +200,7 @@ void TreeView::update_scrollbar() noexcept {
 void TreeView::scroll_to(std::size_t top_row) noexcept {
     top_row = std::min(top_row, max_top_row());
     if (top_row == top_row_ || wnd_ == nullptr) return;
+    end_rename(false); // the editor would no longer sit on its row
 
     const std::ptrdiff_t delta = static_cast<std::ptrdiff_t>(top_row_) -
                                  static_cast<std::ptrdiff_t>(top_row);
@@ -266,6 +269,7 @@ void TreeView::on_wheel(int delta) noexcept {
 
 void TreeView::on_size() noexcept {
     if (wnd_ == nullptr) return;
+    end_rename(false);
     RECT client{};
     GetClientRect(wnd_, &client);
     client_width_ = client.right - client.left;
@@ -294,6 +298,7 @@ void TreeView::select_row(std::size_t row) noexcept {
 
 void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
     if (splice.empty()) return;
+    end_rename(false);
     const auto shift = [&](std::ptrdiff_t& row) {
         if (row < 0 || static_cast<std::size_t>(row) < splice.row) return;
         if (static_cast<std::size_t>(row) < splice.row + splice.removed) {
@@ -409,11 +414,22 @@ void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
     } else if (const auto row = tree_.row_of(node)) {
         invalidate_row(*row); // empty folder or error: the expander changes
     }
+    apply_pending_select(node);
 }
 
 bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept {
     result = 0;
     switch (msg) {
+    case WM_CONTEXTMENU:
+        on_context_menu(lp);
+        return true;
+    case WM_INITMENUPOPUP:
+    case WM_DRAWITEM:
+    case WM_MEASUREITEM:
+    case WM_MENUCHAR:
+        return forward_menu_message(msg, wp, lp, result);
+    case WM_CTLCOLOREDIT:
+        return on_edit_colour(reinterpret_cast<HDC>(wp), reinterpret_cast<HWND>(lp), result);
     case WM_PAINT: {
         PAINTSTRUCT ps{};
         if (HDC dc = BeginPaint(wnd, &ps); dc != nullptr) {

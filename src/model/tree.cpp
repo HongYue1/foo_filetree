@@ -1,5 +1,7 @@
 #include "tree.h"
 
+#include <windows.h>
+
 #include <algorithm>
 #include <limits>
 
@@ -131,6 +133,56 @@ void Tree::fail_load(std::uint32_t index) noexcept {
     Node& node = nodes_[index];
     node.flags = static_cast<std::uint16_t>((node.flags | node_load_failed) &
                                             ~(node_loading | node_loaded));
+}
+
+void Tree::orphan_children(std::uint32_t index) noexcept {
+    const Node& parent = nodes_[index];
+    for (std::uint32_t child = parent.first_child;
+         parent.child_count != 0 && child < parent.first_child + parent.child_count; ++child) {
+        Node& node = nodes_[child];
+        node.flags = static_cast<std::uint16_t>(node.flags & ~(node_loading | node_expanded));
+        if (node.has(node_loaded)) orphan_children(child);
+    }
+}
+
+Tree::ReloadResult Tree::reload(std::uint32_t index) {
+    ReloadResult result;
+    Node& node = nodes_[index];
+    if (!node.has(node_container) || node.has(node_loading)) return result;
+
+    if (node.has(node_expanded)) {
+        if (const auto row = row_of(index)) {
+            const std::uint16_t depth = node.depth;
+            std::size_t end = *row + 1;
+            while (end < rows_.size() && nodes_[rows_[end]].depth > depth) ++end;
+            result.splice = {*row + 1, end - (*row + 1), 0};
+            rows_.erase(rows_.begin() + static_cast<std::ptrdiff_t>(*row + 1),
+                        rows_.begin() + static_cast<std::ptrdiff_t>(end));
+        }
+    }
+    if (node.has(node_loaded)) orphan_children(index);
+    node.first_child = no_node;
+    node.child_count = 0;
+    node.flags = static_cast<std::uint16_t>(node.flags & ~(node_loaded | node_load_failed));
+    if (node.has(node_expanded)) {
+        node.flags |= node_loading;
+        result.needs_load = true;
+    }
+    return result;
+}
+
+std::uint32_t Tree::find_child(std::uint32_t parent, std::wstring_view name) const noexcept {
+    const Node& node = nodes_[parent];
+    if (!node.has(node_loaded)) return no_node;
+    for (std::uint32_t child = node.first_child; child < node.first_child + node.child_count;
+         ++child) {
+        const Node& c = nodes_[child];
+        if (CompareStringOrdinal(c.name, c.name_length, name.data(),
+                                 static_cast<int>(name.size()), TRUE) == CSTR_EQUAL) {
+            return child;
+        }
+    }
+    return no_node;
 }
 
 void Tree::build_path(std::uint32_t index, std::wstring& out) const {

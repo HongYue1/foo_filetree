@@ -181,6 +181,51 @@ void test_tree() {
     std::printf("sizeof(Node) = %zu bytes\n", sizeof(model::Node));
 }
 
+void test_tree_reload() {
+    using model::Tree;
+    Tree tree;
+    const auto c = tree.add_root(L"C:\\");
+    const auto d = tree.add_root(L"D:\\");
+    tree.expand(c);
+    tree.apply_children(c, records({L"Music", L"Users"}, {L"a.mp3"}));
+    const auto music = tree.node_at_row(1);
+    const auto users = tree.node_at_row(2);
+    tree.expand(music);
+    tree.apply_children(music, records({L"Album"}, {L"x.flac"}));
+    CHECK(tree.row_count() == 7);
+    CHECK(tree.find_child(c, L"users") == users);
+    CHECK(tree.find_child(c, L"nope") == model::no_node);
+    CHECK(tree.find_child(d, L"x") == model::no_node);
+
+    // Users is loading when the root reloads: its listing must then be ignored.
+    CHECK(tree.expand(users) == Tree::ExpandResult::needs_load);
+    auto result = tree.reload(c);
+    CHECK(result.needs_load);
+    CHECK(result.splice.row == 1 && result.splice.removed == 5 && result.splice.inserted == 0);
+    CHECK(tree.row_count() == 2);
+    CHECK(tree.node(c).has(model::node_loading) && !tree.node(c).has(model::node_loaded));
+    CHECK(tree.apply_children(users, records({L"Bob"}, {})).empty());
+    CHECK(tree.row_count() == 2);
+    // Reloading while loading is a no-op.
+    CHECK(!tree.reload(c).needs_load);
+
+    auto splice = tree.apply_children(c, records({L"Music", L"Renamed"}, {}));
+    CHECK(splice.row == 1 && splice.inserted == 2);
+    CHECK(tree.find_child(c, L"Renamed") == tree.node_at_row(2));
+    // Music came back as a fresh, collapsed node.
+    CHECK(!tree.node(tree.node_at_row(1)).has(model::node_expanded));
+    CHECK(row_name(tree, 3) == L"D:\\");
+
+    // A collapsed folder: forgets its children, no listing, re-expand lists again.
+    tree.expand(d);
+    tree.apply_children(d, records({L"Backup"}, {}));
+    tree.collapse(d);
+    result = tree.reload(d);
+    CHECK(!result.needs_load && result.splice.empty());
+    CHECK(!tree.node(d).has(model::node_loaded));
+    CHECK(tree.expand(d) == Tree::ExpandResult::needs_load);
+}
+
 void test_tree_large() {
     model::Tree tree;
     const auto root = tree.add_root(L"C:\\");
@@ -407,6 +452,7 @@ int main() {
     test_sort();
     test_extensions();
     test_tree();
+    test_tree_reload();
     test_tree_large();
     test_search_pattern();
     const auto base = make_fixture();

@@ -5,6 +5,7 @@
 #include "tree_view.h"
 
 #include <algorithm>
+#include <string_view>
 
 #include "../actions/action_settings.h"
 #include "../actions/drag_out.h"
@@ -109,6 +110,58 @@ bool TreeView::on_key(WPARAM key) noexcept {
     default:
         return false;
     }
+}
+
+namespace {
+
+//! Explorer's pause before typing starts a new search.
+constexpr DWORD typeahead_reset_ms = 1000;
+
+[[nodiscard]] bool starts_with_ignoring_case(std::wstring_view name,
+                                             std::wstring_view prefix) noexcept {
+    if (prefix.size() > name.size()) return false;
+    return CompareStringOrdinal(name.data(), static_cast<int>(prefix.size()), prefix.data(),
+                                static_cast<int>(prefix.size()), TRUE) == CSTR_EQUAL;
+}
+
+} // namespace
+
+bool TreeView::on_char(wchar_t ch, DWORD time) noexcept {
+    // Control characters (Enter, Esc, Backspace, Ctrl+letter) are not names.
+    if (ch < L' ') return false;
+    const std::size_t rows = tree_.row_count();
+    if (rows == 0) return true;
+    try {
+        if (time - typeahead_time_ > typeahead_reset_ms) typeahead_.clear();
+        typeahead_time_ = time;
+        if (typeahead_.empty() && ch == L' ') return true;
+        typeahead_.push_back(ch);
+
+        // Typing one letter repeatedly steps through the names starting with it, as in Explorer.
+        bool repeat = true;
+        for (const wchar_t c : typeahead_) {
+            if (CompareStringOrdinal(&c, 1, typeahead_.data(), 1, TRUE) != CSTR_EQUAL) {
+                repeat = false;
+                break;
+            }
+        }
+        const std::wstring_view prefix =
+            repeat ? std::wstring_view(typeahead_).substr(0, 1) : std::wstring_view(typeahead_);
+        const bool has_selection = selected_row_ >= 0;
+        // A longer prefix may still match the current row; a repeated letter moves on.
+        const std::size_t start = !has_selection ? 0
+                                  : repeat       ? static_cast<std::size_t>(selected_row_) + 1
+                                                 : static_cast<std::size_t>(selected_row_);
+        for (std::size_t i = 0; i < rows; ++i) {
+            const std::size_t row = (start + i) % rows;
+            if (starts_with_ignoring_case(tree_.node(tree_.node_at_row(row)).name_view(), prefix)) {
+                select_row(row);
+                break;
+            }
+        }
+    } catch (...) {
+    }
+    return true;
 }
 
 void TreeView::on_button_down(int x, int y, bool double_click) noexcept {
@@ -219,4 +272,5 @@ void TreeView::on_mouse_leave() noexcept {
 }
 
 } // namespace filetree::view
+
 

@@ -20,6 +20,9 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 | Ctrl+Z | Undo the last rename or delete |
 | Right click, Apps key, Shift+F10 | Context menu |
 
+- Type letters to jump to the next visible row whose name starts with them; press the same letter
+  again to step through matches. A pause of one second starts a new search.
+
 ## Context menu
 
 - **Play**, **Add to active playlist**, **Send to new playlist**

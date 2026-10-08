@@ -105,6 +105,8 @@ private:
     void on_vscroll(int code) noexcept;
     void on_wheel(int delta) noexcept;
     bool on_key(WPARAM key) noexcept;
+    //! Type-ahead find: typed characters select the next row whose name starts with them.
+    bool on_char(wchar_t ch, DWORD time) noexcept;
     void on_button_down(int x, int y, bool double_click) noexcept;
     void on_middle_button(int y) noexcept;
     //! Runs the bound action for a gesture on a row's node (actions/action_settings.h).
@@ -180,6 +182,8 @@ private:
     bool focused_{false};
     bool tracking_mouse_{false};
     int wheel_remainder_{};
+    std::wstring typeahead_;  //!< characters typed within typeahead_reset_ms of each other
+    DWORD typeahead_time_{};
     UINT wheel_lines_{3};
 
     // Listings in flight. `generation_` changes whenever the tree is rebuilt, so a late result
@@ -230,4 +234,5 @@ private:
 };
 
 } // namespace filetree::view
+
 

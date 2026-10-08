@@ -495,6 +495,8 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
         return true;
     case WM_KEYDOWN:
         return on_key(wp);
+    case WM_CHAR:
+        return on_char(static_cast<wchar_t>(wp), static_cast<DWORD>(GetMessageTime()));
     case WM_GETDLGCODE: {
         // DLGC_WANTARROWS covers the arrow keys only. Enter is a dialog key: without
         // DLGC_WANTMESSAGE for it, the host's dialog navigation eats it before WM_KEYDOWN.
@@ -522,3 +524,4 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
 }
 
 } // namespace filetree::view
+

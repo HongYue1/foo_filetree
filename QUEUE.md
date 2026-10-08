@@ -66,7 +66,10 @@ Design:
 Defaults: single = None/None; double = toggle (folder) / temp replace+play (file); middle = add
 to active (both); Enter = same as double.
 
-Status: **built (0 warnings), tests 98/98, waiting for the user's test.**
+Status: **user-tested 2026-10-08: 1-4 all pass** (2560-track / 3511-file folder: only fb2k's
+own processing dialog, UI never froze). Open question to the user: double-click on a folder
+toggles by design (default table); they noticed it does not replace+play. Waiting for their
+choice of default before closing M3.
 
 Steps:
 - [x] action model + encoding + tests (`actions/action.*`)

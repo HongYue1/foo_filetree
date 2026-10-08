@@ -418,26 +418,37 @@ bool TreeView::on_key(WPARAM key) noexcept {
     if (rows == 0) return false;
     const bool has_selection = selected_row_ >= 0;
     const std::size_t current = has_selection ? static_cast<std::size_t>(selected_row_) : top_row_;
-    const auto page = static_cast<std::size_t>(std::max(visible_rows() - 1, 1));
     const std::uint32_t node = tree_.node_at_row(current);
     const model::Node& n = tree_.node(node);
 
     switch (key) {
     case VK_UP: select_row(has_selection && current > 0 ? current - 1 : current); return true;
     case VK_DOWN: select_row(has_selection ? std::min(current + 1, rows - 1) : current); return true;
-    // Explorer paging: first move to the edge of the view, then a page at a time.
-    case VK_PRIOR: {
-        const std::size_t first_visible = top_row_;
-        const bool inside = has_selection && current > first_visible &&
-                            current < top_row_ + static_cast<std::size_t>(visible_rows());
-        select_row(inside ? first_visible : (current > page ? current - page : 0));
+    // Folder jumps (user's choice over Explorer paging): PgUp goes to the parent folder, PgDn
+    // to the row after the parent's subtree, i.e. the parent's next sibling (or the next row
+    // further out). At a root, PgUp stays and PgDn goes to the next root.
+    case VK_PRIOR:
+        if (!has_selection) {
+            select_row(current);
+        } else if (n.parent != model::no_node) {
+            if (const auto parent = tree_.row_of(n.parent)) select_row(*parent);
+        }
         return true;
-    }
     case VK_NEXT: {
-        const std::size_t last_visible =
-            std::min(top_row_ + static_cast<std::size_t>(visible_rows()) - 1, rows - 1);
-        const bool inside = has_selection && current >= top_row_ && current < last_visible;
-        select_row(inside ? last_visible : std::min(current + page, rows - 1));
+        if (!has_selection) {
+            select_row(current);
+            return true;
+        }
+        // Rows are in display order, so the parent's subtree ends at the first later row that
+        // is shallower than the current one.
+        const std::uint16_t depth = n.depth;
+        std::size_t next = current + 1;
+        if (depth == 0) {
+            while (next < rows && tree_.node(tree_.node_at_row(next)).depth > 0) ++next;
+        } else {
+            while (next < rows && tree_.node(tree_.node_at_row(next)).depth >= depth) ++next;
+        }
+        select_row(next < rows ? next : rows - 1);
         return true;
     }
     case VK_HOME: select_row(0); return true;

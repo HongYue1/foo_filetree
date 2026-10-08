@@ -62,8 +62,10 @@ re-test.** (M0 load test also passed: both UIs, two instances, dark mode, colour
   it because WM_GETDLGCODE did not return DLGC_WANTMESSAGE for it. Fixed; if the re-test passes,
   record it in the columns-ui-sdk / foobar2000-component-dev skill. (Enter on a file still does
   nothing by design until M3.)
-- PgUp/PgDn behaved like Home/End. Probably the list was shorter than the panel, so one page
-  reached the end. Now Explorer-style anyway: first to the edge of the view, then a page at a time.
+- Enter fix confirmed by the user (DLGC_WANTMESSAGE). Record in a skill once M2 closes.
+- PgUp/PgDn: Explorer paging worked as designed (user screenshots), but the user chose folder
+  jumps instead: PgUp = parent folder, PgDn = row after the parent's subtree (parent's next
+  sibling). Implemented, awaiting re-test. Keep this behaviour; M5 may make it a setting.
 - "(unavailable)" untested: the user has no offline drive.
 
 Steps:

@@ -39,3 +39,12 @@ Shift+Del deletes permanently and cannot be undone. The same changes can also be
 Ctrl+Z in an Explorer window, or restored from the Recycle Bin by hand.
 
 Changes made through **Explorer >** are not picked up automatically yet; press F5.
+
+## Preferences
+
+Settings live under Preferences > Tools > Folder Tree. Changes preview live in open panels and are
+kept only when you press OK or Apply.
+
+In Columns UI, the tree lines take their base colour from **Group foreground** in the Folder Tree
+colour settings; the line opacity from the Display tab still applies. A custom line colour set
+on the Display tab overrides both hosts.

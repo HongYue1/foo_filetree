@@ -17,6 +17,9 @@ struct ViewColours {
     COLORREF selection_background{RGB(0, 120, 215)};
     COLORREF inactive_selection_text{RGB(0, 0, 0)};
     COLORREF inactive_selection_background{RGB(204, 204, 204)};
+    //! Base colour for tree lines; hosts without one leave it unset and text is used.
+    COLORREF lines{RGB(0, 0, 0)};
+    bool has_lines{false};
     bool dark{false};
 };
 

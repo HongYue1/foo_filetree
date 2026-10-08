@@ -99,4 +99,4 @@ Steps:
 - [ ] M5b user test: Apply effects live (lines, padding,
   extensions, sort, filter, hidden drives, patterns); Reset
 - [x] M5c: Actions tab (binding editor) + Menu tab; menu honours layout
-- [ ] M5d: CUI colour client "Tree lines" entry; user test; commit
+- [~] M5d: CUI colour client tree lines (Group foreground); awaiting user test of M5

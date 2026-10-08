@@ -39,3 +39,8 @@ Shift+Del deletes permanently and cannot be undone. The same changes can also be
 Ctrl+Z in an Explorer window, or restored from the Recycle Bin by hand.
 
 Changes made through **Explorer >** are not picked up automatically yet; press F5.
+
+## Preferences
+
+Settings live under Preferences > Tools > Folder Tree. Changes preview live in open panels and are
+kept only when you press OK or Apply.

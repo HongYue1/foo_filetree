@@ -27,6 +27,7 @@ using namespace filetree;
 // settings_test.cpp
 void test_filter_rules();
 void test_settings_model();
+void test_presets();
 void test_enumerate_rules(const std::filesystem::path& base);
 
 namespace {
@@ -446,6 +447,7 @@ int main() {
     test_actions();
     test_filter_rules();
     test_settings_model();
+    test_presets();
     test_sort();
     test_extensions();
     test_tree();

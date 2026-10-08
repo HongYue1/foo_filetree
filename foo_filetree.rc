@@ -105,3 +105,40 @@ BEGIN
     EDITTEXT        IDC_HIDE_PATTERNS,85,178,208,12,ES_AUTOHSCROLL
     LTEXT           "Hides files and folders whose whole name matches. * stands for any characters, ? for one. Separate patterns with ; for example: *.tmp; Thumbs.db; @eaDir (Synology NAS thumbnail folders)",IDC_STATIC,85,193,208,24
 END
+
+IDD_TAB_ACTIONS DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Clicks and keys",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LTEXT           "On a folder",IDC_STATIC,85,21,102,8
+    LTEXT           "On a file",IDC_STATIC,191,21,102,8
+    LTEXT           "Single click:",IDC_STATIC,12,34,70,8
+    COMBOBOX        1050,85,32,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        1051,191,32,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Double click:",IDC_STATIC,12,50,70,8
+    COMBOBOX        1052,85,48,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        1053,191,48,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Middle click:",IDC_STATIC,12,66,70,8
+    COMBOBOX        1054,85,64,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        1055,191,64,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Enter key:",IDC_STATIC,12,82,70,8
+    COMBOBOX        1056,85,80,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        1057,191,80,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "A single click always selects; its action runs as well. Hold Shift to flip ""include subfolders"", Ctrl to use the active playlist.",IDC_STATIC,85,97,208,24
+END
+
+IDD_TAB_MENU DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Context menu",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LTEXT           "Items in the order they appear:",IDC_STATIC,12,21,226,8
+    LISTBOX         IDC_MENU_LIST,12,32,226,140,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Move up",IDC_MENU_UP,243,32,50,14
+    PUSHBUTTON      "Move down",IDC_MENU_DOWN,243,48,50,14
+    CONTROL         "Show the selected item",IDC_MENU_SHOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,177,226,10
+    LTEXT           "Separators are added between groups automatically. Undo only appears when there is something to undo.",IDC_STATIC,12,191,226,16
+END

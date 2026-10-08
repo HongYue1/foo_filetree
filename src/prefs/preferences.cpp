@@ -14,6 +14,7 @@
 
 #include "../../resource.h"
 #include "../actions/action_settings.h"
+#include "../actions/presets.h"
 #include "../guids.h"
 #include "../settings/settings_store.h"
 #include "../version.h"
@@ -24,14 +25,16 @@
 namespace filetree::prefs {
 namespace {
 
-constexpr int tab_count = 3;
-constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Display", L"Filter"};
+constexpr int tab_count = 5;
+constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Display", L"Filter", L"Actions",
+                                                 L"Menu"};
 
 //! Everything the page edits, so "changed?" is one comparison.
 struct PageState {
     settings::Settings settings;
     std::wstring temp_playlist;
     bool recursive{true};
+    actions::Bindings bindings{actions::Bindings::defaults()};
 
     friend bool operator==(const PageState&, const PageState&) = default;
 };
@@ -42,12 +45,12 @@ PageState stored_state() {
     state.temp_playlist =
         pfc::stringcvt::string_wide_from_utf8(actions::temp_playlist_name().c_str()).get_ptr();
     state.recursive = actions::recursive_by_default();
+    state.bindings = actions::bindings();
     return state;
 }
 
 PageState default_state() {
     PageState state;
-    state.settings.menu = settings::stored().menu; // edited on its own tab (M5c)
     state.temp_playlist = L"Folder Tree";
     return state;
 }
@@ -81,6 +84,7 @@ public:
         actions::set_temp_playlist_name(
             pfc::stringcvt::string_utf8_from_wide(state.temp_playlist.c_str()).get_ptr());
         actions::set_recursive_by_default(state.recursive);
+        actions::set_bindings(state.bindings);
         settings::apply(state.settings);
         to_controls(stored_state()); // show the clamped values
         callback_->on_state_changed();
@@ -99,6 +103,10 @@ public:
         MSG_WM_DESTROY(on_destroy)
         MESSAGE_HANDLER_EX(WM_NOTIFY, on_notify)
         COMMAND_HANDLER_EX(IDC_LINE_SWATCH, BN_CLICKED, on_swatch)
+        COMMAND_HANDLER_EX(IDC_MENU_LIST, LBN_SELCHANGE, on_menu_select)
+        COMMAND_HANDLER_EX(IDC_MENU_UP, BN_CLICKED, on_menu_move)
+        COMMAND_HANDLER_EX(IDC_MENU_DOWN, BN_CLICKED, on_menu_move)
+        COMMAND_HANDLER_EX(IDC_MENU_SHOW, BN_CLICKED, on_menu_show)
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, on_changed)
         COMMAND_CODE_HANDLER_EX(BN_CLICKED, on_changed)
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, on_changed)
@@ -116,6 +124,14 @@ private:
                    {L"Name (natural)", L"Name", L"Date modified", L"Size", L"Type"});
         fill_combo(page, IDC_FILES,
                    {L"All files", L"Playable files only", L"No files (folders only)"});
+        for (int id = IDC_BIND_FIRST; id < IDC_BIND_FIRST + 2 * int(actions::gesture_count); ++id) {
+            const HWND combo = find_control(page, id);
+            if (combo == nullptr) continue;
+            const bool folder = (id - IDC_BIND_FIRST) % 2 == 0;
+            for (const actions::Preset& preset : actions::presets(folder)) {
+                ::SendMessageW(combo, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(preset.label));
+            }
+        }
         to_controls(stored_state());
         initialised_ = true;
         return FALSE;
@@ -265,6 +281,61 @@ private:
         draw_swatch(*item, parse_hex(get_text(m_hWnd, IDC_LINE_HEX), settings::stored().line_colour));
     }
 
+    // --- Menu tab: the layout is edited in menu_ and shown in the list box. ---
+
+    void show_menu_list(int select) {
+        const HWND list = find_control(m_hWnd, IDC_MENU_LIST);
+        if (list == nullptr) return;
+        ::SendMessageW(list, WM_SETREDRAW, FALSE, 0);
+        ::SendMessageW(list, LB_RESETCONTENT, 0, 0);
+        for (const settings::MenuItem item : menu_.order) {
+            std::wstring text = settings::menu_item_label(item);
+            if (!menu_.visible(item)) text += L"   (hidden)";
+            ::SendMessageW(list, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(text.c_str()));
+        }
+        ::SendMessageW(list, LB_SETCURSEL, static_cast<WPARAM>(select), 0);
+        ::SendMessageW(list, WM_SETREDRAW, TRUE, 0);
+        ::InvalidateRect(list, nullptr, TRUE);
+        on_menu_select(0, 0, nullptr);
+    }
+
+    [[nodiscard]] int menu_selection() const {
+        const auto index = static_cast<int>(
+            ::SendMessageW(find_control(m_hWnd, IDC_MENU_LIST), LB_GETCURSEL, 0, 0));
+        return index >= 0 && index < int(settings::menu_item_count) ? index : -1;
+    }
+
+    void on_menu_select(UINT, int, CWindow) {
+        const int index = menu_selection();
+        const bool was_updating = updating_;
+        updating_ = true;
+        set_check(m_hWnd, IDC_MENU_SHOW,
+                  index >= 0 && menu_.visible(menu_.order[static_cast<std::size_t>(index)]));
+        updating_ = was_updating;
+        enable(m_hWnd, IDC_MENU_SHOW, index >= 0);
+        enable(m_hWnd, IDC_MENU_UP, index > 0);
+        enable(m_hWnd, IDC_MENU_DOWN, index >= 0 && index + 1 < int(settings::menu_item_count));
+    }
+
+    void on_menu_move(UINT, int id, CWindow) {
+        const int index = menu_selection();
+        const int target = id == IDC_MENU_UP ? index - 1 : index + 1;
+        if (index < 0 || target < 0 || target >= int(settings::menu_item_count)) return;
+        std::swap(menu_.order[static_cast<std::size_t>(index)],
+                  menu_.order[static_cast<std::size_t>(target)]);
+        show_menu_list(target);
+        on_changed(0, id, nullptr);
+    }
+
+    void on_menu_show(UINT, int id, CWindow) {
+        const int index = menu_selection();
+        if (index < 0 || updating_) return;
+        const auto bit = 1u << static_cast<unsigned>(menu_.order[static_cast<std::size_t>(index)]);
+        menu_.hidden = get_check(m_hWnd, IDC_MENU_SHOW) ? menu_.hidden & ~bit : menu_.hidden | bit;
+        show_menu_list(index);
+        on_changed(0, id, nullptr);
+    }
+
     void update_enabled() {
         const HWND page = m_hWnd;
         const bool lines = get_combo(page, IDC_LINES, 0) != 0;
@@ -310,7 +381,17 @@ private:
         s.always_show = get_text(page, IDC_ALWAYS_SHOW);
         s.never_show = get_text(page, IDC_NEVER_SHOW);
         s.hide_patterns = get_text(page, IDC_HIDE_PATTERNS);
+        s.menu = menu_;
         s.sanitize();
+
+        for (std::size_t g = 0; g < actions::gesture_count; ++g) {
+            actions::Binding& binding = state.bindings.gestures[g];
+            const int id = IDC_BIND_FIRST + static_cast<int>(g) * 2;
+            binding.folder = actions::from_preset(
+                static_cast<std::size_t>(get_combo(page, id, 0)), true, binding.folder);
+            binding.file = actions::from_preset(
+                static_cast<std::size_t>(get_combo(page, id + 1, 0)), false, binding.file);
+        }
         return state;
     }
 
@@ -342,6 +423,14 @@ private:
         set_text(page, IDC_ALWAYS_SHOW, s.always_show);
         set_text(page, IDC_NEVER_SHOW, s.never_show);
         set_text(page, IDC_HIDE_PATTERNS, s.hide_patterns);
+        for (std::size_t g = 0; g < actions::gesture_count; ++g) {
+            const actions::Binding& binding = state.bindings.gestures[g];
+            const int id = IDC_BIND_FIRST + static_cast<int>(g) * 2;
+            set_combo(page, id, static_cast<int>(actions::preset_index(binding.folder, true)));
+            set_combo(page, id + 1, static_cast<int>(actions::preset_index(binding.file, false)));
+        }
+        menu_ = s.menu;
+        show_menu_list(std::max(menu_selection(), 0));
         ::InvalidateRect(find_control(page, IDC_LINE_SWATCH), nullptr, FALSE);
         updating_ = false;
         update_enabled();
@@ -352,6 +441,7 @@ private:
 
     const preferences_page_callback::ptr callback_;
     std::array<HWND, tab_count> tabs_{};
+    settings::MenuLayout menu_{settings::MenuLayout::defaults()};
     bool initialised_{false};
     bool updating_{false};
     // A member: it hooks this dialog and its controls for the lifetime of both.

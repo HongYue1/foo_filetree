@@ -69,36 +69,67 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
 
         HMENU menu = CreatePopupMenu();
         if (menu == nullptr) return;
-        AppendMenuW(menu, MF_STRING, id_play, L"Play");
-        AppendMenuW(menu, MF_STRING, id_add_active, L"Add to active playlist");
-        AppendMenuW(menu, MF_STRING, id_new_playlist, L"Send to new playlist");
-        AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-        AppendMenuW(menu, MF_STRING, id_open_explorer,
-                    folder ? L"Open in Explorer" : L"Show in folder");
-        AppendMenuW(menu, MF_STRING, id_copy_path, L"Copy path\tCtrl+C");
-        AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-        const UINT root_flags = root ? MF_GRAYED : 0u;
-        AppendMenuW(menu, MF_STRING | root_flags, id_rename, L"Rename\tF2");
-        AppendMenuW(menu, MF_STRING | root_flags, id_delete, L"Delete\tDel");
-        AppendMenuW(menu, MF_STRING, id_refresh, L"Refresh\tF5");
-        if (undo_.kind != UndoRecord::Kind::none) {
-            const bool rename = undo_.kind == UndoRecord::Kind::rename;
-            std::wstring label = rename ? L"Undo rename of \"" + undo_.old_name + L"\""
-                                        : L"Undo delete of \"" + undo_.name + L"\"";
-            label += L"\tCtrl+Z";
-            AppendMenuW(menu, MF_STRING, id_undo, label.c_str());
-        }
-        AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-
         MenuSession session;
-        if (!folder) {
-            HMENU fb2k = CreatePopupMenu();
-            AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(fb2k), L"foobar2000");
-            session.fb2k.prepare(fb2k, path);
+        const UINT root_flags = root ? MF_GRAYED : 0u;
+        // The user's order (Preferences > Menu); a separator wherever the group changes.
+        const settings::MenuLayout& layout = settings::current().menu;
+        int last_group = -1;
+        for (const settings::MenuItem item : layout.order) {
+            if (!layout.visible(item)) continue;
+            using settings::MenuItem;
+            if (item == MenuItem::undo && undo_.kind == UndoRecord::Kind::none) continue;
+            if (item == MenuItem::fb2k_menu && folder) continue;
+            const int group = settings::menu_group(item);
+            if (last_group >= 0 && group != last_group) AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+            last_group = group;
+            switch (item) {
+            case MenuItem::play: AppendMenuW(menu, MF_STRING, id_play, L"Play"); break;
+            case MenuItem::add_active:
+                AppendMenuW(menu, MF_STRING, id_add_active, L"Add to active playlist");
+                break;
+            case MenuItem::new_playlist:
+                AppendMenuW(menu, MF_STRING, id_new_playlist, L"Send to new playlist");
+                break;
+            case MenuItem::open_explorer:
+                AppendMenuW(menu, MF_STRING, id_open_explorer,
+                            folder ? L"Open in Explorer" : L"Show in folder");
+                break;
+            case MenuItem::copy_path:
+                AppendMenuW(menu, MF_STRING, id_copy_path, L"Copy path\tCtrl+C");
+                break;
+            case MenuItem::rename:
+                AppendMenuW(menu, MF_STRING | root_flags, id_rename, L"Rename\tF2");
+                break;
+            case MenuItem::remove:
+                AppendMenuW(menu, MF_STRING | root_flags, id_delete, L"Delete\tDel");
+                break;
+            case MenuItem::refresh: AppendMenuW(menu, MF_STRING, id_refresh, L"Refresh\tF5"); break;
+            case MenuItem::undo: {
+                const bool rename = undo_.kind == UndoRecord::Kind::rename;
+                std::wstring label = rename ? L"Undo rename of \"" + undo_.old_name + L"\""
+                                            : L"Undo delete of \"" + undo_.name + L"\"";
+                label += L"\tCtrl+Z";
+                AppendMenuW(menu, MF_STRING, id_undo, label.c_str());
+                break;
+            }
+            case MenuItem::fb2k_menu: {
+                HMENU fb2k = CreatePopupMenu();
+                AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(fb2k), L"foobar2000");
+                session.fb2k.prepare(fb2k, path);
+                break;
+            }
+            case MenuItem::explorer_menu: {
+                HMENU shell = CreatePopupMenu();
+                AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(shell), L"Explorer");
+                session.shell.prepare(shell, path, wnd_, GetKeyState(VK_SHIFT) < 0);
+                break;
+            }
+            }
         }
-        HMENU shell = CreatePopupMenu();
-        AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(shell), L"Explorer");
-        session.shell.prepare(shell, path, wnd_, GetKeyState(VK_SHIFT) < 0);
+        if (GetMenuItemCount(menu) <= 0) {
+            DestroyMenu(menu);
+            return;
+        }
 
         menu_ = &session;
         const UINT id = static_cast<UINT>(TrackPopupMenu(

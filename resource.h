@@ -8,6 +8,8 @@
 #define IDD_TAB_GENERAL 102
 #define IDD_TAB_DISPLAY 103
 #define IDD_TAB_FILTER 104
+#define IDD_TAB_ACTIONS 105
+#define IDD_TAB_MENU 106
 
 #define IDC_TABS 1000
 #define IDC_PAGE_HOST 1001
@@ -40,3 +42,12 @@
 #define IDC_ALWAYS_SHOW 1043
 #define IDC_NEVER_SHOW 1044
 #define IDC_HIDE_PATTERNS 1045
+
+// Actions: one drop-down per gesture and kind, IDC_BIND_FIRST + gesture * 2 + (0 folder, 1 file).
+#define IDC_BIND_FIRST 1050
+
+// Menu
+#define IDC_MENU_LIST 1060
+#define IDC_MENU_UP 1061
+#define IDC_MENU_DOWN 1062
+#define IDC_MENU_SHOW 1063

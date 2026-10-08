@@ -98,5 +98,5 @@ Steps:
   the start of M6 (PLAN.md updated).
 - [ ] M5b user test: Apply effects live (lines, padding,
   extensions, sort, filter, hidden drives, patterns); Reset
-- [ ] M5c: Actions tab (binding editor) + Menu tab; menu honours layout
+- [x] M5c: Actions tab (binding editor) + Menu tab; menu honours layout
 - [ ] M5d: CUI colour client "Tree lines" entry; user test; commit

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "check.h"
+#include "../src/actions/presets.h"
 #include "../src/fs/enumerate.h"
 #include "../src/model/filter_rules.h"
 #include "../src/settings/settings_model.h"
@@ -99,6 +100,25 @@ void test_settings_model() {
     CHECK(wild.line_thickness == 4 && wild.row_padding == 0 && wild.line_opacity == 10);
     CHECK(wild.lines == TreeLines::none && wild.files == fs::FileMode::all);
     CHECK(wild.hidden_drives == (1u << 26) - 1);
+}
+
+void test_presets() {
+    using namespace actions;
+    const Bindings defaults = Bindings::defaults();
+    // Every default action has a preset (else the editor would show None and lose it).
+    for (const Binding& binding : defaults.gestures) {
+        CHECK(binding.folder.kind == Kind::none || preset_index(binding.folder, true) != 0);
+        CHECK(binding.file.kind == Kind::none || preset_index(binding.file, false) != 0);
+    }
+    CHECK(presets(true).size() == presets(false).size() + 1);
+    CHECK(preset_index(Action{Kind::toggle}, false) == 0); // files cannot expand
+    // Recursion survives a round trip through the editor.
+    Action action = presets(false)[3].action;
+    action.recursion = Recursion::never;
+    const std::size_t index = preset_index(action, false);
+    CHECK(index == 3);
+    CHECK(from_preset(index, false, action) == action);
+    CHECK(from_preset(99, true, action).kind == Kind::none);
 }
 
 void test_enumerate_rules(const std::filesystem::path& base) {

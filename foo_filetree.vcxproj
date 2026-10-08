@@ -133,6 +133,7 @@
     <ClCompile Include="src\actions\action_settings.cpp" />
     <ClCompile Include="src\actions\playlist_send.cpp" />
     <ClCompile Include="src\actions\shell_ops.cpp" />
+    <ClCompile Include="src\actions\presets.cpp" />
     <ClCompile Include="src\prefs\preferences.cpp" />
     <ClCompile Include="src\prefs\prefs_util.cpp" />
     <ClCompile Include="src\model\filter_rules.cpp" />
@@ -167,6 +168,7 @@
     <ClInclude Include="src\actions\action_settings.h" />
     <ClInclude Include="src\actions\playlist_send.h" />
     <ClInclude Include="src\actions\shell_ops.h" />
+    <ClInclude Include="src\actions\presets.h" />
     <ClInclude Include="src\model\filter_rules.h" />
     <ClInclude Include="src\settings\settings_model.h" />
     <ClInclude Include="src\settings\settings_store.h" />

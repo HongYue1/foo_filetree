@@ -66,3 +66,6 @@ Each panel remembers its own open folders, selection and scroll position (stored
 foobar2000 layout). General > On startup chooses between restoring that, starting with all
 folders closed, or opening a fixed folder.
 
+Favourites: right-click a folder > Add to favourites and it becomes a root (shown by its name)
+in every panel, before or after the drives. Manage the list on the Favourites tab.
+

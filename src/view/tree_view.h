@@ -165,6 +165,8 @@ private:
     bool forward_menu_message(UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept;
     void open_in_explorer(std::uint32_t node) noexcept;
     void copy_path(std::uint32_t node) noexcept;
+    //! Adds the folder to the favourites, or removes it (Preferences > Favourites).
+    void toggle_favourite(std::uint32_t node) noexcept;
     void delete_node(std::uint32_t node, bool permanent) noexcept;
     // tree_view_refresh.cpp. Like Explorer's F5: every open folder is listed again in the
     // background and, where something changed, its children are merged in place (open folders

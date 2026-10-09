@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "../fs/enumerate.h"
 #include "../model/sort.h"
@@ -20,6 +21,15 @@ enum class Extensions : std::uint8_t { always, never, non_playable };
 enum class FilterBox : std::uint8_t { bar, floating, off };
 //! What a panel shows when foobar2000 starts.
 enum class Startup : std::uint8_t { restore, collapsed, folder };
+enum class FavouritesPlace : std::uint8_t { before, after }; //!< relative to the drives
+
+//! Favourites are stored as one string: paths joined by '|' (never part of a Windows path).
+[[nodiscard]] std::wstring join_paths(const std::vector<std::wstring>& paths);
+//! Splits, trims spaces and trailing backslashes (keeping "C:\"), drops empty and repeated
+//! (case-insensitive) entries.
+[[nodiscard]] std::vector<std::wstring> split_paths(std::wstring_view text);
+//! The path as a favourite: trimmed, no trailing backslash except on a drive ("C:\").
+[[nodiscard]] std::wstring clean_path(std::wstring_view path);
 
 //! Context menu entries a user can show, hide and reorder. Append only (stored by number).
 enum class MenuItem : std::uint8_t {
@@ -34,8 +44,9 @@ enum class MenuItem : std::uint8_t {
     undo,
     fb2k_menu,
     explorer_menu,
+    favourite, //!< Add to / Remove from favourites
 };
-inline constexpr std::size_t menu_item_count = 11;
+inline constexpr std::size_t menu_item_count = 12;
 
 //! Items that share a group get no separator between them.
 [[nodiscard]] int menu_group(MenuItem item) noexcept;
@@ -65,6 +76,8 @@ struct Settings {
     FilterBox filter_box{FilterBox::bar};
     Startup startup{Startup::restore};
     std::wstring startup_folder; //!< for Startup::folder
+    std::vector<std::wstring> favourites; //!< shown as roots, in this order
+    FavouritesPlace favourites_place{FavouritesPlace::before};
 
     // Display
     TreeLines lines{TreeLines::none};

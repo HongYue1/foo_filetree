@@ -11,13 +11,6 @@
 namespace filetree::view {
 namespace {
 
-//! "C:\" is shown as "C:".
-std::wstring_view display_name(const model::Node& node) noexcept {
-    std::wstring_view name = node.name_view();
-    if (node.has(model::node_root) && name.size() == 3 && name[1] == L':') name.remove_suffix(1);
-    return name;
-}
-
 //! What a user may type: quotes, forward slashes, %variables%, "c:" without a backslash, a
 //! trailing backslash. Empty when it is not an absolute drive path.
 std::wstring normalise(std::wstring_view input) {
@@ -64,7 +57,7 @@ void TreeView::selection_crumbs(std::vector<Crumb>& out) const {
     if (selected_row_ < 0 || static_cast<std::size_t>(selected_row_) >= tree_.row_count()) return;
     for (std::uint32_t node = tree_.node_at_row(static_cast<std::size_t>(selected_row_));
          node != model::no_node; node = tree_.node(node).parent) {
-        out.push_back({std::wstring(display_name(tree_.node(node))), node});
+        out.push_back({std::wstring(model::display_name(tree_.node(node))), node});
     }
     std::reverse(out.begin(), out.end());
 }

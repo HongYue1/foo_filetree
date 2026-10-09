@@ -31,6 +31,7 @@ enum NodeFlag : std::uint16_t {
     node_loading = 1 << 3,     //!< a listing has been requested and not yet applied
     node_load_failed = 1 << 4, //!< the last listing failed (access denied, offline, ...)
     node_root = 1 << 5,
+    node_favourite = 1 << 6, //!< a root from the favourites list (else a drive)
 };
 
 struct Node {
@@ -52,6 +53,20 @@ struct Node {
 
 // PLAN.md budget: <= 64 bytes per node plus the name.
 static_assert(sizeof(Node) <= 64, "Node exceeds the per-node memory budget");
+
+//! The name as shown: a drive root "C:\\" as "C:", a favourite root by its last component.
+[[nodiscard]] inline std::wstring_view display_name(const Node& node) noexcept {
+    std::wstring_view name = node.name_view();
+    if (!node.has(node_root)) return name;
+    if (node.has(node_favourite)) {
+        while (name.size() > 1 && name.back() == L'\\') name.remove_suffix(1);
+        const std::size_t slash = name.find_last_of(L'\\');
+        if (slash != std::wstring_view::npos && slash + 1 < name.size()) name.remove_prefix(slash + 1);
+        return name;
+    }
+    if (name.size() == 3 && name[1] == L':') name.remove_suffix(1);
+    return name;
+}
 
 //! What changed in the row list, for the view to invalidate and fix scroll/selection.
 //! `row` is the first affected row; rows [row, row + removed) were replaced by `inserted` rows.
@@ -86,7 +101,8 @@ public:
     void clear() noexcept;
 
     //! Adds a top-level entry (a drive "C:\", a favourite folder) as a new last row.
-    std::uint32_t add_root(std::wstring_view path, std::uint32_t attributes = 0x10);
+    std::uint32_t add_root(std::wstring_view path, std::uint32_t attributes = 0x10,
+                           std::uint16_t flags = 0);
 
     [[nodiscard]] std::size_t row_count() const noexcept { return rows_.size(); }
     [[nodiscard]] std::uint32_t node_at_row(std::size_t row) const noexcept { return rows_[row]; }

@@ -30,6 +30,8 @@ constexpr GUID guid_hide_patterns = {0x262e73df, 0x1412, 0x4717, {0x96, 0x7e, 0x
 constexpr GUID guid_show_address_bar = {0x961ca913, 0xd41f, 0x43e8, {0x8b, 0x68, 0x5b, 0xd9, 0x1e, 0xbf, 0xff, 0x75}};
 constexpr GUID guid_startup = {0x038cf33e, 0xedf7, 0x4107, {0x9a, 0x4d, 0xd5, 0xb8, 0x93, 0xaf, 0x06, 0x17}};
 constexpr GUID guid_startup_folder = {0xb670a6f0, 0xb28a, 0x4770, {0xa4, 0x1b, 0x7e, 0xb5, 0x1f, 0xaf, 0xad, 0x2c}};
+constexpr GUID guid_favourites = {0x25bdcd87, 0x51a1, 0x4a89, {0xb5, 0x48, 0x5d, 0x8f, 0xa1, 0x6d, 0x63, 0x95}};
+constexpr GUID guid_favourites_place = {0xa9cb41bf, 0x0efa, 0x401c, {0xa1, 0x85, 0xab, 0xd9, 0x9c, 0x3a, 0xf3, 0xde}};
 constexpr GUID guid_filter_box = {0x95efa8c6, 0x13ae, 0x4993, {0xbf, 0xaf, 0x74, 0x7a, 0xeb, 0xa7, 0x74, 0xe3}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
@@ -61,6 +63,8 @@ cfg_bool cfg_show_address_bar(guid_show_address_bar, defaults.show_address_bar);
 cfg_int cfg_filter_box(guid_filter_box, static_cast<int>(defaults.filter_box));
 cfg_int cfg_startup(guid_startup, static_cast<int>(defaults.startup));
 cfg_string cfg_startup_folder(guid_startup_folder, "");
+cfg_string cfg_favourites(guid_favourites, "");
+cfg_int cfg_favourites_place(guid_favourites_place, static_cast<int>(defaults.favourites_place));
 
 std::optional<Settings> g_current; //!< saved
 std::optional<Settings> g_preview;
@@ -108,6 +112,8 @@ Settings load() {
     s.filter_box = as_enum<FilterBox>(cfg_filter_box.get());
     s.startup = as_enum<Startup>(cfg_startup.get());
     s.startup_folder = wide(cfg_startup_folder.get());
+    s.favourites = split_paths(wide(cfg_favourites.get()));
+    s.favourites_place = as_enum<FavouritesPlace>(cfg_favourites_place.get());
     s.sanitize();
     return s;
 }
@@ -135,6 +141,8 @@ void save(const Settings& s) {
     cfg_filter_box.set(static_cast<int>(s.filter_box));
     cfg_startup.set(static_cast<int>(s.startup));
     cfg_startup_folder.set(utf8(s.startup_folder));
+    cfg_favourites.set(utf8(join_paths(s.favourites)));
+    cfg_favourites_place.set(static_cast<int>(s.favourites_place));
 }
 
 std::shared_ptr<const model::FilterRules> build_rules(const Settings& s) {

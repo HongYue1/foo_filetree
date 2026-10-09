@@ -141,9 +141,7 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         draw_expander(dc, cx, cy, metrics_.expander, open, colour);
     }
 
-    // Roots are stored as "C:\"; show "C:".
-    std::wstring_view name = node.name_view();
-    if (node.has(model::node_root) && name.size() == 3 && name[1] == L':') name.remove_suffix(1);
+    std::wstring_view name = model::display_name(node);
     if (extensions_ != settings::Extensions::always && !node.has(model::node_container)) {
         const std::wstring_view extension = model::extension_of(name);
         const bool hide = !extension.empty() &&

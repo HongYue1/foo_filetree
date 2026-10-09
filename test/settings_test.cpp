@@ -85,14 +85,32 @@ void test_settings_model() {
     // An older config without the last two items: they come back after their predecessors.
     const MenuLayout old = MenuLayout::decode(L"5,0,1,2,3,4,6,7,8");
     CHECK(old.order[0] == MenuItem::rename);
-    CHECK(old.order[9] == MenuItem::fb2k_menu && old.order[10] == MenuItem::explorer_menu);
+    CHECK(old.order[10] == MenuItem::fb2k_menu && old.order[11] == MenuItem::explorer_menu);
+    // A newer item goes to its default place (Favourites after Copy path), not to the end.
+    CHECK(old.order[5] == MenuItem::copy_path && old.order[6] == MenuItem::favourite);
+    CHECK(defaults.order[5] == MenuItem::favourite);
     // Duplicates are dropped and the missing item is restored.
     const MenuLayout dup = MenuLayout::decode(L"0,0,1,2,3,4,5,6,7,8,9,10");
     CHECK(dup == defaults);
 
+    // Favourites: cleaned, de-duplicated, round-tripped.
+    CHECK(clean_path(L" \"D:/Media/\" ") == L"D:\\Media");
+    CHECK(clean_path(L"E:") == L"E:\\" && clean_path(L"E:\\") == L"E:\\");
+    const auto paths = split_paths(L"D:\\Media\\|| C:\\ |d:\\media|\\\\nas\\music\\");
+    CHECK(paths.size() == 3 && paths[0] == L"D:\\Media" && paths[1] == L"C:\\" &&
+          paths[2] == L"\\\\nas\\music");
+    CHECK(split_paths(join_paths(paths)) == paths);
+    CHECK(split_paths(L"").empty());
+
     Settings a;
     Settings b;
     CHECK(diff(a, b) == 0);
+    b.favourites = {L"D:\\Media"};
+    CHECK(diff(a, b) == change_roots);
+    b = a;
+    b.favourites_place = FavouritesPlace::after;
+    CHECK(diff(a, b) == change_roots);
+    b = a;
     b.row_padding = 5;
     CHECK(diff(a, b) == change_remeasure);
     b = a;

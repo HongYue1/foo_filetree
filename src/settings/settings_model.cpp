@@ -12,13 +12,32 @@ E clamp_enum(E value, E last) noexcept {
 
 } // namespace
 
+namespace {
+
+// Where each item goes in a fresh layout (newer items are not always last).
+constexpr std::array<MenuItem, menu_item_count> default_order = {
+    MenuItem::play,        MenuItem::add_active, MenuItem::new_playlist, MenuItem::open_explorer,
+    MenuItem::copy_path,   MenuItem::favourite,  MenuItem::rename,       MenuItem::remove,
+    MenuItem::refresh,     MenuItem::undo,       MenuItem::fb2k_menu,    MenuItem::explorer_menu,
+};
+
+std::size_t default_rank(MenuItem item) noexcept {
+    for (std::size_t i = 0; i < default_order.size(); ++i) {
+        if (default_order[i] == item) return i;
+    }
+    return default_order.size();
+}
+
+} // namespace
+
 int menu_group(MenuItem item) noexcept {
     switch (item) {
     case MenuItem::play:
     case MenuItem::add_active:
     case MenuItem::new_playlist: return 0;
     case MenuItem::open_explorer:
-    case MenuItem::copy_path: return 1;
+    case MenuItem::copy_path:
+    case MenuItem::favourite: return 1;
     case MenuItem::rename:
     case MenuItem::remove:
     case MenuItem::refresh:
@@ -42,13 +61,14 @@ const wchar_t* menu_item_label(MenuItem item) noexcept {
     case MenuItem::undo: return L"Undo (when available)";
     case MenuItem::fb2k_menu: return L"foobar2000 submenu (files)";
     case MenuItem::explorer_menu: return L"Explorer submenu";
+    case MenuItem::favourite: return L"Add to / Remove from favourites";
     }
     return L"";
 }
 
 MenuLayout MenuLayout::defaults() noexcept {
     MenuLayout out;
-    for (std::size_t i = 0; i < menu_item_count; ++i) out.order[i] = static_cast<MenuItem>(i);
+    out.order = default_order;
     return out;
 }
 
@@ -88,11 +108,12 @@ MenuLayout MenuLayout::decode(std::wstring_view text) {
         if (hidden) out.hidden |= 1u << value;
     }
     // Items the text did not mention: insert each after its default predecessor, else first.
-    for (unsigned value = 0; value < menu_item_count; ++value) {
+    for (const MenuItem missing : default_order) {
+        const auto value = static_cast<unsigned>(missing);
         if ((seen & (1u << value)) != 0) continue;
         std::size_t at = 0;
         for (std::size_t i = 0; i < count; ++i) {
-            if (static_cast<unsigned>(out.order[i]) < value) at = i + 1;
+            if (default_rank(out.order[i]) < default_rank(missing)) at = i + 1;
         }
         std::move_backward(out.order.begin() + static_cast<std::ptrdiff_t>(at),
                            out.order.begin() + static_cast<std::ptrdiff_t>(count),
@@ -116,11 +137,16 @@ void Settings::sanitize() noexcept {
     files = clamp_enum(files, fs::FileMode::none);
     filter_box = clamp_enum(filter_box, FilterBox::off);
     startup = clamp_enum(startup, Startup::folder);
+    favourites_place = clamp_enum(favourites_place, FavouritesPlace::after);
+    favourites = split_paths(join_paths(favourites));
 }
 
 std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
     std::uint32_t out = 0;
-    if (a.hidden_drives != b.hidden_drives) out |= change_roots;
+    if (a.hidden_drives != b.hidden_drives || a.favourites != b.favourites ||
+        a.favourites_place != b.favourites_place) {
+        out |= change_roots;
+    }
     if (a.lines != b.lines || a.line_thickness != b.line_thickness ||
         a.line_custom_colour != b.line_custom_colour || a.line_colour != b.line_colour ||
         a.line_opacity != b.line_opacity || a.extensions != b.extensions) {
@@ -139,5 +165,42 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
     return out;
 }
 
-} // namespace filetree::settings
+std::wstring clean_path(std::wstring_view path) {
+    while (!path.empty() && (path.front() == L' ' || path.front() == L'"')) path.remove_prefix(1);
+    while (!path.empty() && (path.back() == L' ' || path.back() == L'"')) path.remove_suffix(1);
+    std::wstring out(path);
+    std::replace(out.begin(), out.end(), L'/', L'\\');
+    while (out.size() > 1 && out.back() == L'\\' && !(out.size() == 3 && out[1] == L':')) {
+        out.pop_back();
+    }
+    if (out.size() == 2 && out[1] == L':') out.push_back(L'\\');
+    return out;
+}
 
+std::wstring join_paths(const std::vector<std::wstring>& paths) {
+    std::wstring out;
+    for (const std::wstring& path : paths) {
+        if (path.empty() || path.find(L'|') != std::wstring::npos) continue;
+        if (!out.empty()) out.push_back(L'|');
+        out += path;
+    }
+    return out;
+}
+
+std::vector<std::wstring> split_paths(std::wstring_view text) {
+    std::vector<std::wstring> out;
+    while (!text.empty()) {
+        const std::size_t bar = text.find(L'|');
+        std::wstring path = clean_path(text.substr(0, bar));
+        text.remove_prefix(bar == std::wstring_view::npos ? text.size() : bar + 1);
+        if (path.empty()) continue;
+        const bool repeated = std::any_of(out.begin(), out.end(), [&](const std::wstring& seen) {
+            return CompareStringOrdinal(seen.c_str(), static_cast<int>(seen.size()), path.c_str(),
+                                        static_cast<int>(path.size()), TRUE) == CSTR_EQUAL;
+        });
+        if (!repeated) out.push_back(std::move(path));
+    }
+    return out;
+}
+
+} // namespace filetree::settings

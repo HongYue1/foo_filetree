@@ -73,12 +73,23 @@ void TreeView::populate_roots() {
     ++generation_;
     tree_.clear();
     pending_select_ = {};
-    const std::uint32_t hidden = settings::current().hidden_drives;
+    const settings::Settings& s = settings::current();
+    // Favourites are not checked here (a network path could stall the UI); one that is gone
+    // shows the load error when opened.
+    const auto add_favourites = [&] {
+        for (const std::wstring& path : s.favourites) {
+            tree_.add_root(path, FILE_ATTRIBUTE_DIRECTORY, model::node_favourite);
+        }
+    };
+    if (s.favourites_place == settings::FavouritesPlace::before) add_favourites();
     for (const std::wstring& root : fs::drive_roots()) {
         const wchar_t letter = root.empty() ? L'\0' : static_cast<wchar_t>(towupper(root[0]));
-        if (letter >= L'A' && letter <= L'Z' && (hidden & (1u << (letter - L'A'))) != 0) continue;
+        if (letter >= L'A' && letter <= L'Z' && (s.hidden_drives & (1u << (letter - L'A'))) != 0) {
+            continue;
+        }
         tree_.add_root(root);
     }
+    if (s.favourites_place == settings::FavouritesPlace::after) add_favourites();
     selected_row_ = hover_row_ = -1;
     top_row_ = 0;
     filter_hidden_selection_ = model::no_node;

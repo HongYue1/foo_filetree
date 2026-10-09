@@ -24,13 +24,14 @@ void Tree::clear() noexcept {
     names_.clear();
 }
 
-std::uint32_t Tree::add_root(std::wstring_view path, std::uint32_t attributes) {
+std::uint32_t Tree::add_root(std::wstring_view path, std::uint32_t attributes,
+                            std::uint16_t flags) {
     const auto index = static_cast<std::uint32_t>(nodes_.size());
     Node& node = nodes_.emplace_back();
     node.name = names_.intern(path);
     node.name_length = clamp16(path.size());
     node.attributes = attributes;
-    node.flags = node_container | node_root;
+    node.flags = static_cast<std::uint16_t>(node_container | node_root | flags);
     rows_.push_back(index);
     return index;
 }

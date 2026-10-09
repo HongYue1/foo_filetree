@@ -10,6 +10,7 @@
 #define IDD_TAB_FILTER 104
 #define IDD_TAB_ACTIONS 105
 #define IDD_TAB_MENU 106
+#define IDD_TAB_FAVOURITES 107
 
 #define IDC_TABS 1000
 #define IDC_PAGE_HOST 1001
@@ -57,3 +58,10 @@
 #define IDC_MENU_DOWN 1062
 #define IDC_MENU_SHOW 1063
 
+// Favourites tab
+#define IDC_FAV_LIST 1070
+#define IDC_FAV_ADD 1071
+#define IDC_FAV_REMOVE 1072
+#define IDC_FAV_UP 1073
+#define IDC_FAV_DOWN 1074
+#define IDC_FAV_PLACE 1075

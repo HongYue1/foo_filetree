@@ -153,3 +153,20 @@ BEGIN
     LTEXT           "Separators are added between groups automatically. Undo only appears when there is something to undo.",IDC_STATIC,12,191,226,16
 END
 
+IDD_TAB_FAVOURITES DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Favourites",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LTEXT           "Folders shown as roots in every Folder Tree panel, in this order:",IDC_STATIC,12,21,281,8
+    LISTBOX         IDC_FAV_LIST,12,32,226,130,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Add...",IDC_FAV_ADD,243,32,50,14
+    PUSHBUTTON      "Remove",IDC_FAV_REMOVE,243,48,50,14
+    PUSHBUTTON      "Move up",IDC_FAV_UP,243,68,50,14
+    PUSHBUTTON      "Move down",IDC_FAV_DOWN,243,84,50,14
+    LTEXT           "Show them:",IDC_STATIC,12,170,70,8
+    COMBOBOX        IDC_FAV_PLACE,85,168,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Right-click a folder in the tree to add it or remove it.",IDC_STATIC,12,186,281,8
+END
+

@@ -25,9 +25,9 @@
 namespace filetree::prefs {
 namespace {
 
-constexpr int tab_count = 5;
-constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Display", L"Filter", L"Actions",
-                                                 L"Menu"};
+constexpr int tab_count = 6;
+constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Display", L"Filter",
+                                                 L"Actions", L"Menu",    L"Favourites"};
 
 //! Everything the page edits, so "changed?" is one comparison.
 struct PageState {
@@ -108,6 +108,11 @@ public:
         COMMAND_HANDLER_EX(IDC_MENU_UP, BN_CLICKED, on_menu_move)
         COMMAND_HANDLER_EX(IDC_MENU_DOWN, BN_CLICKED, on_menu_move)
         COMMAND_HANDLER_EX(IDC_MENU_SHOW, BN_CLICKED, on_menu_show)
+        COMMAND_HANDLER_EX(IDC_FAV_LIST, LBN_SELCHANGE, on_fav_select)
+        COMMAND_HANDLER_EX(IDC_FAV_ADD, BN_CLICKED, on_fav_add)
+        COMMAND_HANDLER_EX(IDC_FAV_REMOVE, BN_CLICKED, on_fav_remove)
+        COMMAND_HANDLER_EX(IDC_FAV_UP, BN_CLICKED, on_fav_move)
+        COMMAND_HANDLER_EX(IDC_FAV_DOWN, BN_CLICKED, on_fav_move)
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, on_changed)
         COMMAND_CODE_HANDLER_EX(BN_CLICKED, on_changed)
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, on_changed)
@@ -122,6 +127,7 @@ private:
                    {L"In the address bar", L"Floating over the tree", L"Off"});
         fill_combo(page, IDC_STARTUP,
                    {L"Restore the last state", L"All folders closed", L"Open this folder:"});
+        fill_combo(page, IDC_FAV_PLACE, {L"Before the drives", L"After the drives"});
         fill_combo(page, IDC_LINES, {L"None", L"Connector lines", L"Indentation guides"});
         fill_combo(page, IDC_EXTENSIONS,
                    {L"Always show", L"Never show", L"Hide for playable files"});
@@ -286,6 +292,74 @@ private:
         draw_swatch(*item, parse_hex(get_text(m_hWnd, IDC_LINE_HEX), settings::stored().line_colour));
     }
 
+    // --- Favourites tab: the list is edited in favourites_. ---
+
+    void show_fav_list(int select) {
+        const HWND list = find_control(m_hWnd, IDC_FAV_LIST);
+        if (list == nullptr) return;
+        ::SendMessageW(list, LB_RESETCONTENT, 0, 0);
+        int widest = 0;
+        HDC dc = ::GetDC(list);
+        const auto font = reinterpret_cast<HGDIOBJ>(::SendMessageW(list, WM_GETFONT, 0, 0));
+        const HGDIOBJ old = ::SelectObject(dc, font);
+        for (const std::wstring& path : favourites_) {
+            ::SendMessageW(list, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(path.c_str()));
+            SIZE size{};
+            ::GetTextExtentPoint32W(dc, path.c_str(), static_cast<int>(path.size()), &size);
+            widest = std::max(widest, static_cast<int>(size.cx));
+        }
+        ::SelectObject(dc, old);
+        ::ReleaseDC(list, dc);
+        ::SendMessageW(list, LB_SETHORIZONTALEXTENT, static_cast<WPARAM>(widest + 8), 0);
+        select = std::min(select, static_cast<int>(favourites_.size()) - 1);
+        ::SendMessageW(list, LB_SETCURSEL, static_cast<WPARAM>(select), 0);
+        on_fav_select(0, 0, nullptr);
+    }
+
+    [[nodiscard]] int fav_selection() const {
+        const auto index = static_cast<int>(
+            ::SendMessageW(find_control(m_hWnd, IDC_FAV_LIST), LB_GETCURSEL, 0, 0));
+        return index >= 0 && index < static_cast<int>(favourites_.size()) ? index : -1;
+    }
+
+    void on_fav_select(UINT, int, CWindow) {
+        const int index = fav_selection();
+        enable(m_hWnd, IDC_FAV_REMOVE, index >= 0);
+        enable(m_hWnd, IDC_FAV_UP, index > 0);
+        enable(m_hWnd, IDC_FAV_DOWN,
+               index >= 0 && index + 1 < static_cast<int>(favourites_.size()));
+    }
+
+    void on_fav_add(UINT, int id, CWindow) {
+        std::wstring path;
+        if (!pick_folder(m_hWnd, path)) return;
+        std::vector<std::wstring> next = favourites_;
+        next.push_back(path);
+        next = settings::split_paths(settings::join_paths(next)); // cleans, drops a repeat
+        if (next == favourites_) return;
+        favourites_ = std::move(next);
+        show_fav_list(static_cast<int>(favourites_.size()) - 1);
+        on_changed(0, id, nullptr);
+    }
+
+    void on_fav_remove(UINT, int id, CWindow) {
+        const int index = fav_selection();
+        if (index < 0) return;
+        favourites_.erase(favourites_.begin() + index);
+        show_fav_list(index);
+        on_changed(0, id, nullptr);
+    }
+
+    void on_fav_move(UINT, int id, CWindow) {
+        const int index = fav_selection();
+        const int target = id == IDC_FAV_UP ? index - 1 : index + 1;
+        if (index < 0 || target < 0 || target >= static_cast<int>(favourites_.size())) return;
+        std::swap(favourites_[static_cast<std::size_t>(index)],
+                  favourites_[static_cast<std::size_t>(target)]);
+        show_fav_list(target);
+        on_changed(0, id, nullptr);
+    }
+
     // --- Menu tab: the layout is edited in menu_ and shown in the list box. ---
 
     void show_menu_list(int select) {
@@ -400,6 +474,9 @@ private:
         s.never_show = get_text(page, IDC_NEVER_SHOW);
         s.hide_patterns = get_text(page, IDC_HIDE_PATTERNS);
         s.menu = menu_;
+        s.favourites = favourites_;
+        s.favourites_place =
+            static_cast<settings::FavouritesPlace>(get_combo(page, IDC_FAV_PLACE, 0));
         s.sanitize();
 
         for (std::size_t g = 0; g < actions::gesture_count; ++g) {
@@ -452,7 +529,10 @@ private:
             set_combo(page, id + 1, static_cast<int>(actions::preset_index(binding.file, false)));
         }
         menu_ = s.menu;
+        favourites_ = s.favourites;
+        set_combo(page, IDC_FAV_PLACE, static_cast<int>(s.favourites_place));
         show_menu_list(std::max(menu_selection(), 0));
+        show_fav_list(std::max(fav_selection(), 0));
         ::InvalidateRect(find_control(page, IDC_LINE_SWATCH), nullptr, FALSE);
         updating_ = false;
         update_enabled();
@@ -464,6 +544,7 @@ private:
     const preferences_page_callback::ptr callback_;
     std::array<HWND, tab_count> tabs_{};
     settings::MenuLayout menu_{settings::MenuLayout::defaults()};
+    std::vector<std::wstring> favourites_;
     bool initialised_{false};
     bool updating_{false};
     // A member: it hooks this dialog and its controls for the lifetime of both.

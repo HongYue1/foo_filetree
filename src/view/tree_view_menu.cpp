@@ -25,11 +25,24 @@ enum MenuId : UINT {
     id_delete,
     id_refresh,
     id_undo,
+    id_favourite,
     // Empty-area menu.
     id_refresh_all,
     id_collapse_all,
     id_preferences,
 };
+
+//! Index of `path` in the favourites list (case-insensitive, as NTFS), or -1.
+int favourite_index(const std::vector<std::wstring>& list, std::wstring_view path) {
+    const std::wstring clean = settings::clean_path(path);
+    for (std::size_t i = 0; i < list.size(); ++i) {
+        if (CompareStringOrdinal(list[i].c_str(), static_cast<int>(list[i].size()), clean.c_str(),
+                                 static_cast<int>(clean.size()), TRUE) == CSTR_EQUAL) {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
 
 } // namespace
 
@@ -93,6 +106,7 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             using settings::MenuItem;
             if (item == MenuItem::undo && undo_.kind == UndoRecord::Kind::none) continue;
             if (item == MenuItem::fb2k_menu && folder) continue;
+            if (item == MenuItem::favourite && !folder) continue;
             const int group = settings::menu_group(item);
             if (last_group >= 0 && group != last_group) AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
             last_group = group;
@@ -118,6 +132,12 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
                 AppendMenuW(menu, MF_STRING | root_flags, id_delete, L"Delete\tDel");
                 break;
             case MenuItem::refresh: AppendMenuW(menu, MF_STRING, id_refresh, L"Refresh\tF5"); break;
+            case MenuItem::favourite: {
+                const bool listed = favourite_index(settings::current().favourites, path) >= 0;
+                AppendMenuW(menu, MF_STRING, id_favourite,
+                            listed ? L"Remove from favourites" : L"Add to favourites");
+                break;
+            }
             case MenuItem::undo: {
                 const bool rename = undo_.kind == UndoRecord::Kind::rename;
                 std::wstring label = rename ? L"Undo rename of \"" + undo_.old_name + L"\""
@@ -232,7 +252,25 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
     case id_delete: delete_node(node, GetKeyState(VK_SHIFT) < 0); break;
     case id_refresh: refresh_open_folders(); break;
     case id_undo: undo(); break;
+    case id_favourite: toggle_favourite(node); break;
     default: break;
+    }
+}
+
+void TreeView::toggle_favourite(std::uint32_t node) noexcept {
+    try {
+        std::wstring path;
+        tree_.build_path(node, path);
+        settings::Settings next = settings::stored();
+        if (const int index = favourite_index(next.favourites, path); index >= 0) {
+            next.favourites.erase(next.favourites.begin() + index);
+        } else {
+            next.favourites.push_back(settings::clean_path(path));
+        }
+        // Every panel rebuilds its roots (relist_all keeps what is open and selected). `node`
+        // is not valid afterwards.
+        settings::apply(std::move(next));
+    } catch (...) {
     }
 }
 

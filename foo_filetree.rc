@@ -82,14 +82,14 @@ BEGIN
     LTEXT           "File extensions:",IDC_STATIC,12,128,70,8
     COMBOBOX        IDC_EXTENSIONS,85,126,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-    CONTROL         "File and folder icons",IDC_SHOW_ICONS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,143,100,10
-    LTEXT           "Icon size:",IDC_STATIC,190,144,40,8
-    EDITTEXT        IDC_ICON_SIZE,232,142,20,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "px (12-24)",IDC_STATIC,255,144,38,8
-    CONTROL         "Star favourite folders",IDC_MARK_FAVOURITES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,157,100,10
-    LTEXT           "Mark size:",IDC_STATIC,190,158,40,8
-    EDITTEXT        IDC_MARK_SIZE,232,156,20,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "px (8-16)",IDC_STATIC,255,158,38,8
+    CONTROL         "File and folder icons",IDC_SHOW_ICONS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,143,92,10
+    LTEXT           "Icon size (12-24):",IDC_STATIC,180,144,74,8
+    EDITTEXT        IDC_ICON_SIZE,256,142,20,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "px",IDC_STATIC,279,144,14,8
+    CONTROL         "Star favourite folders",IDC_MARK_FAVOURITES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,157,92,10
+    LTEXT           "Star && play size (8-16):",IDC_STATIC,180,158,74,8
+    EDITTEXT        IDC_MARK_SIZE,256,156,20,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "px",IDC_STATIC,279,158,14,8
     CONTROL         "Mark the playing track (or its closed folder)",IDC_MARK_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,171,208,10
 
     LTEXT           "Sorting",IDC_STATIC,7,188,286,8

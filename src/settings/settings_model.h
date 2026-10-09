@@ -99,7 +99,7 @@ struct Settings {
     bool mark_favourites{true}; //!< a star after folders that are in the favourites
     bool mark_playing{true};    //!< a play mark on the playing file, or its folder if closed
     int icon_size{16};          //!< file / folder icon size in DIP, 12-24
-    int mark_size{10};          //!< star / play mark size in DIP, 8-16
+    int mark_size{12};          //!< star / play mark size in DIP, 8-16
     model::SortOptions sort{};
 
     // Filter

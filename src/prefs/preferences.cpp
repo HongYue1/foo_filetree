@@ -348,6 +348,8 @@ private:
                             static_cast<int>(settings::Startup::folder);
         enable(page, IDC_STARTUP_FOLDER, folder);
         enable(page, IDC_STARTUP_BROWSE, folder);
+        const bool drives = get_check(page, IDC_DRIVES_LABEL);
+        for (int letter = 0; letter < 26; ++letter) enable(page, IDC_DRIVE_FIRST + letter, drives);
     }
 
     void on_startup_browse(UINT, int, CWindow) {
@@ -359,6 +361,7 @@ private:
         const HWND page = m_hWnd;
         PageState state = stored_state();
         settings::Settings& s = state.settings;
+        s.show_drives = get_check(page, IDC_DRIVES_LABEL);
         for (int letter = 0; letter < 26; ++letter) {
             if (find_control(page, IDC_DRIVE_FIRST + letter) == nullptr) continue;
             const std::uint32_t bit = 1u << letter;
@@ -429,6 +432,7 @@ private:
         updating_ = true;
         const HWND page = m_hWnd;
         const settings::Settings& s = state.settings;
+        set_check(page, IDC_DRIVES_LABEL, s.show_drives);
         for (int letter = 0; letter < 26; ++letter) {
             set_check(page, IDC_DRIVE_FIRST + letter, (s.hidden_drives & (1u << letter)) == 0);
         }

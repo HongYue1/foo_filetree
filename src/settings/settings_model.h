@@ -85,6 +85,7 @@ struct MenuLayout {
 
 struct Settings {
     // General
+    bool show_drives{true};         //!< off: only the favourites (and library folders) are roots
     std::uint32_t hidden_drives{0}; //!< bit 0 = A: ... bit 25 = Z:
     bool show_address_bar{true};
     FilterBox filter_box{FilterBox::floating};

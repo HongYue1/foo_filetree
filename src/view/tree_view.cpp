@@ -133,12 +133,14 @@ void TreeView::populate_roots() {
         }
     };
     if (s.favourites_place == settings::FavouritesPlace::before) add_favourites();
-    for (const std::wstring& root : fs::drive_roots()) {
-        const wchar_t letter = root.empty() ? L'\0' : static_cast<wchar_t>(towupper(root[0]));
-        if (letter >= L'A' && letter <= L'Z' && (s.hidden_drives & (1u << (letter - L'A'))) != 0) {
-            continue;
+    if (s.show_drives) {
+        for (const std::wstring& root : fs::drive_roots()) {
+            const wchar_t letter = root.empty() ? L'\0' : static_cast<wchar_t>(towupper(root[0]));
+            const bool hidden = letter >= L'A' && letter <= L'Z' &&
+                                (s.hidden_drives & (1u << (letter - L'A'))) != 0;
+            if (hidden) continue;
+            tree_.add_root(root);
         }
-        tree_.add_root(root);
     }
     if (s.favourites_place == settings::FavouritesPlace::after) add_favourites();
     boundary_node_ = model::no_node;

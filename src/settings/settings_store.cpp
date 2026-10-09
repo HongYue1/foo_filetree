@@ -50,8 +50,9 @@ constexpr GUID guid_zebra = {0xddfc1742, 0x6710, 0x41d8, {0xba, 0xf8, 0x7f, 0x9a
 constexpr GUID guid_show_status_bar = {0xc6839425, 0x8ba9, 0x4642, {0xbc, 0x2d, 0x23, 0xd0, 0x01, 0x81, 0x9b, 0x5a}};
 constexpr GUID guid_status_counters = {0xfaa522ce, 0xe123, 0x4ebb, {0x9b, 0xc2, 0xb0, 0xd1, 0x17, 0xbe, 0x63, 0xe8}};
 constexpr GUID guid_transparent = {0xbe4faf12, 0x9724, 0x40f9, {0x85, 0x9d, 0xa3, 0x52, 0x48, 0x62, 0x9c, 0x24}};
-// Hidden folders.
+// Hidden folders, drives switch.
 constexpr GUID guid_hidden_folders = {0x94af8dbf, 0xe2c8, 0x4114, {0x9f, 0xbf, 0x75, 0x89, 0x6e, 0xbd, 0xbb, 0xe2}};
+constexpr GUID guid_show_drives = {0x29230d09, 0x9a45, 0x4730, {0x80, 0x37, 0x15, 0x36, 0x6a, 0x98, 0x76, 0xf8}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
 using cfg_int = cfg_var_modern::cfg_int;
@@ -61,6 +62,7 @@ using cfg_string = cfg_var_modern::cfg_string;
 const Settings defaults{};
 
 cfg_int cfg_hidden_drives(guid_hidden_drives, 0);
+cfg_bool cfg_show_drives(guid_show_drives, defaults.show_drives);
 cfg_int cfg_lines(guid_lines, static_cast<int>(defaults.lines));
 cfg_int cfg_line_thickness(guid_line_thickness, defaults.line_thickness);
 cfg_bool cfg_line_custom(guid_line_custom, defaults.line_custom_colour);
@@ -127,6 +129,7 @@ int as_int(std::int64_t value) {
 
 Settings load() {
     Settings s;
+    s.show_drives = cfg_show_drives.get();
     s.hidden_drives = static_cast<std::uint32_t>(cfg_hidden_drives.get());
     s.lines = as_enum<TreeLines>(cfg_lines.get());
     s.line_thickness = as_int(cfg_line_thickness.get());
@@ -172,6 +175,7 @@ Settings load() {
 }
 
 void save(const Settings& s) {
+    cfg_show_drives.set(s.show_drives);
     cfg_hidden_drives.set(s.hidden_drives);
     cfg_lines.set(static_cast<int>(s.lines));
     cfg_line_thickness.set(s.line_thickness);

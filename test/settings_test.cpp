@@ -143,6 +143,12 @@ void test_settings_model() {
     b.hide_patterns = L"x";
     CHECK(diff(a, b) == change_relist);
     b = a;
+    b.hidden_folders.pop_back();
+    CHECK(diff(a, b) == change_relist);
+    b = a;
+    b.show_drives = false;
+    CHECK(diff(a, b) == change_roots);
+    b = a;
     b.lines = TreeLines::guides;
     b.hidden_drives = 1;
     CHECK(diff(a, b) == (change_repaint | change_roots));

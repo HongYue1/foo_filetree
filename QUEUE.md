@@ -153,9 +153,10 @@ README + release notes. Fonts tab: see M8f.
 
 User test list (after dinner), in order: M7d multi-select fixes (soft focus frame only after keyboard use; undo after deleting several items), M8a View tab (tooltips 3 modes, hover highlight off, zebra), M8b status bar (View tab; counts for a folder, a file, several selected; listing state; tooltip counters; DPI move; dark mode), M8c screen reader (Narrator Ctrl+Win+Enter: names, level, expanded / collapsed, selection, moving with arrows), M8d/M8e: install dist/foo_filetree.fb2k-component via Preferences > Components (x64; x86 if a 32-bit foobar2000 is at hand).
 
-## User test of the whole component (2026-10-09): all sections pass. Follow-ups (built, awaiting retest)
+## User test of the whole component (2026-10-09): all sections pass. Follow-ups (user-retested OK)
 - [x] Transparent background (View tab, `transparent`, default off): tree rows in the plain background colour and the status bar draw the parent's background (DrawThemeParentBackground into the back buffer, after a background-colour fill as fallback); Panel forwards WM_ERASEBKGND / WM_PRINTCLIENT from its children to its own parent; scrolling repaints instead of ScrollWindowEx. Address bar and filter box stay opaque. Unverified which CUI / DUI containers paint for WM_PRINTCLIENT (if none, it looks opaque).
 - [x] Tree line colour radios: the opacity EDIT (WS_GROUP) sat between the two auto radios, splitting their group, so both could be checked and Apply kept Custom. The radios are now consecutive in the .rc.
 - [x] "Select each new track" -> "Follow the playing track". Actions hint: Shift / Ctrl apply to Enter and middle click. Filter hint: "Separate patterns with semicolons". Menu tab: list shows whole rows only (no LBS_NOINTEGRALHEIGHT), checkbox "Show this item in the menu". Drive labels "C: (local)" (one space).
-- [ ] Favourites "shared between panels on restart": favourites are global by design (Preferences says "every Folder Tree panel"); asked the user whether they want per-panel favourites.
+- [x] Favourites "shared between panels on restart": global by design (Preferences says "every Folder Tree panel"); user: keep as is.
+- [x] Retest (user): all settings tabs reviewed in dark mode, look right. Transparent on in CUI looks the same as off: CUI containers paint a plain colour behind panels, so there is nothing different to show through; expected.
 - Date sort is already oldest -> newest (Reverse flips it); it sorts by last-modified time, which for a folder changes whenever its contents change.

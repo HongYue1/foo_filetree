@@ -115,6 +115,9 @@ private:
         int icon{};         //!< icon glyph box (square); 0 without an icon font
         int icon_width{};   //!< icon column before the text, gap included; 0 with icons off
         int group_gap{};    //!< space between the favourites and the drives
+        int icon_raise{};   //!< px the icons are drawn above the row centre (setting)
+        int star_top{};     //!< row-relative top of the star mark's cell: ink centred on the
+        int play_top{};     //!< text's capital letters, then raised by the setting
     };
 
     // tree_view.cpp
@@ -132,6 +135,7 @@ private:
     void apply_restore_top() noexcept;
     [[nodiscard]] std::wstring upper_path(std::uint32_t node) const;
     void remeasure() noexcept;
+    void measure_marks(const TEXTMETRICW& text) noexcept;
     void rebuild_font() noexcept;
     void update_scrollbar() noexcept;
     [[nodiscard]] int visible_rows() const noexcept;

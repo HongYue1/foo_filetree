@@ -18,6 +18,8 @@ constexpr GUID guid_line_colour = {0x27d93641, 0x9833, 0x4832, {0x85, 0x99, 0xb0
 constexpr GUID guid_line_opacity = {0x67983199, 0x9897, 0x462e, {0xb9, 0x52, 0xe3, 0x04, 0x3a, 0x28, 0x6c, 0xec}};
 constexpr GUID guid_extensions = {0xabb77538, 0x675c, 0x41aa, {0xa9, 0xa7, 0x92, 0x51, 0x61, 0xec, 0x3f, 0xfa}};
 constexpr GUID guid_row_padding = {0xb20e2006, 0xcedb, 0x4c4e, {0xb1, 0x17, 0x67, 0x7b, 0x90, 0x62, 0x04, 0xc6}};
+constexpr GUID guid_icon_raise = {0x1a91fce5, 0x78e2, 0x47de, {0x98, 0xaa, 0xba, 0xa2, 0x70, 0x32, 0x61, 0x25}};
+constexpr GUID guid_mark_raise = {0xb9cccaa3, 0x3182, 0x40e7, {0x8c, 0xa9, 0x20, 0xc3, 0x7f, 0x69, 0x79, 0xf2}};
 constexpr GUID guid_sort_field = {0xd7a147e7, 0xdcc5, 0x4b0a, {0x80, 0xe8, 0x33, 0xd7, 0xa7, 0x1c, 0x62, 0xce}};
 constexpr GUID guid_folders_first = {0x953a2cf0, 0x0248, 0x4ed2, {0x95, 0xd6, 0xc6, 0x8a, 0xa3, 0xcb, 0xe5, 0x9e}};
 constexpr GUID guid_sort_reverse = {0x4e371dd4, 0x7d03, 0x4e94, {0x83, 0xc6, 0x31, 0x07, 0xf9, 0x2b, 0x23, 0x25}};
@@ -55,6 +57,8 @@ cfg_int cfg_line_colour(guid_line_colour, static_cast<int>(defaults.line_colour)
 cfg_int cfg_line_opacity(guid_line_opacity, defaults.line_opacity);
 cfg_int cfg_extensions(guid_extensions, static_cast<int>(defaults.extensions));
 cfg_int cfg_row_padding(guid_row_padding, defaults.row_padding);
+cfg_int cfg_icon_raise(guid_icon_raise, defaults.icon_raise);
+cfg_int cfg_mark_raise(guid_mark_raise, defaults.mark_raise);
 cfg_int cfg_sort_field(guid_sort_field, static_cast<int>(defaults.sort.field));
 cfg_bool cfg_folders_first(guid_folders_first, defaults.sort.folders_first);
 cfg_bool cfg_sort_reverse(guid_sort_reverse, defaults.sort.reverse);
@@ -110,6 +114,8 @@ Settings load() {
     s.line_opacity = as_int(cfg_line_opacity.get());
     s.extensions = as_enum<Extensions>(cfg_extensions.get());
     s.row_padding = as_int(cfg_row_padding.get());
+    s.icon_raise = as_int(cfg_icon_raise.get());
+    s.mark_raise = as_int(cfg_mark_raise.get());
     s.sort.field = as_enum<model::SortField>(cfg_sort_field.get());
     s.sort.folders_first = cfg_folders_first.get();
     s.sort.reverse = cfg_sort_reverse.get();
@@ -145,6 +151,8 @@ void save(const Settings& s) {
     cfg_line_opacity.set(s.line_opacity);
     cfg_extensions.set(static_cast<int>(s.extensions));
     cfg_row_padding.set(s.row_padding);
+    cfg_icon_raise.set(s.icon_raise);
+    cfg_mark_raise.set(s.mark_raise);
     cfg_sort_field.set(static_cast<int>(s.sort.field));
     cfg_folders_first.set(s.sort.folders_first);
     cfg_sort_reverse.set(s.sort.reverse);

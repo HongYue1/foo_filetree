@@ -284,7 +284,46 @@ void TreeView::remeasure() noexcept {
         if (icon_font_ == nullptr) metrics_.icon = 0;
     }
     if (show_icons_ && icon_font_ != nullptr) metrics_.icon_width = metrics_.icon + scale(4, dpi);
+    metrics_.icon_raise = scale(settings::current().icon_raise, dpi);
+    measure_marks(tm);
     metrics_.group_gap = scale(settings::current().favourites_gap, dpi);
+}
+
+void TreeView::measure_marks(const TEXTMETRICW& text) noexcept {
+    // DrawText's DT_VCENTER centres the font's cell, but icon glyphs sit anywhere in it (the play
+    // triangle is low). Place each mark by its ink instead: centred on the capitals of the text.
+    HDC dc = GetDC(wnd_);
+    if (dc == nullptr) return;
+    const HGDIOBJ old = SelectObject(dc, font_ != nullptr ? font_ : GetStockObject(DEFAULT_GUI_FONT));
+    int cap = text.tmAscent - text.tmInternalLeading;
+    OUTLINETEXTMETRICW otm{};
+    otm.otmSize = sizeof(otm);
+    if (GetOutlineTextMetricsW(dc, sizeof(otm), &otm) != 0 && otm.otmsCapEmHeight > 0) {
+        cap = static_cast<int>(otm.otmsCapEmHeight);
+    }
+    const int baseline = (metrics_.row_height - text.tmHeight) / 2 + text.tmAscent;
+    const int target = baseline - cap / 2; // the capitals' centre, from the row top
+    const int raise = scale(settings::current().mark_raise, metrics_.dpi);
+    const auto top_for = [&](wchar_t ch, HFONT font) {
+        SelectObject(dc, font);
+        TEXTMETRICW tm{};
+        GetTextMetricsW(dc, &tm);
+        GLYPHMETRICS gm{};
+        const MAT2 identity{{0, 1}, {0, 0}, {0, 0}, {0, 1}};
+        int ink_centre = tm.tmAscent / 2; // above the baseline; a guess if the glyph is missing
+        if (GetGlyphOutlineW(dc, ch, GGO_METRICS, &gm, 0, nullptr, &identity) != GDI_ERROR) {
+            ink_centre = gm.gmptGlyphOrigin.y - static_cast<int>(gm.gmBlackBoxY) / 2;
+        }
+        // The cell top that puts the ink centre on the target.
+        return target - tm.tmAscent + ink_centre - raise;
+    };
+    const bool icons = icon_font_ != nullptr && mark_font_ != nullptr;
+    HFONT text_font = font_ != nullptr ? font_ : static_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));
+    metrics_.star_top = top_for(icons ? glyph::star : glyph::star_fallback, icons ? mark_font_ : text_font);
+    metrics_.play_top =
+        top_for(icons ? glyph::playing : glyph::playing_fallback, icons ? mark_font_ : text_font);
+    SelectObject(dc, old);
+    ReleaseDC(wnd_, dc);
 }
 
 // --- Geometry -------------------------------------------------------------------------------

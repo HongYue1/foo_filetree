@@ -199,10 +199,12 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     wchar_t marks[2];
     COLORREF mark_colours[2];
     HFONT mark_fonts[2];
+    int mark_tops[2];
     int mark_count = 0;
     if (mark_favourites_ && node.has(model::node_container) && is_favourite(index)) {
         marks[mark_count] = icon_font ? glyph::star : glyph::star_fallback;
         mark_fonts[mark_count] = icon_font && mark_font_ != nullptr ? mark_font_ : font_;
+        mark_tops[mark_count] = metrics_.star_top;
         mark_colours[mark_count++] = selected ? text : icon_colour_;
     }
     // With icons, the playing file's icon is the triangle (paint_icon); a closed folder holding
@@ -210,6 +212,7 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     if (playing != 0 && (playing == 1 || metrics_.icon_width == 0)) {
         marks[mark_count] = icon_font ? glyph::playing : glyph::playing_fallback;
         mark_fonts[mark_count] = icon_font && mark_font_ != nullptr ? mark_font_ : font_;
+        mark_tops[mark_count] = metrics_.play_top;
         // The file itself in the text colour, a closed folder holding it dimmer.
         mark_colours[mark_count++] = selected || playing == 2 ? text : icon_colour_;
     }
@@ -235,10 +238,12 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         if (marks_left > text_rect.left) {
             int left = marks_left;
             for (int i = 0; i < mark_count; ++i) {
-                RECT mark_rect{left, rect.top, text_rect.right, rect.bottom};
+                // Placed by measure_marks (ink centred on the text), so no DT_VCENTER.
+                RECT mark_rect{left, rect.top + mark_tops[i], text_rect.right,
+                               rect.bottom + metrics_.row_height};
                 SelectObject(dc, mark_fonts[i]);
                 SetTextColor(dc, mark_colours[i]);
-                DrawTextW(dc, &marks[i], 1, &mark_rect, DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
+                DrawTextW(dc, &marks[i], 1, &mark_rect, DT_SINGLELINE | DT_NOPREFIX);
                 left += widths[i] + gap;
             }
             SelectObject(dc, font_);
@@ -331,7 +336,8 @@ void TreeView::paint_icon(HDC dc, const model::Node& node, const RECT& rect, COL
         if (!extension.empty() && playable_->contains(extension)) icon = glyph::audio;
     }
     const int left = content_left(node.depth);
-    RECT box{left, rect.top, left + metrics_.icon, rect.bottom};
+    RECT box{left, rect.top - metrics_.icon_raise, left + metrics_.icon,
+             rect.bottom - metrics_.icon_raise};
     SelectObject(dc, icon_font_);
     SetTextColor(dc, colour);
     DrawTextW(dc, &icon, 1, &box, DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX);

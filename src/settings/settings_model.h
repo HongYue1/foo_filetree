@@ -97,7 +97,9 @@ struct Settings {
     int row_padding{3};     //!< DIP above and below the text, 0-12
     bool show_icons{false};     //!< folder / file / drive glyphs from the system icon font
     bool mark_favourites{true}; //!< a star after folders that are in the favourites
-    bool mark_playing{true};    //!< a speaker after the playing file, or its folder if closed
+    bool mark_playing{true};    //!< a play mark on the playing file, or its folder if closed
+    int icon_raise{0};          //!< DIP the file / folder icons are drawn higher, 0-6
+    int mark_raise{0};          //!< DIP the star / play marks are drawn higher, 0-6
     model::SortOptions sort{};
 
     // Filter

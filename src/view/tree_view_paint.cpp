@@ -173,8 +173,11 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         draw_expander(dc, cx, cy, metrics_.expander, open, colour);
     }
 
-    if (metrics_.icon_width > 0) paint_icon(dc, node, rect,
-                                             selected || index == cut_node_ ? text : icon_colour_);
+    const int playing = playing_mark(index);
+    if (metrics_.icon_width > 0) {
+        const bool strong = selected || index == cut_node_ || playing == 2;
+        paint_icon(dc, node, rect, strong ? text : icon_colour_, playing == 2);
+    }
 
     std::wstring_view name = model::display_name(node);
     if (extensions_ != settings::Extensions::always && !node.has(model::node_container)) {
@@ -190,7 +193,7 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     SetTextColor(dc, text);
     constexpr UINT format = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_END_ELLIPSIS;
 
-    // Marks after the name: the favourite star, the now playing speaker. A long name gives up
+    // Marks after the name: the favourite star, the now playing triangle. A long name gives up
     // room for them.
     const bool icon_font = icon_font_ != nullptr;
     wchar_t marks[2];
@@ -200,8 +203,10 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         marks[mark_count] = icon_font ? glyph::star : glyph::star_fallback;
         mark_colours[mark_count++] = selected ? text : icon_colour_;
     }
-    if (const int playing = playing_mark(index); playing != 0) {
-        marks[mark_count] = icon_font ? glyph::speaker : glyph::speaker_fallback;
+    // With icons, the playing file's icon is the triangle (paint_icon); a closed folder holding
+    // it, or any row without icons, gets it after the name.
+    if (playing != 0 && (playing == 1 || metrics_.icon_width == 0)) {
+        marks[mark_count] = icon_font ? glyph::playing : glyph::playing_fallback;
         // The file itself in the text colour, a closed folder holding it dimmer.
         mark_colours[mark_count++] = selected || playing == 2 ? text : icon_colour_;
     }
@@ -307,8 +312,8 @@ void TreeView::paint_lines(HDC dc, std::uint32_t index, const RECT& rect, bool e
     }
 }
 
-void TreeView::paint_icon(HDC dc, const model::Node& node, const RECT& rect,
-                          COLORREF colour) noexcept {
+void TreeView::paint_icon(HDC dc, const model::Node& node, const RECT& rect, COLORREF colour,
+                          bool playing) noexcept {
     wchar_t icon = glyph::document;
     if (node.has(model::node_root) && !node.has(model::node_favourite)) {
         icon = glyph::drive;
@@ -316,6 +321,8 @@ void TreeView::paint_icon(HDC dc, const model::Node& node, const RECT& rect,
         const bool open = node.has(model::node_expanded) && node.has(model::node_loaded) &&
                           node.child_count > 0;
         icon = open ? glyph::folder_open : glyph::folder;
+    } else if (playing) {
+        icon = glyph::playing;
     } else if (playable_ != nullptr) {
         const std::wstring_view extension = model::extension_of(node.name_view());
         if (!extension.empty() && playable_->contains(extension)) icon = glyph::audio;

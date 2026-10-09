@@ -17,8 +17,8 @@ inline constexpr wchar_t audio = 0xE8D6;
 inline constexpr wchar_t drive = 0xEDA2;
 inline constexpr wchar_t star = 0xE735;          //!< filled star (icon font)
 inline constexpr wchar_t star_fallback = 0x2605; //!< BLACK STAR, any UI font
-inline constexpr wchar_t speaker = 0xE767;          //!< Volume (icon font): now playing
-inline constexpr wchar_t speaker_fallback = 0x25B6; //!< BLACK RIGHT-POINTING TRIANGLE
+inline constexpr wchar_t playing = 0xF5B0;          //!< PlaySolid (icon font): now playing
+inline constexpr wchar_t playing_fallback = 0x25B6; //!< BLACK RIGHT-POINTING TRIANGLE
 } // namespace glyph
 
 } // namespace filetree::view

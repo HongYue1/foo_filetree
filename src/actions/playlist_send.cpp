@@ -53,6 +53,8 @@ void deliver(const Delivery& delivery, metadb_handle_list_cref items) {
         // Honours the user's "default action" (Play, unless they changed it). The direct
         // alternative, track_command_settrack, is marked internal in playback_control.h.
         pm->playlist_execute_default_action(playlist, base);
+    } else if (delivery.action.target == Target::new_playlist) {
+        pm->set_active_playlist(playlist); // a new playlist is only useful when you see it
     }
 }
 

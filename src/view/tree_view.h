@@ -153,7 +153,9 @@ private:
     [[nodiscard]] int row_top(std::size_t row) const noexcept;
     //! In the favourites list (a favourite root, or the same folder elsewhere in the tree).
     [[nodiscard]] bool is_favourite(std::uint32_t index) noexcept;
-    void paint_icon(HDC dc, const model::Node& node, const RECT& rect, COLORREF colour) noexcept;
+    //! `playing`: the playing file, drawn as the play triangle.
+    void paint_icon(HDC dc, const model::Node& node, const RECT& rect, COLORREF colour,
+                    bool playing) noexcept;
 
     void select_row(std::size_t row) noexcept;
     void toggle(std::uint32_t node) noexcept;

@@ -36,7 +36,8 @@ public:
                          filetree::view::Panel::class_styles, (-1));
 
     FolderTreeElement(ui_element_config::ptr config, ui_element_instance_callback_ptr callback)
-        : config_(config), m_callback(callback) {
+        : m_callback(callback) {
+        read_config(config);
         live_elements().push_back(this);
     }
 
@@ -66,10 +67,16 @@ public:
 
     HWND get_wnd() override { return *this; }
 
-    // Nothing is stored yet (M6 adds per-instance state); keep whatever the host gave us so a
-    // newer blob survives a round trip through this version.
-    void set_configuration(ui_element_config::ptr config) override { config_ = config; }
-    ui_element_config::ptr get_configuration() override { return config_; }
+    // Per-instance state (settings/panel_state.h). Taken from the live tree when there is one.
+    void set_configuration(ui_element_config::ptr config) override {
+        read_config(config);
+        if (m_hWnd != nullptr) view_.restore_state(state_);
+    }
+    ui_element_config::ptr get_configuration() override {
+        if (m_hWnd != nullptr) capture();
+        const std::string bytes = state_.encode();
+        return ui_element_config::g_create(g_get_guid(), bytes.data(), bytes.size());
+    }
 
     static GUID g_get_guid() { return filetree::guids::dui_element; }
     static GUID g_get_subclass() { return ui_element_subclass_utility; }
@@ -101,10 +108,32 @@ private:
                                 [this] { return m_callback->is_edit_mode_enabled(); }});
         apply_colours();
         apply_font();
+        view_.start(state_);
         return 0;
     }
 
-    void on_destroy() { view_.detach(); }
+    void on_destroy() {
+        capture();
+        view_.detach();
+    }
+
+    void read_config(const ui_element_config::ptr& config) noexcept {
+        state_ = {};
+        try {
+            if (config.is_valid() && config->get_data_size() != 0) {
+                state_ = filetree::settings::PanelState::decode(
+                    {static_cast<const char*>(config->get_data()), config->get_data_size()});
+            }
+        } catch (...) {
+        }
+    }
+
+    void capture() noexcept {
+        try {
+            view_.capture_state(state_);
+        } catch (...) {
+        }
+    }
 
     void apply_colours() {
         if (m_hWnd == nullptr) return;
@@ -134,7 +163,7 @@ private:
         }
     }
 
-    ui_element_config::ptr config_;
+    filetree::settings::PanelState state_;
     filetree::view::Panel view_;
 
 protected:

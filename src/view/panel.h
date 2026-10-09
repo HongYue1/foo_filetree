@@ -38,6 +38,12 @@ public:
     //! Call from the host's WM_DESTROY.
     void detach() noexcept;
 
+    //! After attach(): what to show first, by the Startup setting. `saved` is this instance's
+    //! stored state (empty for a new panel).
+    void start(const settings::PanelState& saved) noexcept;
+    void capture_state(settings::PanelState& out) const { tree_.capture_state(out); }
+    void restore_state(const settings::PanelState& state) noexcept { tree_.restore_state(state); }
+
     void set_colours(const ViewColours& colours) noexcept;
     //! A font as the host reports it, at system DPI.
     void set_font(const LOGFONTW& font) noexcept;

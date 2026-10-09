@@ -28,6 +28,8 @@ constexpr GUID guid_always_show = {0xfeb7d3e3, 0xe0dd, 0x4434, {0xbd, 0x6f, 0x92
 constexpr GUID guid_never_show = {0x50c7f182, 0x6ac2, 0x49e9, {0xba, 0x2d, 0x6f, 0x68, 0xaf, 0x30, 0x48, 0xd3}};
 constexpr GUID guid_hide_patterns = {0x262e73df, 0x1412, 0x4717, {0x96, 0x7e, 0xb6, 0x56, 0x4b, 0xd3, 0x0c, 0x87}};
 constexpr GUID guid_show_address_bar = {0x961ca913, 0xd41f, 0x43e8, {0x8b, 0x68, 0x5b, 0xd9, 0x1e, 0xbf, 0xff, 0x75}};
+constexpr GUID guid_startup = {0x038cf33e, 0xedf7, 0x4107, {0x9a, 0x4d, 0xd5, 0xb8, 0x93, 0xaf, 0x06, 0x17}};
+constexpr GUID guid_startup_folder = {0xb670a6f0, 0xb28a, 0x4770, {0xa4, 0x1b, 0x7e, 0xb5, 0x1f, 0xaf, 0xad, 0x2c}};
 constexpr GUID guid_filter_box = {0x95efa8c6, 0x13ae, 0x4993, {0xbf, 0xaf, 0x74, 0x7a, 0xeb, 0xa7, 0x74, 0xe3}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
@@ -57,6 +59,8 @@ cfg_string cfg_hide_patterns(guid_hide_patterns, "");
 cfg_string cfg_menu(guid_menu, "");
 cfg_bool cfg_show_address_bar(guid_show_address_bar, defaults.show_address_bar);
 cfg_int cfg_filter_box(guid_filter_box, static_cast<int>(defaults.filter_box));
+cfg_int cfg_startup(guid_startup, static_cast<int>(defaults.startup));
+cfg_string cfg_startup_folder(guid_startup_folder, "");
 
 std::optional<Settings> g_current; //!< saved
 std::optional<Settings> g_preview;
@@ -102,6 +106,8 @@ Settings load() {
     s.menu = MenuLayout::decode(wide(cfg_menu.get()));
     s.show_address_bar = cfg_show_address_bar.get();
     s.filter_box = as_enum<FilterBox>(cfg_filter_box.get());
+    s.startup = as_enum<Startup>(cfg_startup.get());
+    s.startup_folder = wide(cfg_startup_folder.get());
     s.sanitize();
     return s;
 }
@@ -127,6 +133,8 @@ void save(const Settings& s) {
     cfg_menu.set(utf8(s.menu.encode()));
     cfg_show_address_bar.set(s.show_address_bar);
     cfg_filter_box.set(static_cast<int>(s.filter_box));
+    cfg_startup.set(static_cast<int>(s.startup));
+    cfg_startup_folder.set(utf8(s.startup_folder));
 }
 
 std::shared_ptr<const model::FilterRules> build_rules(const Settings& s) {

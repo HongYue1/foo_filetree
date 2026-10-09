@@ -138,6 +138,7 @@
     <ClCompile Include="src\prefs\prefs_util.cpp" />
     <ClCompile Include="src\model\filter_rules.cpp" />
     <ClCompile Include="src\settings\settings_model.cpp" />
+    <ClCompile Include="src\settings\panel_state.cpp" />
     <ClCompile Include="src\settings\settings_store.cpp" />
     <ClCompile Include="src\view\tree_view_settings.cpp" />
     <ClCompile Include="src\actions\recycle_bin.cpp" />
@@ -183,6 +184,7 @@
     <ClInclude Include="src\actions\presets.h" />
     <ClInclude Include="src\model\filter_rules.h" />
     <ClInclude Include="src\settings\settings_model.h" />
+    <ClInclude Include="src\settings\panel_state.h" />
     <ClInclude Include="src\settings\settings_store.h" />
     <ClInclude Include="src\actions\recycle_bin.h" />
     <ClInclude Include="src\actions\shell_menu.h" />

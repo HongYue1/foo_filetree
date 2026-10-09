@@ -106,6 +106,7 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
         pending_select_.folder = merge.map(pending_select_.folder);
         undo_.folder = merge.map(undo_.folder);
         filter_hidden_selection_ = merge.map(filter_hidden_selection_);
+        restore_top_node_ = merge.map(restore_top_node_);
 
         // Keep the selection and the first visible row on the same items. A selected item that
         // disappeared hands the selection to the refreshed folder.

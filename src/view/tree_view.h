@@ -24,6 +24,7 @@
 #include "../fs/enumerate.h"
 #include "../fs/enumeration_service.h"
 #include "../model/tree.h"
+#include "../settings/panel_state.h"
 #include "../settings/settings_store.h"
 #include "theme.h"
 
@@ -67,6 +68,11 @@ public:
     //! Expands down to `path` (listing folders as needed) and selects it. False when no root
     //! holds the path or it is not an absolute path; nothing changes then.
     bool navigate_to(std::wstring_view path, bool expand_target) noexcept;
+    //! Per-instance state for the host to store: open folders, selection, first visible row.
+    //! Restores still waiting for a listing (an offline drive) are kept, so they survive.
+    void capture_state(settings::PanelState& out) const;
+    //! Reopens a captured state; folders open as their listings arrive.
+    void restore_state(const settings::PanelState& state) noexcept;
     //! Selects a visible node (an address bar crumb). Ignored if it is not visible.
     void select_node(std::uint32_t node) noexcept;
     void select_parent() noexcept;
@@ -105,6 +111,9 @@ private:
     void relist_all() noexcept;
     //! Expands / selects `node` if a pending restore wants it.
     void try_restore(std::uint32_t node);
+    //! Keeps restore_top_node_ as the first visible row until the restore finishes or the user
+    //! scrolls.
+    void apply_restore_top() noexcept;
     [[nodiscard]] std::wstring upper_path(std::uint32_t node) const;
     void remeasure() noexcept;
     void rebuild_font() noexcept;
@@ -247,6 +256,8 @@ private:
     // Restore after relist_all(): upper-cased paths still to expand, and the path to select.
     std::unordered_set<std::wstring> restore_expand_;
     std::wstring restore_select_;
+    std::wstring restore_top_;                  //!< restore_state: the row to show at the top
+    std::uint32_t restore_top_node_{model::no_node}; //!< found; kept on top while listings land
 
     // Context menu (tree_view_menu.cpp): set only while TrackPopupMenu runs.
     MenuSession* menu_{};

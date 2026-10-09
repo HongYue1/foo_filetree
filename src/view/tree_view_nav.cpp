@@ -127,4 +127,63 @@ bool TreeView::navigate_to(std::wstring_view input, bool expand_target) noexcept
     }
 }
 
+void TreeView::capture_state(settings::PanelState& out) const {
+    out = {};
+    std::wstring path;
+    for (const std::uint32_t node : tree_.rows()) {
+        const model::Node& n = tree_.node(node);
+        if (!n.has(model::node_container) || !n.has(model::node_expanded)) continue;
+        tree_.build_path(node, path);
+        out.expanded.push_back(path);
+    }
+    for (const std::wstring& pending : restore_expand_) out.expanded.push_back(pending);
+    if (selected_row_ >= 0 && static_cast<std::size_t>(selected_row_) < tree_.row_count()) {
+        tree_.build_path(tree_.node_at_row(static_cast<std::size_t>(selected_row_)), out.selected);
+    } else {
+        out.selected = restore_select_;
+    }
+    if (!restore_top_.empty()) {
+        out.top = restore_top_;
+    } else if (top_row_ < tree_.row_count()) {
+        tree_.build_path(tree_.node_at_row(top_row_), out.top);
+    }
+}
+
+void TreeView::restore_state(const settings::PanelState& state) noexcept {
+    try {
+        const auto upper = [](std::wstring text) {
+            if (!text.empty()) CharUpperBuffW(text.data(), static_cast<DWORD>(text.size()));
+            return text;
+        };
+        end_rename(false);
+        restore_expand_.clear();
+        for (const std::wstring& path : state.expanded) restore_expand_.insert(upper(path));
+        restore_select_ = upper(state.selected);
+        restore_top_ = upper(state.top);
+        restore_top_node_ = model::no_node;
+        for (std::uint32_t node = 0;
+             node < tree_.node_count() && tree_.node(node).has(model::node_root); ++node) {
+            try_restore(node);
+        }
+        apply_restore_top();
+    } catch (...) {
+        restore_expand_.clear();
+        restore_select_.clear();
+        restore_top_.clear();
+    }
+}
+
+void TreeView::apply_restore_top() noexcept {
+    if (restore_top_node_ == model::no_node) return;
+    if (const auto row = tree_.row_of(restore_top_node_)) {
+        const std::size_t top = std::min(*row, max_top_row());
+        if (top != top_row_) {
+            top_row_ = top;
+            update_scrollbar();
+            InvalidateRect(wnd_, nullptr, FALSE);
+        }
+    }
+    if (restore_expand_.empty() && restore_select_.empty()) restore_top_node_ = model::no_node;
+}
+
 } // namespace filetree::view

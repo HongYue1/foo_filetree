@@ -115,6 +115,7 @@ void Settings::sanitize() noexcept {
     sort.field = clamp_enum(sort.field, model::SortField::type);
     files = clamp_enum(files, fs::FileMode::none);
     filter_box = clamp_enum(filter_box, FilterBox::off);
+    startup = clamp_enum(startup, Startup::folder);
 }
 
 std::uint32_t diff(const Settings& a, const Settings& b) noexcept {

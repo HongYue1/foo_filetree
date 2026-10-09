@@ -103,6 +103,7 @@ public:
         MSG_WM_DESTROY(on_destroy)
         MESSAGE_HANDLER_EX(WM_NOTIFY, on_notify)
         COMMAND_HANDLER_EX(IDC_LINE_SWATCH, BN_CLICKED, on_swatch)
+        COMMAND_HANDLER_EX(IDC_STARTUP_BROWSE, BN_CLICKED, on_startup_browse)
         COMMAND_HANDLER_EX(IDC_MENU_LIST, LBN_SELCHANGE, on_menu_select)
         COMMAND_HANDLER_EX(IDC_MENU_UP, BN_CLICKED, on_menu_move)
         COMMAND_HANDLER_EX(IDC_MENU_DOWN, BN_CLICKED, on_menu_move)
@@ -119,6 +120,8 @@ private:
         const HWND page = m_hWnd;
         fill_combo(page, IDC_FILTER_BOX,
                    {L"In the address bar", L"Floating over the tree", L"Off"});
+        fill_combo(page, IDC_STARTUP,
+                   {L"Restore the last state", L"All folders closed", L"Open this folder:"});
         fill_combo(page, IDC_LINES, {L"None", L"Connector lines", L"Indentation guides"});
         fill_combo(page, IDC_EXTENSIONS,
                    {L"Always show", L"Never show", L"Hide for playable files"});
@@ -348,6 +351,15 @@ private:
         enable(page, IDC_LINE_OPACITY, lines && !custom);
         enable(page, IDC_LINE_SWATCH, lines && custom);
         enable(page, IDC_LINE_HEX, lines && custom);
+        const bool folder = get_combo(page, IDC_STARTUP, 0) ==
+                            static_cast<int>(settings::Startup::folder);
+        enable(page, IDC_STARTUP_FOLDER, folder);
+        enable(page, IDC_STARTUP_BROWSE, folder);
+    }
+
+    void on_startup_browse(UINT, int, CWindow) {
+        std::wstring path = get_text(m_hWnd, IDC_STARTUP_FOLDER);
+        if (pick_folder(m_hWnd, path)) set_text(m_hWnd, IDC_STARTUP_FOLDER, path); // EN_CHANGE
     }
 
     [[nodiscard]] PageState from_controls() const {
@@ -367,6 +379,8 @@ private:
         state.recursive = get_check(page, IDC_RECURSIVE);
         s.show_address_bar = get_check(page, IDC_SHOW_ADDRESS_BAR);
         s.filter_box = static_cast<settings::FilterBox>(get_combo(page, IDC_FILTER_BOX, 0));
+        s.startup = static_cast<settings::Startup>(get_combo(page, IDC_STARTUP, 0));
+        s.startup_folder = get_text(page, IDC_STARTUP_FOLDER);
 
         s.lines = static_cast<settings::TreeLines>(get_combo(page, IDC_LINES, 0));
         s.line_thickness = get_int(page, IDC_LINE_THICKNESS, 1, 4, s.line_thickness);
@@ -410,6 +424,8 @@ private:
         set_check(page, IDC_RECURSIVE, state.recursive);
         set_check(page, IDC_SHOW_ADDRESS_BAR, s.show_address_bar);
         set_combo(page, IDC_FILTER_BOX, static_cast<int>(s.filter_box));
+        set_combo(page, IDC_STARTUP, static_cast<int>(s.startup));
+        set_text(page, IDC_STARTUP_FOLDER, s.startup_folder);
 
         set_combo(page, IDC_LINES, static_cast<int>(s.lines));
         set_int(page, IDC_LINE_THICKNESS, s.line_thickness);

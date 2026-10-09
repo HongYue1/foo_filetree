@@ -5,6 +5,8 @@
 #include <helpers/DarkMode.h>
 
 #include <commdlg.h>
+#include <shlobj.h>
+#include <shobjidl.h>
 
 #include <algorithm>
 #include <cwchar>
@@ -168,6 +170,38 @@ bool pick_colour(HWND owner, COLORREF& colour) noexcept {
     if (!ChooseColorW(&dialog)) return false;
     colour = dialog.rgbResult;
     return true;
+}
+
+bool pick_folder(HWND owner, std::wstring& path) noexcept {
+    try {
+        pfc::com_ptr_t<IFileOpenDialog> dialog;
+        if (FAILED(CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_INPROC_SERVER,
+                                    IID_PPV_ARGS(dialog.receive_ptr())))) {
+            return false;
+        }
+        FILEOPENDIALOGOPTIONS options{};
+        dialog->GetOptions(&options);
+        dialog->SetOptions(options | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST);
+        if (!path.empty()) {
+            pfc::com_ptr_t<IShellItem> start;
+            if (SUCCEEDED(SHCreateItemFromParsingName(path.c_str(), nullptr,
+                                                      IID_PPV_ARGS(start.receive_ptr())))) {
+                dialog->SetFolder(start.get_ptr());
+            }
+        }
+        if (dialog->Show(owner) != S_OK) return false;
+        pfc::com_ptr_t<IShellItem> item;
+        if (FAILED(dialog->GetResult(item.receive_ptr()))) return false;
+        PWSTR chosen = nullptr;
+        if (FAILED(item->GetDisplayName(SIGDN_FILESYSPATH, &chosen)) || chosen == nullptr) {
+            return false;
+        }
+        path = chosen;
+        CoTaskMemFree(chosen);
+        return true;
+    } catch (...) {
+        return false;
+    }
 }
 
 } // namespace filetree::prefs

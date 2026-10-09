@@ -49,6 +49,7 @@ void TreeView::detach() noexcept {
     settings::unsubscribe(this);
     restore_expand_.clear();
     restore_select_.clear();
+    restore_top_.clear();
     end_rename(false);
     pending_select_ = {};
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
@@ -81,6 +82,7 @@ void TreeView::populate_roots() {
     selected_row_ = hover_row_ = -1;
     top_row_ = 0;
     filter_hidden_selection_ = model::no_node;
+    restore_top_node_ = model::no_node;
     if (tree_.filtered()) tree_.rebuild_rows();
     notify_selection();
 }
@@ -285,6 +287,7 @@ void TreeView::ensure_visible(std::size_t row) noexcept {
 }
 
 void TreeView::on_vscroll(int code) noexcept {
+    restore_top_node_ = model::no_node; // the user scrolls: stop holding a restored top row
     const auto page = static_cast<std::size_t>(std::max(visible_rows() - 1, 1));
     switch (code) {
     case SB_LINEUP: scroll_to(top_row_ > 0 ? top_row_ - 1 : 0); break;
@@ -308,6 +311,7 @@ void TreeView::on_vscroll(int code) noexcept {
 }
 
 void TreeView::on_wheel(int delta) noexcept {
+    restore_top_node_ = model::no_node; // the user scrolls: stop holding a restored top row
     int lines = static_cast<int>(wheel_lines_);
     if (wheel_lines_ == WHEEL_PAGESCROLL) lines = std::max(visible_rows() - 1, 1);
     if (lines <= 0) return;
@@ -485,7 +489,7 @@ void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
         invalidate_row(*row); // empty folder or error: the expander changes
     }
     apply_pending_select(node);
-    if (!restore_expand_.empty() || !restore_select_.empty()) {
+    if (!restore_expand_.empty() || !restore_select_.empty() || !restore_top_.empty()) {
         try {
             const model::Node& n = tree_.node(node);
             for (std::uint32_t child = n.first_child; n.has(model::node_loaded) &&
@@ -496,8 +500,10 @@ void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
         } catch (...) {
             restore_expand_.clear();
             restore_select_.clear();
+            restore_top_.clear();
         }
     }
+    apply_restore_top();
 }
 
 bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept {

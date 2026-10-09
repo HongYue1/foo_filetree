@@ -75,6 +75,10 @@ void TreeView::relist_all() noexcept {
 
 void TreeView::try_restore(std::uint32_t node) {
     const std::wstring path = upper_path(node);
+    if (!restore_top_.empty() && path == restore_top_) {
+        restore_top_.clear();
+        restore_top_node_ = node;
+    }
     if (!restore_select_.empty() && path == restore_select_) {
         restore_select_.clear();
         if (const auto row = tree_.row_of(node)) select_row(*row);
@@ -90,7 +94,7 @@ void TreeView::try_restore(std::uint32_t node) {
     const std::uint32_t first = n.first_child;
     const std::uint32_t count = n.child_count;
     for (std::uint32_t child = first; child < first + count; ++child) {
-        if (restore_expand_.empty() && restore_select_.empty()) break;
+        if (restore_expand_.empty() && restore_select_.empty() && restore_top_.empty()) break;
         try_restore(child);
     }
 }

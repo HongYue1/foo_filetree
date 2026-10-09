@@ -62,3 +62,7 @@ Changes made through **Explorer >** are not picked up automatically yet; press F
 Settings live under Preferences > Tools > Folder Tree. Changes preview live in open panels and are
 kept only when you press OK or Apply.
 
+Each panel remembers its own open folders, selection and scroll position (stored with the
+foobar2000 layout). General > On startup chooses between restoring that, starting with all
+folders closed, or opening a fixed folder.
+

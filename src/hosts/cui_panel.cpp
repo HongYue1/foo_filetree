@@ -10,6 +10,7 @@
 #include <uxtheme.h>
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "../guids.h"
@@ -46,6 +47,28 @@ public:
     const GUID& get_extension_guid() const override { return filetree::guids::cui_panel; }
     void get_name(pfc::string_base& out) const override { out = FILETREE_NAME; }
 
+    // Per-instance state (settings/panel_state.h). Columns UI reads it while the window exists
+    // too (saving the layout), so it comes from the live tree then.
+    void set_config(stream_reader* reader, t_size size, abort_callback& abort) override {
+        state_ = {};
+        if (size == 0) return; // a new panel: defaults
+        std::string bytes(size, '\0');
+        reader->read_object(bytes.data(), size, abort);
+        state_ = filetree::settings::PanelState::decode(bytes);
+    }
+
+    void get_config(stream_writer* writer, abort_callback& abort) const override {
+        filetree::settings::PanelState state = state_;
+        if (wnd_ != nullptr) {
+            try {
+                view_.capture_state(state);
+            } catch (...) {
+            }
+        }
+        const std::string bytes = state.encode();
+        writer->write_object(bytes.data(), bytes.size(), abort);
+    }
+
     // uie::window
     unsigned get_type() const override { return uie::type_panel; }
     void get_category(pfc::string_base& out) const override { out = "Panels"; }
@@ -78,9 +101,14 @@ public:
                                       {}});
                 refresh_colours();
                 refresh_font();
+                view_.start(state_);
                 return 0;
 
             case WM_DESTROY:
+                try {
+                    view_.capture_state(state_);
+                } catch (...) {
+                }
                 view_.detach();
                 wnd_ = nullptr;
                 return 0;
@@ -129,6 +157,7 @@ public:
 private:
     HWND wnd_{};
     filetree::view::Panel view_;
+    filetree::settings::PanelState state_;
 };
 
 uie::window_factory<FolderTreePanel> g_folder_tree_panel_factory;

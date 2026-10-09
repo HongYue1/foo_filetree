@@ -18,6 +18,8 @@ namespace filetree::settings {
 enum class TreeLines : std::uint8_t { none, connectors, guides };
 enum class Extensions : std::uint8_t { always, never, non_playable };
 enum class FilterBox : std::uint8_t { bar, floating, off };
+//! What a panel shows when foobar2000 starts.
+enum class Startup : std::uint8_t { restore, collapsed, folder };
 
 //! Context menu entries a user can show, hide and reorder. Append only (stored by number).
 enum class MenuItem : std::uint8_t {
@@ -61,6 +63,8 @@ struct Settings {
     std::uint32_t hidden_drives{0}; //!< bit 0 = A: ... bit 25 = Z:
     bool show_address_bar{true};
     FilterBox filter_box{FilterBox::bar};
+    Startup startup{Startup::restore};
+    std::wstring startup_folder; //!< for Startup::folder
 
     // Display
     TreeLines lines{TreeLines::none};

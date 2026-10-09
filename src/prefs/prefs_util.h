@@ -43,5 +43,7 @@ void draw_swatch(const DRAWITEMSTRUCT& item, COLORREF colour) noexcept;
 
 //! ChooseColorW from `colour`. Returns false on Cancel.
 [[nodiscard]] bool pick_colour(HWND owner, COLORREF& colour) noexcept;
+//! The system folder picker, starting at `path` if it exists. True with `path` set on OK.
+[[nodiscard]] bool pick_folder(HWND owner, std::wstring& path) noexcept;
 
 } // namespace filetree::prefs

@@ -28,6 +28,18 @@ bool same_path(const std::wstring& a, const std::wstring& b) noexcept {
 
 } // namespace
 
+void Panel::start(const settings::PanelState& saved) noexcept {
+    try {
+        const settings::Settings& s = settings::current();
+        switch (s.startup) {
+        case settings::Startup::restore: tree_.restore_state(saved); break;
+        case settings::Startup::folder: tree_.navigate_to(s.startup_folder, true); break;
+        case settings::Startup::collapsed: break;
+        }
+    } catch (...) {
+    }
+}
+
 void Panel::attach(HWND host, HostHooks hooks) noexcept {
     host_ = host;
     hooks_ = std::move(hooks);

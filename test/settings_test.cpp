@@ -12,6 +12,7 @@
 #include "../src/actions/presets.h"
 #include "../src/fs/enumerate.h"
 #include "../src/model/filter_rules.h"
+#include "../src/settings/panel_state.h"
 #include "../src/settings/settings_model.h"
 
 using namespace filetree;
@@ -51,8 +52,24 @@ void test_filter_rules() {
     CHECK(!rules.empty());
 }
 
+void test_panel_state() {
+    using namespace settings;
+    PanelState state;
+    CHECK(PanelState::decode(state.encode()).empty());
+    state.expanded = {L"C:\\", L"C:\\Music", L"D:\\M\u00e9dia\\\u65e5\u672c"};
+    state.selected = L"C:\\Music\\a.flac";
+    state.top = L"C:\\";
+    CHECK(PanelState::decode(state.encode()) == state);
+    CHECK(PanelState::decode("").empty());
+    CHECK(PanelState::decode("garbage\nE C:\\").empty());
+    // Unknown and malformed lines are skipped; CRLF is fine.
+    const PanelState read = PanelState::decode("foo_filetree state 1\r\nX future\r\nE\r\nE D:\\x\r\n");
+    CHECK(read.expanded.size() == 1 && read.expanded[0] == L"D:\\x" && read.selected.empty());
+}
+
 void test_settings_model() {
     using namespace settings;
+    test_panel_state();
     const MenuLayout defaults = MenuLayout::defaults();
     CHECK(MenuLayout::decode(defaults.encode()) == defaults);
     CHECK(MenuLayout::decode(L"") == defaults);

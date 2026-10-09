@@ -1,6 +1,7 @@
 #include <helpers/foobar2000+atl.h>
 
 #include "fb2k_glue.h"
+#include "watcher.h"
 
 #include <atomic>
 
@@ -69,6 +70,7 @@ public:
         g_quitting.store(true, std::memory_order_release);
         if (g_service) g_service->shutdown(1500);
         if (g_shell_worker) g_shell_worker->shutdown(500);
+        shutdown_watcher();
     }
 };
 

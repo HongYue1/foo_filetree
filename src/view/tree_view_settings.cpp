@@ -21,6 +21,7 @@ void TreeView::refresh_options() noexcept {
     show_icons_ = s.show_icons;
     mark_favourites_ = s.mark_favourites;
     separate_favourites_ = s.separate_favourites;
+    watch_changes_ = s.watch_changes;
     try {
         favourite_paths_.clear();
         favourite_leaves_.clear();
@@ -55,6 +56,7 @@ void TreeView::on_settings_changed(std::uint32_t changes) noexcept {
         set_colours(colours_); // line colour
         remeasure();           // line width
     }
+    schedule_watch_sync(); // the Watch setting, or new roots
     InvalidateRect(wnd_, nullptr, FALSE);
 }
 

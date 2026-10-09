@@ -455,6 +455,7 @@ private:
         s.filter_box = static_cast<settings::FilterBox>(get_combo(page, IDC_FILTER_BOX, 0));
         s.startup = static_cast<settings::Startup>(get_combo(page, IDC_STARTUP, 0));
         s.startup_folder = get_text(page, IDC_STARTUP_FOLDER);
+        s.watch_changes = get_check(page, IDC_WATCH_CHANGES);
 
         s.lines = static_cast<settings::TreeLines>(get_combo(page, IDC_LINES, 0));
         s.line_thickness = get_int(page, IDC_LINE_THICKNESS, 1, 4, s.line_thickness);
@@ -507,6 +508,7 @@ private:
         set_combo(page, IDC_FILTER_BOX, static_cast<int>(s.filter_box));
         set_combo(page, IDC_STARTUP, static_cast<int>(s.startup));
         set_text(page, IDC_STARTUP_FOLDER, s.startup_folder);
+        set_check(page, IDC_WATCH_CHANGES, s.watch_changes);
 
         set_combo(page, IDC_LINES, static_cast<int>(s.lines));
         set_int(page, IDC_LINE_THICKNESS, s.line_thickness);

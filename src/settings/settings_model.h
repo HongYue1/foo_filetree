@@ -75,6 +75,7 @@ struct Settings {
     bool show_address_bar{true};
     FilterBox filter_box{FilterBox::bar};
     Startup startup{Startup::restore};
+    bool watch_changes{true}; //!< open folders update when their contents change on disk
     std::wstring startup_folder; //!< for Startup::folder
     std::vector<std::wstring> favourites; //!< shown as roots, in this order
     FavouritesPlace favourites_place{FavouritesPlace::before};

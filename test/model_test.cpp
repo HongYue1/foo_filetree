@@ -29,6 +29,7 @@ void test_filter_rules();
 void test_settings_model();
 void test_presets();
 void test_enumerate_rules(const std::filesystem::path& base);
+void test_watcher(const std::filesystem::path& base);
 
 namespace {
 
@@ -550,6 +551,7 @@ int main() {
     test_enumerate(base);
     test_service(base);
     test_enumerate_rules(base);
+    test_watcher(base);
     test_drives();
     std::error_code ignored;
     std::filesystem::remove_all(base, ignored);

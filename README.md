@@ -55,7 +55,8 @@ or delete made in Folder Tree. One step only. A deleted item comes back from the
 Shift+Del deletes permanently and cannot be undone. The same changes can also be undone with
 Ctrl+Z in an Explorer window, or restored from the Recycle Bin by hand.
 
-Changes made through **Explorer >** are not picked up automatically yet; press F5.
+Open folders update by themselves when files change on disk (General > Update open folders...);
+removable and optical drives are not watched, so they do not block Safely Remove: press F5 there.
 
 ## Preferences
 

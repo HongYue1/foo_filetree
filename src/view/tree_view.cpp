@@ -55,6 +55,7 @@ void TreeView::detach() noexcept {
     pending_select_ = {};
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
     pending_.clear();
+    stop_watching();
     ++generation_;
     alive_.reset();
     release_buffer();
@@ -113,6 +114,7 @@ void TreeView::populate_roots() {
 }
 
 void TreeView::apply_full_splice() noexcept {
+    schedule_watch_sync();
     // Rows were rebuilt (name filter): find the selected and top nodes again.
     const auto relocate = [&](std::ptrdiff_t row) -> std::ptrdiff_t {
         if (row < 0) return -1;
@@ -448,6 +450,7 @@ void TreeView::select_row(std::size_t row) noexcept {
 
 void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
     if (splice.empty()) return;
+    schedule_watch_sync();
     end_rename(false);
     if (splice.full) {
         apply_full_splice();
@@ -658,6 +661,11 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
     case WM_KILLFOCUS:
         focused_ = msg == WM_SETFOCUS;
         if (selected_row_ >= 0) invalidate_row(static_cast<std::size_t>(selected_row_));
+        return true;
+    case WM_TIMER:
+        return on_watch_timer(static_cast<UINT_PTR>(wp));
+    case watch_message:
+        on_watch_notify(static_cast<fs::WatchId>(lp));
         return true;
     case WM_DPICHANGED_AFTERPARENT:
         on_dpi_changed();

@@ -24,6 +24,7 @@
 #define IDC_STARTUP 1015
 #define IDC_STARTUP_FOLDER 1016
 #define IDC_STARTUP_BROWSE 1017
+#define IDC_WATCH_CHANGES 1018
 // Drive check boxes are created at run time: IDC_DRIVE_FIRST + 0 (A:) ... + 25 (Z:).
 #define IDC_DRIVE_FIRST 1100
 

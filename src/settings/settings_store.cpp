@@ -36,6 +36,7 @@ constexpr GUID guid_show_icons = {0xf9d0a057, 0x6a52, 0x4cc9, {0xaa, 0x4f, 0x8b,
 constexpr GUID guid_mark_favourites = {0xe3e51223, 0x74ff, 0x4e48, {0xb7, 0x7d, 0x03, 0x47, 0x9f, 0x5b, 0xe5, 0xd7}};
 constexpr GUID guid_separate_favourites = {0x9615dedb, 0x4915, 0x47e6, {0x96, 0x7c, 0x15, 0x4b, 0x69, 0xa9, 0x76, 0x8f}};
 constexpr GUID guid_favourites_gap = {0xa28695a1, 0xdcf4, 0x413f, {0xae, 0x80, 0xa0, 0x06, 0x01, 0xe2, 0x19, 0x5d}};
+constexpr GUID guid_watch_changes = {0x5051725b, 0xdb03, 0x4e50, {0x91, 0x3c, 0x96, 0xf7, 0xad, 0x84, 0x6d, 0x14}};
 constexpr GUID guid_filter_box = {0x95efa8c6, 0x13ae, 0x4993, {0xbf, 0xaf, 0x74, 0x7a, 0xeb, 0xa7, 0x74, 0xe3}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
@@ -66,6 +67,7 @@ cfg_string cfg_menu(guid_menu, "");
 cfg_bool cfg_show_address_bar(guid_show_address_bar, defaults.show_address_bar);
 cfg_bool cfg_separate_favourites(guid_separate_favourites, defaults.separate_favourites);
 cfg_int cfg_favourites_gap(guid_favourites_gap, defaults.favourites_gap);
+cfg_bool cfg_watch_changes(guid_watch_changes, defaults.watch_changes);
 cfg_bool cfg_show_icons(guid_show_icons, defaults.show_icons);
 cfg_bool cfg_mark_favourites(guid_mark_favourites, defaults.mark_favourites);
 cfg_int cfg_filter_box(guid_filter_box, static_cast<int>(defaults.filter_box));
@@ -118,6 +120,7 @@ Settings load() {
     s.menu = MenuLayout::decode(wide(cfg_menu.get()));
     s.show_address_bar = cfg_show_address_bar.get();
     s.show_icons = cfg_show_icons.get();
+    s.watch_changes = cfg_watch_changes.get();
     s.separate_favourites = cfg_separate_favourites.get();
     s.favourites_gap = static_cast<int>(cfg_favourites_gap.get());
     s.mark_favourites = cfg_mark_favourites.get();
@@ -151,6 +154,7 @@ void save(const Settings& s) {
     cfg_menu.set(utf8(s.menu.encode()));
     cfg_show_address_bar.set(s.show_address_bar);
     cfg_show_icons.set(s.show_icons);
+    cfg_watch_changes.set(s.watch_changes);
     cfg_separate_favourites.set(s.separate_favourites);
     cfg_favourites_gap.set(s.favourites_gap);
     cfg_mark_favourites.set(s.mark_favourites);

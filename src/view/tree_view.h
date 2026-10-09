@@ -10,6 +10,7 @@
 
 #include <windows.h>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -24,6 +25,7 @@
 #include "../actions/shell_ops.h"
 #include "../fs/enumerate.h"
 #include "../fs/enumeration_service.h"
+#include "../fs/watcher.h"
 #include "../model/tree.h"
 #include "../settings/panel_state.h"
 #include "../settings/settings_store.h"
@@ -191,6 +193,15 @@ private:
     void on_check(std::uint32_t node, std::uint64_t generation, fs::Listing& listing) noexcept;
     void retry_failed(std::uint32_t node) noexcept;
     void merge_listing(std::uint32_t node, fs::Listing& listing) noexcept;
+
+    // tree_view_watch.cpp
+    static constexpr UINT watch_message = WM_APP + 0x31; //!< LPARAM: fs::WatchId
+    void schedule_watch_sync() noexcept;
+    void sync_watches() noexcept;
+    void unwatch_all() noexcept;
+    void stop_watching() noexcept; //!< detach: unwatch and stop the timers
+    void on_watch_notify(fs::WatchId id) noexcept;
+    bool on_watch_timer(UINT_PTR id) noexcept;
     //! Right-click below the last row: Refresh all, Collapse all, Preferences.
     void show_background_menu(POINT point) noexcept;
     void collapse_all() noexcept;
@@ -273,6 +284,17 @@ private:
     bool mark_favourites_{false};
     bool separate_favourites_{false};
     std::uint32_t boundary_node_{model::no_node}; //!< first root of the second group
+    // Change watching (tree_view_watch.cpp): upper-cased path, node as of the last sync.
+    struct Watched {
+        fs::WatchId id;
+        std::uint32_t node;
+        std::wstring path;
+    };
+    std::vector<Watched> watched_;
+    std::vector<fs::WatchId> watch_dirty_;
+    bool watch_changes_{true};
+    bool sync_pending_{false};
+    bool watch_timer_pending_{false};
     mutable std::size_t boundary_row_cache_{0};   //!< checked against boundary_node_ on use
     COLORREF icon_colour_{};
     // Favourites as upper-cased full paths, and their last components for a cheap first test.

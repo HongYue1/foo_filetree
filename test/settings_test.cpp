@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include <atomic>
+#include <cstdio>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -11,6 +12,7 @@
 #include "check.h"
 #include "../src/actions/presets.h"
 #include "../src/fs/enumerate.h"
+#include "../src/fs/watcher.h"
 #include "../src/model/filter_rules.h"
 #include "../src/settings/panel_state.h"
 #include "../src/settings/settings_model.h"
@@ -178,4 +180,54 @@ void test_enumerate_rules(const std::filesystem::path& base) {
     options.files = fs::FileMode::none;
     const auto folders = fs::enumerate_folder(base.wstring(), options, cancel);
     CHECK(folders.items.size() == 2); // always_show does not apply to "folders only"
+}
+
+// The watcher posts to a window: a message-only one here, pumped by hand.
+void test_watcher(const std::filesystem::path& base) {
+    const std::filesystem::path folder = base / L"watched";
+    std::filesystem::create_directories(folder);
+    HWND wnd = CreateWindowExW(0, L"STATIC", L"", 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, nullptr,
+                               nullptr);
+    CHECK(wnd != nullptr);
+    constexpr UINT message = WM_APP + 1;
+    const auto wait_for = [&](fs::WatchId id, DWORD ms) {
+        const DWORD start = GetTickCount();
+        MSG msg{};
+        while (GetTickCount() - start < ms) {
+            while (PeekMessageW(&msg, wnd, message, message, PM_REMOVE)) {
+                if (static_cast<fs::WatchId>(msg.lParam) == id) return true;
+            }
+            Sleep(10);
+        }
+        return false;
+    };
+    const fs::WatchId id = fs::watch_folder(folder.wstring(), wnd, message);
+    CHECK(id != 0);
+    Sleep(200); // the thread opens the folder
+    HANDLE file = CreateFileW((folder / L"new.txt").c_str(), GENERIC_WRITE, 0, nullptr,
+                              CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    CHECK(file != INVALID_HANDLE_VALUE);
+    CloseHandle(file);
+    CHECK(wait_for(id, 2000));
+    // After unwatch, nothing more arrives and the watch is freed.
+    fs::unwatch_folder(id);
+    Sleep(100);
+    CHECK(fs::watch_count() == 0);
+    std::filesystem::remove(folder / L"new.txt");
+    CHECK(!wait_for(id, 300));
+    // A folder that does not exist ends by itself; unwatching it later is harmless.
+    const fs::WatchId missing = fs::watch_folder((base / L"nope").wstring(), wnd, message);
+    Sleep(200);
+    CHECK(fs::watch_count() == 0);
+    fs::unwatch_folder(missing);
+    // A deleted watched folder reports once and ends.
+    const std::filesystem::path doomed = base / L"doomed";
+    std::filesystem::create_directories(doomed);
+    const fs::WatchId gone = fs::watch_folder(doomed.wstring(), wnd, message);
+    Sleep(200);
+    std::filesystem::remove(doomed);
+    CHECK(wait_for(gone, 2000));
+    fs::shutdown_watcher();
+    CHECK(fs::watch_folder(folder.wstring(), wnd, message) == 0);
+    DestroyWindow(wnd);
 }

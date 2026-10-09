@@ -48,10 +48,11 @@ BEGIN
     COMBOBOX        IDC_STARTUP,85,119,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     EDITTEXT        IDC_STARTUP_FOLDER,85,135,180,12,ES_AUTOHSCROLL
     PUSHBUTTON      "...",IDC_STARTUP_BROWSE,268,134,25,14
+    CONTROL         "Update open folders when files change on disk",IDC_WATCH_CHANGES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,152,281,10
 
-    LTEXT           "Drives",IDC_STATIC,7,156,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,166,286,1
-    LTEXT           "Drives shown as roots in every Folder Tree panel:",IDC_DRIVES_LABEL,12,173,281,8
+    LTEXT           "Drives",IDC_STATIC,7,170,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,180,286,1
+    LTEXT           "Drives shown as roots in every Folder Tree panel:",IDC_DRIVES_LABEL,12,187,281,8
 END
 
 IDD_TAB_DISPLAY DIALOGEX 0, 0, 300, 222

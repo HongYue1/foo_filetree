@@ -86,6 +86,7 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
         const std::size_t old_top = top_row_;
 
         const model::Tree::MergeResult merge = tree_.merge_children(node, records_);
+        schedule_watch_sync(); // moved children: refresh the watch set's node indices
         // Callbacks carry the node index they were made for: listings for moved children are
         // asked for again under the new index (checks are simply dropped).
         std::vector<std::uint32_t> relist;

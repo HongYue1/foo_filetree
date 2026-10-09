@@ -150,6 +150,8 @@
     <ClCompile Include="src\view\tree_view_nav.cpp" />
     <ClCompile Include="src\view\tree_view_refresh.cpp" />
     <ClCompile Include="src\view\icon_font.cpp" />
+    <ClCompile Include="src\view\tree_view_watch.cpp" />
+    <ClCompile Include="src\fs\watcher.cpp" />
     <ClCompile Include="src\view\address_bar.cpp" />
     <ClCompile Include="src\view\panel.cpp" />
     <ClCompile Include="src\view\filter_box.cpp" />
@@ -172,6 +174,7 @@
     <ClInclude Include="src\view\theme.h" />
     <ClInclude Include="src\view\tree_view.h" />
     <ClInclude Include="src\view\icon_font.h" />
+    <ClInclude Include="src\fs\watcher.h" />
     <ClInclude Include="src\hosts\host_shared.h" />
     <ClInclude Include="src\actions\action.h" />
     <ClInclude Include="src\actions\action_settings.h" />

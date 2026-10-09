@@ -104,6 +104,10 @@ void TreeView::detach() noexcept {
         DeleteObject(icon_font_);
         icon_font_ = nullptr;
     }
+    if (mark_font_ != nullptr) {
+        DeleteObject(mark_font_);
+        mark_font_ = nullptr;
+    }
     if (font_ != nullptr) {
         DeleteObject(font_);
         font_ = nullptr;
@@ -259,6 +263,10 @@ void TreeView::remeasure() noexcept {
         DeleteObject(icon_font_);
         icon_font_ = nullptr;
     }
+    if (mark_font_ != nullptr) {
+        DeleteObject(mark_font_);
+        mark_font_ = nullptr;
+    }
     metrics_.icon = 0;
     metrics_.icon_width = 0;
     const wchar_t* face = icon_font_face();
@@ -270,6 +278,9 @@ void TreeView::remeasure() noexcept {
         icon.lfQuality = CLEARTYPE_QUALITY;
         wcsncpy_s(icon.lfFaceName, face, _TRUNCATE);
         icon_font_ = CreateFontIndirectW(&icon);
+        // The play mark after a name is smaller: it decorates text, it is not an icon.
+        icon.lfHeight = -std::max<int>(scale(10, dpi), 1);
+        mark_font_ = CreateFontIndirectW(&icon);
         if (icon_font_ == nullptr) metrics_.icon = 0;
     }
     if (show_icons_ && icon_font_ != nullptr) metrics_.icon_width = metrics_.icon + scale(4, dpi);

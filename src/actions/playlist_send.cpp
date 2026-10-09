@@ -37,6 +37,10 @@ std::size_t resolve_playlist(playlist_manager& pm, const Delivery& delivery) {
 void deliver(const Delivery& delivery, metadb_handle_list_cref items) {
     if (items.get_count() == 0) return;
     auto pm = playlist_manager::get();
+    if (delivery.action.target == Target::queue) {
+        for (std::size_t i = 0; i < items.get_count(); ++i) pm->queue_add_item(items[i]);
+        return;
+    }
     const std::size_t playlist = resolve_playlist(*pm, delivery);
     if (playlist == SIZE_MAX) return;
 

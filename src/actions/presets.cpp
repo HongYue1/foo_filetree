@@ -17,7 +17,8 @@ constexpr Action send(Target target, Mode mode, bool play) {
         {L"Add to active playlist", send(Target::active, Mode::add, false)},                  \
         {L"Add to active and play", send(Target::active, Mode::add, true)},                   \
         {L"Play in new playlist", send(Target::new_playlist, Mode::replace, true)},           \
-        {L"Send to new playlist", send(Target::new_playlist, Mode::replace, false)}
+        {L"Send to new playlist", send(Target::new_playlist, Mode::replace, false)},          \
+        {L"Add to playback queue", send(Target::queue, Mode::add, false)}
 
 constexpr Preset folder_presets[] = {
     {L"None", Action{}},
@@ -35,6 +36,7 @@ constexpr Preset file_presets[] = {
 bool same_ignoring_recursion(const Action& a, const Action& b) noexcept {
     if (a.kind != b.kind) return false;
     if (a.kind != Kind::send) return true;
+    if (a.target == Target::queue || b.target == Target::queue) return a.target == b.target;
     // Adding to a new playlist is the same as sending to it.
     const Mode mode_a = a.target == Target::new_playlist ? Mode::replace : a.mode;
     const Mode mode_b = b.target == Target::new_playlist ? Mode::replace : b.mode;

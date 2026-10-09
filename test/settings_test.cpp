@@ -87,12 +87,13 @@ void test_settings_model() {
     // An older config without the last two items: they come back after their predecessors.
     const MenuLayout old = MenuLayout::decode(L"5,0,1,2,3,4,6,7,8");
     CHECK(old.order[0] == MenuItem::rename);
-    CHECK(old.order[14] == MenuItem::fb2k_menu && old.order[15] == MenuItem::explorer_menu);
-    CHECK(old.order[7] == MenuItem::new_folder && old.order[8] == MenuItem::cut &&
-          old.order[9] == MenuItem::copy && old.order[10] == MenuItem::paste);
+    CHECK(old.order[15] == MenuItem::fb2k_menu && old.order[16] == MenuItem::explorer_menu);
+    CHECK(old.order[4] == MenuItem::queue && old.order[8] == MenuItem::new_folder &&
+          old.order[9] == MenuItem::cut && old.order[10] == MenuItem::copy &&
+          old.order[11] == MenuItem::paste);
     // A newer item goes to its default place (Favourites after Copy path), not to the end.
-    CHECK(old.order[5] == MenuItem::copy_path && old.order[6] == MenuItem::favourite);
-    CHECK(defaults.order[5] == MenuItem::favourite);
+    CHECK(old.order[6] == MenuItem::copy_path && old.order[7] == MenuItem::favourite);
+    CHECK(defaults.order[6] == MenuItem::favourite);
     // Duplicates are dropped and the missing item is restored.
     const MenuLayout dup = MenuLayout::decode(L"0,0,1,2,3,4,5,6,7,8,9,10");
     CHECK(dup == defaults);

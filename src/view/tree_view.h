@@ -285,6 +285,7 @@ private:
     bool has_base_font_{false};
     HFONT font_{};
     HFONT icon_font_{}; //!< icons and the favourite star; null without an icon font
+    HFONT mark_font_{}; //!< the smaller play mark after a name; with icon_font_
     Metrics metrics_{};
 
     // Back buffer: one DIB, grown on WM_SIZE, reused by every paint.

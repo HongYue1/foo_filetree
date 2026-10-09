@@ -9,7 +9,8 @@
 namespace filetree::actions {
 
 enum class Kind : std::uint8_t { none, toggle, send };
-enum class Target : std::uint8_t { temp, active, new_playlist };
+//! queue: foobar2000's playback queue (plays next, no playlist changes; mode and play unused).
+enum class Target : std::uint8_t { temp, active, new_playlist, queue };
 enum class Mode : std::uint8_t { replace, add };
 enum class Recursion : std::uint8_t { by_default, always, never };
 

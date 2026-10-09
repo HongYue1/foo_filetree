@@ -82,7 +82,7 @@ BEGIN
     LTEXT           "File extensions:",IDC_STATIC,12,128,70,8
     COMBOBOX        IDC_EXTENSIONS,85,126,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 
-    CONTROL         "Show icons",IDC_SHOW_ICONS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,142,90,10
+    CONTROL         "File and folder icons",IDC_SHOW_ICONS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,142,90,10
     CONTROL         "Star favourite folders",IDC_MARK_FAVOURITES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,180,142,113,10
     CONTROL         "Mark the playing track (or its closed folder)",IDC_MARK_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,154,208,10
 

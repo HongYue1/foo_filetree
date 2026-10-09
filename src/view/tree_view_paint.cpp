@@ -198,15 +198,18 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     const bool icon_font = icon_font_ != nullptr;
     wchar_t marks[2];
     COLORREF mark_colours[2];
+    HFONT mark_fonts[2];
     int mark_count = 0;
     if (mark_favourites_ && node.has(model::node_container) && is_favourite(index)) {
         marks[mark_count] = icon_font ? glyph::star : glyph::star_fallback;
+        mark_fonts[mark_count] = icon_font ? icon_font_ : font_;
         mark_colours[mark_count++] = selected ? text : icon_colour_;
     }
     // With icons, the playing file's icon is the triangle (paint_icon); a closed folder holding
     // it, or any row without icons, gets it after the name.
     if (playing != 0 && (playing == 1 || metrics_.icon_width == 0)) {
         marks[mark_count] = icon_font ? glyph::playing : glyph::playing_fallback;
+        mark_fonts[mark_count] = icon_font && mark_font_ != nullptr ? mark_font_ : font_;
         // The file itself in the text colour, a closed folder holding it dimmer.
         mark_colours[mark_count++] = selected || playing == 2 ? text : icon_colour_;
     }
@@ -214,31 +217,31 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         const int gap = MulDiv(4, metrics_.dpi, 96);
         SIZE extent{};
         GetTextExtentPoint32W(dc, name.data(), static_cast<int>(name.size()), &extent);
-        if (icon_font) SelectObject(dc, icon_font_);
         int marks_width = 0;
         int widths[2]{};
         for (int i = 0; i < mark_count; ++i) {
             SIZE size{};
+            SelectObject(dc, mark_fonts[i]);
             GetTextExtentPoint32W(dc, &marks[i], 1, &size);
             widths[i] = size.cx;
             marks_width += size.cx + (i > 0 ? gap : 0);
         }
-        if (icon_font) SelectObject(dc, font_);
+        SelectObject(dc, font_);
         const int marks_left = std::min<int>(text_rect.left + extent.cx + gap,
                                              text_rect.right - marks_width);
         RECT name_rect = text_rect;
         name_rect.right = std::max<int>(marks_left - gap, name_rect.left);
         DrawTextW(dc, name.data(), static_cast<int>(name.size()), &name_rect, format);
         if (marks_left > text_rect.left) {
-            if (icon_font) SelectObject(dc, icon_font_);
             int left = marks_left;
             for (int i = 0; i < mark_count; ++i) {
                 RECT mark_rect{left, rect.top, text_rect.right, rect.bottom};
+                SelectObject(dc, mark_fonts[i]);
                 SetTextColor(dc, mark_colours[i]);
                 DrawTextW(dc, &marks[i], 1, &mark_rect, DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
                 left += widths[i] + gap;
             }
-            if (icon_font) SelectObject(dc, font_);
+            SelectObject(dc, font_);
         }
         return;
     }

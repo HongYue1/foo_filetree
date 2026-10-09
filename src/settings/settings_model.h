@@ -49,8 +49,9 @@ enum class MenuItem : std::uint8_t {
     paste,
     cut,
     copy,
+    queue,
 };
-inline constexpr std::size_t menu_item_count = 16;
+inline constexpr std::size_t menu_item_count = 17;
 
 //! Items that share a group get no separator between them.
 [[nodiscard]] int menu_group(MenuItem item) noexcept;

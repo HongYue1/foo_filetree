@@ -31,6 +31,7 @@ enum MenuId : UINT {
     id_paste,
     id_cut,
     id_copy,
+    id_queue,
     // Empty-area menu.
     id_refresh_all,
     id_collapse_all,
@@ -122,6 +123,9 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
                 break;
             case MenuItem::new_playlist:
                 AppendMenuW(menu, MF_STRING, id_new_playlist, L"Send to new playlist");
+                break;
+            case MenuItem::queue:
+                AppendMenuW(menu, MF_STRING, id_queue, L"Add to playback queue");
                 break;
             case MenuItem::open_explorer:
                 AppendMenuW(menu, MF_STRING, id_open_explorer,
@@ -264,6 +268,11 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
         break;
     case id_new_playlist:
         action.target = actions::Target::new_playlist;
+        send_node(action, node);
+        break;
+    case id_queue:
+        action.target = actions::Target::queue;
+        action.mode = actions::Mode::add;
         send_node(action, node);
         break;
     case id_open_explorer: open_in_explorer(node); break;

@@ -23,7 +23,7 @@ void put(std::uint8_t*& out, const Action& action) noexcept {
 
 Action get(const std::uint8_t* in, const Action& fallback) noexcept {
     if (in[0] > static_cast<std::uint8_t>(Kind::send) ||
-        in[1] > static_cast<std::uint8_t>(Target::new_playlist) ||
+        in[1] > static_cast<std::uint8_t>(Target::queue) ||
         in[2] > static_cast<std::uint8_t>(Mode::add) || in[3] > 1 ||
         in[4] > static_cast<std::uint8_t>(Recursion::never)) {
         return fallback;

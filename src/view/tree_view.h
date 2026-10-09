@@ -162,7 +162,21 @@ private:
     void paint_icon(HDC dc, const model::Node& node, const RECT& rect, COLORREF colour,
                     bool playing) noexcept;
 
+    // Selection (tree_view_select.cpp). selected_row_ is the focus row; the selection is the
+    // node_selected flag in the tree, the range anchor tree_.anchor().
+    //! Selects this row alone and moves the focus to it.
     void select_row(std::size_t row) noexcept;
+    //! Moves the focus without changing the selection (Ctrl+arrows).
+    void focus_row(std::size_t row) noexcept;
+    //! Ctrl+click / Ctrl+Space: flips the row's selection and focuses it; it becomes the anchor.
+    void toggle_row(std::size_t row) noexcept;
+    //! Shift: selects anchor..row (added to the selection with `add`), focus on row.
+    void extend_to(std::size_t row, bool add) noexcept;
+    //! A navigation key's target: plain selects, Shift extends, Ctrl only moves the focus.
+    void move_to(std::size_t row, bool shift, bool ctrl) noexcept;
+    void select_all() noexcept;
+    //! The selected nodes in row order; the focus node alone when nothing visible is selected.
+    void selection_or_focus(std::vector<std::uint32_t>& out) const;
     void toggle(std::uint32_t node) noexcept;
     void expand(std::uint32_t node) noexcept;
     void collapse(std::uint32_t node) noexcept;

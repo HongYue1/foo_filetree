@@ -142,7 +142,8 @@ void TreeView::paint(HDC target, const RECT& dirty) noexcept {
 void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     const std::uint32_t index = tree_.node_at_row(row);
     const model::Node& node = tree_.node(index);
-    const bool selected = static_cast<std::ptrdiff_t>(row) == selected_row_;
+    const bool selected = node.has(model::node_selected);
+    const bool focus = static_cast<std::ptrdiff_t>(row) == selected_row_;
     const bool hovered = static_cast<std::ptrdiff_t>(row) == hover_row_ ||
                          static_cast<std::ptrdiff_t>(row) == drop_row_;
 
@@ -158,6 +159,12 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         if (index == cut_node_) text = dim_text_; // cut, as Explorer ghosts it
     }
     fill(dc, rect, background);
+    // The focus row of a multi-selection (or an unselected focus row after Ctrl+Space) gets a
+    // frame, so the keyboard position stays visible.
+    if (focus && focused_ && (!selected || tree_.selection_hint() > 1)) {
+        SetDCBrushColor(dc, selected ? colours_.selection_text : colours_.selection_background);
+        FrameRect(dc, &rect, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+    }
 
     const bool expandable = node.has(model::node_container) &&
                             !(node.has(model::node_loaded) && node.child_count == 0);

@@ -32,6 +32,7 @@ enum NodeFlag : std::uint16_t {
     node_load_failed = 1 << 4, //!< the last listing failed (access denied, offline, ...)
     node_root = 1 << 5,
     node_favourite = 1 << 6, //!< a root from the favourites list (else a drive)
+    node_selected = 1 << 7,  //!< in the multi-selection (follows the node through merges)
 };
 
 struct Node {
@@ -182,6 +183,29 @@ public:
         return row < previous_rows_.size() ? previous_rows_[row] : no_node;
     }
 
+    // Selection (tree_selection.cpp): a flag on the nodes, so it follows them through merges,
+    // splices and filter rebuilds. Collapsing a folder deselects what it hides; a filter keeps
+    // hidden rows selected (they count again when they reappear).
+    void set_selected(std::uint32_t index, bool selected);
+    [[nodiscard]] bool is_selected(std::uint32_t index) const noexcept {
+        return nodes_[index].has(node_selected);
+    }
+    //! Returns how many nodes were deselected.
+    std::size_t clear_selection() noexcept;
+    //! Adds rows [first, last] (either order) to the selection.
+    void select_rows(std::size_t first, std::size_t last);
+    //! Selected nodes on visible rows, in row order.
+    void selected_nodes(std::vector<std::uint32_t>& out) const;
+    //! Selected visible rows, counted up to `limit` (cheap "one or several" tests).
+    [[nodiscard]] std::size_t count_selected_rows(std::size_t limit = SIZE_MAX) const noexcept;
+    //! At least this many nodes may be selected (an upper bound; 0 means none).
+    [[nodiscard]] std::size_t selection_hint() const noexcept { return selected_.size(); }
+    //! Deselects every selected node below `index`.
+    void deselect_descendants(std::uint32_t index) noexcept;
+    //! Shift+click / Shift+arrow ranges start here; follows merges like the selection.
+    void set_anchor(std::uint32_t index) noexcept { anchor_ = index; }
+    [[nodiscard]] std::uint32_t anchor() const noexcept { return anchor_; }
+
     //! Bytes held by nodes, rows and names. For the performance counters (M7).
     [[nodiscard]] std::size_t memory_bytes() const noexcept;
 
@@ -200,6 +224,8 @@ private:
     bool filter_glob_{false};
     wchar_t upper_[256]{};               //!< a name upper-cased for matching
     NamePool names_;
+    std::vector<std::uint32_t> selected_; //!< every flagged node (may hold stale entries)
+    std::uint32_t anchor_{no_node};
 };
 
 } // namespace filetree::model

@@ -531,17 +531,6 @@ void TreeView::on_dpi_changed() noexcept {
 
 // --- Selection and expansion ----------------------------------------------------------------
 
-void TreeView::select_row(std::size_t row) noexcept {
-    if (row >= tree_.row_count()) return;
-    if (selected_row_ >= 0) invalidate_row(static_cast<std::size_t>(selected_row_));
-    const bool changed = selected_row_ != static_cast<std::ptrdiff_t>(row);
-    filter_hidden_selection_ = model::no_node;
-    selected_row_ = static_cast<std::ptrdiff_t>(row);
-    invalidate_row(row);
-    ensure_visible(row);
-    if (changed) notify_selection();
-}
-
 void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
     if (splice.empty()) return;
     schedule_watch_sync();
@@ -563,7 +552,19 @@ void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
         }
     };
     shift(selected_row_);
-    if (moved_to_parent) notify_selection();
+    if (moved_to_parent) {
+        // The focus was inside a collapsed folder: the folder takes it, selected if nothing
+        // else still is.
+        if (selected_row_ >= 0 && tree_.count_selected_rows(1) == 0) {
+            const std::uint32_t parent = tree_.node_at_row(static_cast<std::size_t>(selected_row_));
+            try {
+                tree_.set_selected(parent, true);
+            } catch (...) {
+            }
+            tree_.set_anchor(parent);
+        }
+        notify_selection();
+    }
     hover_row_ = -1;
 
     // Rows inserted or removed above the viewport must not move what the user is looking at.
@@ -773,7 +774,11 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
     case WM_KILLFOCUS:
         focused_ = msg == WM_SETFOCUS;
         if (focused_) set_active_view(this);
-        if (selected_row_ >= 0) invalidate_row(static_cast<std::size_t>(selected_row_));
+        if (tree_.selection_hint() > 1) {
+            InvalidateRect(wnd_, nullptr, FALSE); // every selected row changes colour
+        } else if (selected_row_ >= 0) {
+            invalidate_row(static_cast<std::size_t>(selected_row_));
+        }
         return true;
     case WM_TIMER:
         return on_watch_timer(static_cast<UINT_PTR>(wp));

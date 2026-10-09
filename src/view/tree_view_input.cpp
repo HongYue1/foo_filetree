@@ -25,21 +25,23 @@ bool TreeView::on_key(WPARAM key) noexcept {
     const bool alt = GetKeyState(VK_MENU) < 0;
 
     switch (key) {
-    case VK_UP: select_row(has_selection && current > 0 ? current - 1 : current); return true;
-    case VK_DOWN: select_row(has_selection ? std::min(current + 1, rows - 1) : current); return true;
+    case VK_UP: move_to(has_selection && current > 0 ? current - 1 : current, shift, ctrl); return true;
+    case VK_DOWN:
+        move_to(has_selection ? std::min(current + 1, rows - 1) : current, shift, ctrl);
+        return true;
     // Folder jumps (user's choice over Explorer paging): PgUp goes to the parent folder, PgDn
     // to the row after the parent's subtree, i.e. the parent's next sibling (or the next row
     // further out). At a root, PgUp stays and PgDn goes to the next root.
     case VK_PRIOR:
         if (!has_selection) {
-            select_row(current);
+            move_to(current, shift, ctrl);
         } else if (n.parent != model::no_node) {
-            if (const auto parent = tree_.row_of(n.parent)) select_row(*parent);
+            if (const auto parent = tree_.row_of(n.parent)) move_to(*parent, shift, ctrl);
         }
         return true;
     case VK_NEXT: {
         if (!has_selection) {
-            select_row(current);
+            move_to(current, shift, ctrl);
             return true;
         }
         // Rows are in display order, so the parent's subtree ends at the first later row that
@@ -51,11 +53,19 @@ bool TreeView::on_key(WPARAM key) noexcept {
         } else {
             while (next < rows && tree_.node(tree_.node_at_row(next)).depth >= depth) ++next;
         }
-        select_row(next < rows ? next : rows - 1);
+        move_to(next < rows ? next : rows - 1, shift, ctrl);
         return true;
     }
-    case VK_HOME: select_row(0); return true;
-    case VK_END: select_row(rows - 1); return true;
+    case VK_HOME: move_to(0, shift, ctrl); return true;
+    case VK_END: move_to(rows - 1, shift, ctrl); return true;
+    case VK_SPACE: // Ctrl+Space toggles the focus row; plain Space is type-ahead (on_char)
+        if (!ctrl || alt) return false;
+        toggle_row(current);
+        return true;
+    case 'A':
+        if (!ctrl || alt || shift) return false;
+        select_all();
+        return true;
     case VK_LEFT:
         if (!has_selection) {
             select_row(current);
@@ -145,6 +155,7 @@ constexpr DWORD typeahead_reset_ms = 1000;
 bool TreeView::on_char(wchar_t ch, DWORD time) noexcept {
     // Control characters (Enter, Esc, Backspace, Ctrl+letter) are not names.
     if (ch < L' ') return false;
+    if (GetKeyState(VK_CONTROL) < 0) return true; // Ctrl+Space toggles (on_key), not a search
     const std::size_t rows = tree_.row_count();
     if (rows == 0) return true;
     try {
@@ -194,19 +205,42 @@ void TreeView::on_button_down(int x, int y, bool double_click) noexcept {
         toggle(node);
         return;
     }
-    // Single click always selects; a bound single-click action runs in addition, at once (no
-    // double-click delay timer), so it also runs on the first click of a double click.
-    select_row(static_cast<std::size_t>(row));
     // Press and move starts a drag out instead of the click action. DragDetect returns at once
     // on movement past the system drag threshold or on button up (a plain click).
-    if (!double_click && wnd_ != nullptr) {
+    const auto drag_detect = [&] {
+        if (wnd_ == nullptr) return false;
         POINT screen{x, y};
         ClientToScreen(wnd_, &screen);
-        if (DragDetect(wnd_, screen)) {
-            drag_node(node);
-            return;
+        return DragDetect(wnd_, screen) != FALSE;
+    };
+    // Ctrl+click toggles, Shift+click selects a range (Ctrl+Shift adds it); no action runs.
+    const bool shift = GetKeyState(VK_SHIFT) < 0;
+    const bool ctrl = GetKeyState(VK_CONTROL) < 0;
+    if (shift || ctrl) {
+        if (double_click) return;
+        if (shift) {
+            extend_to(static_cast<std::size_t>(row), ctrl);
+        } else {
+            toggle_row(static_cast<std::size_t>(row));
         }
+        if (tree_.is_selected(node) && drag_detect()) drag_node(node);
+        return;
     }
+    // A press on a row of a multi-selection keeps it, so the whole selection can be dragged;
+    // releasing without a drag selects the row alone, as in Explorer.
+    const bool keep = !double_click && tree_.is_selected(node) && tree_.count_selected_rows(2) > 1;
+    if (keep) {
+        focus_row(static_cast<std::size_t>(row));
+    } else {
+        // Single click always selects; a bound single-click action runs in addition, at once (no
+        // double-click delay timer), so it also runs on the first click of a double click.
+        select_row(static_cast<std::size_t>(row));
+    }
+    if (!double_click && drag_detect()) {
+        drag_node(node);
+        return;
+    }
+    if (keep) select_row(static_cast<std::size_t>(row));
     run_gesture(double_click ? actions::Gesture::double_click : actions::Gesture::single_click,
                 node);
 }

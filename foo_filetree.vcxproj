@@ -121,6 +121,7 @@
     <ClCompile Include="src\model\extension_set.cpp" />
     <ClCompile Include="src\model\name_pool.cpp" />
     <ClCompile Include="src\model\tree.cpp" />
+    <ClCompile Include="src\model\tree_selection.cpp" />
     <ClCompile Include="src\platform\worker_pool.cpp" />
     <ClCompile Include="src\fs\enumerate.cpp" />
     <ClCompile Include="src\fs\enumeration_service.cpp" />
@@ -129,6 +130,7 @@
     <ClCompile Include="src\view\tree_view.cpp" />
     <ClCompile Include="src\view\tree_view_paint.cpp" />
     <ClCompile Include="src\view\tree_view_input.cpp" />
+    <ClCompile Include="src\view\tree_view_select.cpp" />
     <ClCompile Include="src\actions\action.cpp" />
     <ClCompile Include="src\actions\action_settings.cpp" />
     <ClCompile Include="src\actions\playlist_send.cpp" />

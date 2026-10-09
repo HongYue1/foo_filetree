@@ -142,6 +142,10 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
             selected_at = tree_.row_of(node);
         }
         selected_row_ = selected_at ? static_cast<std::ptrdiff_t>(*selected_at) : -1;
+        if (selected_at && now_selected == model::no_node && tree_.count_selected_rows(1) == 0) {
+            tree_.set_selected(node, true);
+            tree_.set_anchor(node);
+        }
         const std::uint32_t now_top = merge.map(top);
         std::optional<std::size_t> top_at;
         if (now_top != model::no_node) top_at = tree_.row_of(now_top);

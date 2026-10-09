@@ -22,6 +22,8 @@ void Tree::clear() noexcept {
     rows_.clear();
     previous_rows_.clear();
     names_.clear();
+    selected_.clear();
+    anchor_ = no_node;
 }
 
 std::uint32_t Tree::add_root(std::wstring_view path, std::uint32_t attributes,
@@ -86,6 +88,7 @@ RowSplice Tree::collapse(std::uint32_t index) {
     Node& node = nodes_[index];
     if (!node.has(node_expanded)) return {};
     node.flags = static_cast<std::uint16_t>(node.flags & ~(node_expanded | node_load_failed));
+    deselect_descendants(index);
     if (filtered()) return rebuild_rows();
 
     const auto row = row_of(index);
@@ -256,11 +259,13 @@ Tree::MergeResult Tree::merge_children(std::uint32_t index,
         if (match != no_node) {
             cursor = match + 1;
             result.moved[match] = at;
+            if (anchor_ == old_first + match) anchor_ = at;
             Node moved = nodes_[old_first + match];
             moved.size = record.size;
             moved.modified = record.modified;
             moved.attributes = record.attributes;
             nodes_.push_back(moved);
+            if (moved.has(node_selected)) selected_.push_back(at);
             Node& old = nodes_[old_first + match];
             if (moved.has(node_loaded)) {
                 for (std::uint32_t g = moved.first_child; g < moved.first_child + moved.child_count;
@@ -285,6 +290,7 @@ Tree::MergeResult Tree::merge_children(std::uint32_t index,
     }
     for (std::uint32_t i = 0; i < old_count; ++i) {
         if (result.moved[i] != no_node) continue;
+        if (anchor_ == old_first + i) anchor_ = no_node;
         orphan_children(old_first + i);
         nodes_[old_first + i].flags = 0;
     }
@@ -378,6 +384,7 @@ bool Tree::collect_filtered(std::uint32_t index, bool inside_match) {
 RowSplice Tree::collapse_all() {
     for (Node& node : nodes_) {
         node.flags = static_cast<std::uint16_t>(node.flags & ~(node_expanded | node_load_failed));
+        if (!node.has(node_root)) node.flags = static_cast<std::uint16_t>(node.flags & ~node_selected);
     }
     return rebuild_rows();
 }

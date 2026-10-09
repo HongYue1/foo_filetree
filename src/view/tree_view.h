@@ -397,6 +397,8 @@ private:
     bool separate_favourites_{false};
     bool hover_highlight_{true};
     bool zebra_{false};
+    //! Rows in the plain background colour are left unpainted over the parent's background.
+    bool transparent_{false};
     settings::Tooltips tooltips_{settings::Tooltips::off};
     RowTooltip tooltip_;
     std::ptrdiff_t tip_row_{-1};

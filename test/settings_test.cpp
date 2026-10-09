@@ -145,6 +145,9 @@ void test_settings_model() {
     b = a;
     b.status_counters = true;
     CHECK(diff(a, b) == change_layout);
+    b = a;
+    b.transparent = true;
+    CHECK(diff(a, b) == (change_layout | change_repaint));
 
     Settings wild;
     wild.line_thickness = 99;

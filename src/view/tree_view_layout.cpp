@@ -259,7 +259,8 @@ void TreeView::scroll_to(std::size_t top_row) noexcept {
     const auto boundary = metrics_.group_gap > 0 ? boundary_row() : std::nullopt;
     const bool gap_jumps = boundary && ((*boundary >= top_row_) != (*boundary >= top_row));
     top_row_ = top_row;
-    if (std::abs(delta) < visible_rows() && !gap_jumps) {
+    // Transparent rows sit on a background that does not scroll: repaint them all.
+    if (std::abs(delta) < visible_rows() && !gap_jumps && !transparent_) {
         // Move what is already on screen; only the uncovered strip gets painted.
         ScrollWindowEx(wnd_, 0, static_cast<int>(delta) * metrics_.row_height, nullptr, nullptr,
                        nullptr, nullptr, SW_INVALIDATE);

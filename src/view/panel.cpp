@@ -93,6 +93,8 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
                              }});
     status_.create(host, [this] { return tree_.counters_text(); });
     status_.set_counters_enabled(settings::current().status_counters);
+    transparent_ = settings::current().transparent;
+    status_.set_transparent(transparent_);
     // WM_CREATE attaches the tree (it needs the window).
     tree_wnd_ = CreateWindowExW(0, tree_class, L"",
                                 WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_CLIPSIBLINGS |
@@ -242,6 +244,8 @@ void Panel::on_settings_changed(std::uint32_t changes) noexcept {
     show_address_ = settings::current().show_address_bar;
     show_status_ = settings::current().show_status_bar;
     status_.set_counters_enabled(settings::current().status_counters);
+    transparent_ = settings::current().transparent;
+    status_.set_transparent(transparent_);
     const settings::FilterBox mode = settings::current().filter_box;
     if (mode != filter_mode_) {
         filter_.clear();
@@ -348,6 +352,12 @@ bool Panel::handle_message(HWND, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result
         if (tree_wnd_ != nullptr) SetFocus(tree_wnd_);
         return true;
     case WM_ERASEBKGND:
+    case WM_PRINTCLIENT:
+        // A transparent child (DrawThemeParentBackground) asks for what is behind it: pass the
+        // request on to the host's parent, with the DC already offset to our client area.
+        if (transparent_ && wp != 0) {
+            DrawThemeParentBackground(host_, reinterpret_cast<HDC>(wp), nullptr);
+        }
         result = 1;
         return true;
     case WM_DPICHANGED_AFTERPARENT:

@@ -82,6 +82,7 @@ private:
     FilterBox filter_;
     StatusBar status_;
     bool show_status_{false};
+    bool transparent_{false}; //!< forward background requests from the children to our parent
     model::Summary status_summary_{}; //!< what status_ shows, to skip unchanged paints
     bool status_valid_{false};
     HostHooks hooks_;

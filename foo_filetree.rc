@@ -68,9 +68,9 @@ BEGIN
     LTEXT           "px at 100% scaling (1-4)",IDC_STATIC,117,39,176,8
     LTEXT           "Colour:",IDC_STATIC,12,55,70,8
     CONTROL         "Text colour at",IDC_LINE_FOLLOW,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,85,54,60,10
+    CONTROL         "Custom colour",IDC_LINE_CUSTOM,"Button",BS_AUTORADIOBUTTON,85,70,60,10
     EDITTEXT        IDC_LINE_OPACITY,147,53,24,12,ES_AUTOHSCROLL | ES_NUMBER | WS_GROUP
     LTEXT           "% opacity (10-100)",IDC_STATIC,175,55,118,8
-    CONTROL         "Custom colour",IDC_LINE_CUSTOM,"Button",BS_AUTORADIOBUTTON,85,70,60,10
     CONTROL         "",IDC_LINE_SWATCH,"Button",BS_OWNERDRAW | WS_TABSTOP | WS_GROUP,147,69,24,12
     EDITTEXT        IDC_LINE_HEX,175,69,36,12,ES_AUTOHSCROLL | ES_UPPERCASE
 
@@ -91,7 +91,7 @@ BEGIN
     EDITTEXT        IDC_MARK_SIZE,256,156,20,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "px",IDC_STATIC,279,158,14,8
     CONTROL         "Mark the playing track",IDC_MARK_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,171,92,10
-    CONTROL         "Select each new track",IDC_FOLLOW_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,180,171,113,10
+    CONTROL         "Follow the playing track",IDC_FOLLOW_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,180,171,113,10
 
     LTEXT           "Sorting",IDC_STATIC,7,188,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,198,286,1
@@ -115,12 +115,13 @@ BEGIN
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,75,286,1
     CONTROL         "Highlight the row under the mouse",IDC_HOVER_HIGHLIGHT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,82,281,10
     CONTROL         "Shade every other row",IDC_ZEBRA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,96,281,10
+    CONTROL         "Transparent background (show what is behind the panel)",IDC_TRANSPARENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,110,281,10
 
-    LTEXT           "Status bar",IDC_STATIC,7,114,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,124,286,1
-    CONTROL         "Show a status bar below the tree",IDC_SHOW_STATUS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,131,281,10
-    LTEXT           "Counts and sizes of the selected items, or of the focused folder's contents.",IDC_STATIC,24,144,269,8
-    CONTROL         "Show performance counters when the mouse rests on it",IDC_STATUS_COUNTERS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,24,157,269,10
+    LTEXT           "Status bar",IDC_STATIC,7,128,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,138,286,1
+    CONTROL         "Show a status bar below the tree",IDC_SHOW_STATUS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,145,281,10
+    LTEXT           "Counts and sizes of the selected items, or of the focused folder's contents.",IDC_STATIC,24,158,269,8
+    CONTROL         "Show performance counters when the mouse rests on it",IDC_STATUS_COUNTERS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,24,171,269,10
 END
 
 IDD_TAB_FILTER DIALOGEX 0, 0, 300, 222
@@ -147,7 +148,7 @@ BEGIN
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,171,286,1
     LTEXT           "Patterns:",IDC_STATIC,12,180,70,8
     EDITTEXT        IDC_HIDE_PATTERNS,85,178,208,12,ES_AUTOHSCROLL
-    LTEXT           "Hides files and folders whose whole name matches. * stands for any characters, ? for one. Separate patterns with ; for example: *.tmp; Thumbs.db; @eaDir",IDC_STATIC,85,193,208,24
+    LTEXT           "Hides files and folders whose whole name matches. * stands for any characters, ? for one. Separate patterns with semicolons, for example: *.tmp; Thumbs.db; @eaDir",IDC_STATIC,85,193,208,24
 END
 
 IDD_TAB_ACTIONS DIALOGEX 0, 0, 300, 222
@@ -170,7 +171,7 @@ BEGIN
     LTEXT           "Enter key:",IDC_STATIC,12,82,70,8
     COMBOBOX        1056,85,80,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     COMBOBOX        1057,191,80,102,120,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "A single click always selects; its action runs as well. Hold Shift to flip ""include subfolders"", Ctrl to use the active playlist.",IDC_STATIC,85,97,208,24
+    LTEXT           "A single click always selects; its action runs as well. With Enter or a middle click, hold Shift to flip ""include subfolders"", Ctrl to use the active playlist.",IDC_STATIC,85,97,208,24
 END
 
 IDD_TAB_MENU DIALOGEX 0, 0, 300, 222
@@ -180,10 +181,10 @@ BEGIN
     LTEXT           "Context menu",IDC_STATIC,7,4,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
     LTEXT           "Items in the order they appear:",IDC_STATIC,12,21,226,8
-    LISTBOX         IDC_MENU_LIST,12,32,226,140,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LISTBOX         IDC_MENU_LIST,12,32,226,140,LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
     PUSHBUTTON      "Move up",IDC_MENU_UP,243,32,50,14
     PUSHBUTTON      "Move down",IDC_MENU_DOWN,243,48,50,14
-    CONTROL         "Show the selected item",IDC_MENU_SHOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,177,226,10
+    CONTROL         "Show this item in the menu",IDC_MENU_SHOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,177,226,10
     LTEXT           "Separators are added between groups automatically. Undo only appears when there is something to undo.",IDC_STATIC,12,191,226,16
 END
 

@@ -34,6 +34,8 @@ public:
 
     //! The performance-counter tooltip (off: no tip at all).
     void set_counters_enabled(bool enabled) noexcept;
+    //! Paint the parent's background instead of the background colour.
+    void set_transparent(bool transparent) noexcept;
 
     //! Repaints only when the text changed.
     void set_text(std::wstring text) noexcept;
@@ -58,6 +60,7 @@ private:
     int dpi_{96};
     int height_{20};
     bool counters_enabled_{false};
+    bool transparent_{false};
     void place_tip() noexcept;
 };
 

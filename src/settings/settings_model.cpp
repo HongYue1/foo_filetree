@@ -184,11 +184,13 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         a.follow_playing != b.follow_playing ||
         a.separate_favourites != b.separate_favourites ||
         a.watch_changes != b.watch_changes || a.tooltips != b.tooltips ||
-        a.hover_highlight != b.hover_highlight || a.zebra != b.zebra) {
+        a.hover_highlight != b.hover_highlight || a.zebra != b.zebra ||
+        a.transparent != b.transparent) {
         out |= change_repaint;
     }
     if (a.show_address_bar != b.show_address_bar || a.filter_box != b.filter_box ||
-        a.show_status_bar != b.show_status_bar || a.status_counters != b.status_counters) {
+        a.show_status_bar != b.show_status_bar || a.status_counters != b.status_counters ||
+        a.transparent != b.transparent) {
         out |= change_layout;
     }
     if (a.sort.field != b.sort.field || a.sort.folders_first != b.sort.folders_first ||

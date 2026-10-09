@@ -3,12 +3,14 @@
 #include "status_bar.h"
 
 #include <commctrl.h>
+#include <uxtheme.h>
 
 #include <algorithm>
 
 #include "../platform/dpi.h"
 
 #pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "uxtheme.lib")
 
 namespace filetree::view {
 namespace {
@@ -101,6 +103,12 @@ void StatusBar::set_counters_enabled(bool enabled) noexcept {
     place_tip();
 }
 
+void StatusBar::set_transparent(bool transparent) noexcept {
+    if (transparent == transparent_) return;
+    transparent_ = transparent;
+    if (wnd_ != nullptr) InvalidateRect(wnd_, nullptr, FALSE);
+}
+
 void StatusBar::place_tip() noexcept {
     if (wnd_ == nullptr) return;
     if (!counters_enabled_) {
@@ -128,6 +136,7 @@ void StatusBar::paint(HDC dc) noexcept {
     SelectObject(dc, GetStockObject(DC_BRUSH));
     SetDCBrushColor(dc, colours_.background);
     FillRect(dc, &client, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+    if (transparent_) DrawThemeParentBackground(wnd_, dc, &client);
     const RECT line{client.left, client.top, client.right, client.top + 1};
     SetDCBrushColor(dc, line_colour_);
     FillRect(dc, &line, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));

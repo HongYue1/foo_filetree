@@ -28,6 +28,7 @@ void TreeView::refresh_options() noexcept {
     separate_favourites_ = s.separate_favourites;
     hover_highlight_ = s.hover_highlight;
     zebra_ = s.zebra;
+    transparent_ = s.transparent;
     if (tooltips_ != s.tooltips) {
         tooltips_ = s.tooltips;
         update_tooltip(hover_row_);

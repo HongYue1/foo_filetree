@@ -4,7 +4,11 @@
 
 #include "tree_view.h"
 
+#include <uxtheme.h>
+
 #include "icon_font.h"
+
+#pragma comment(lib, "uxtheme.lib")
 
 #include <algorithm>
 
@@ -87,6 +91,12 @@ void TreeView::paint(HDC target, const RECT& dirty) noexcept {
         SetBkMode(dc, TRANSPARENT);
     }
     const HGDIOBJ old_font = SelectObject(dc, font_ != nullptr ? font_ : GetStockObject(DEFAULT_GUI_FONT));
+    if (transparent_) {
+        // What is behind the panel: the host forwards this to its own parent (Panel). The
+        // background colour first, in case no window up the chain paints anything.
+        fill(dc, dirty, colours_.background);
+        DrawThemeParentBackground(wnd_, dc, &dirty);
+    }
 
     const int row_height = metrics_.row_height;
     const std::size_t rows = tree_.row_count();
@@ -109,7 +119,7 @@ void TreeView::paint(HDC target, const RECT& dirty) noexcept {
             // The gap above the second group, with the optional line through its middle.
             const int gap = metrics_.group_gap;
             const RECT gap_rect{0, top - gap, client_width_, top};
-            if (gap > 0) fill(dc, gap_rect, colours_.background);
+            if (gap > 0 && !transparent_) fill(dc, gap_rect, colours_.background);
             if (separate_favourites_) {
                 const int margin = MulDiv(4, metrics_.dpi, 96);
                 const int thickness = std::max(metrics_.line_width, 1);
@@ -128,7 +138,7 @@ void TreeView::paint(HDC target, const RECT& dirty) noexcept {
         }
         bottom = rect.bottom;
     }
-    if (bottom < dirty.bottom) {
+    if (bottom < dirty.bottom && !transparent_) {
         fill(dc, RECT{dirty.left, bottom, dirty.right, dirty.bottom}, colours_.background);
     }
 
@@ -158,7 +168,7 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         if (hovered) background = hover_background_;
         if (is_cut(index)) text = dim_text_; // cut, as Explorer ghosts it
     }
-    fill(dc, rect, background);
+    if (!transparent_ || background != colours_.background) fill(dc, rect, background);
     // While the keyboard drives a multi-selection (or after Ctrl+Space unselected the focus
     // row), the focus row gets a soft inset frame so the keyboard position stays visible.
     if (focus && focused_ && keyboard_cue_ && (!selected || tree_.selection_hint() > 1)) {

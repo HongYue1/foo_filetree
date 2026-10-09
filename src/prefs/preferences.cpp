@@ -207,7 +207,7 @@ private:
             const wchar_t root[] = {static_cast<wchar_t>(L'A' + letter), L':', L'\\', L'\0'};
             std::wstring text{root[0], L':'};
             if (const wchar_t* type = drive_type_name(GetDriveTypeW(root)); *type != L'\0') {
-                text += L"  (";
+                text += L" (";
                 text += type;
                 text += L")";
             }
@@ -381,6 +381,7 @@ private:
         s.zebra = get_check(page, IDC_ZEBRA);
         s.show_status_bar = get_check(page, IDC_SHOW_STATUS_BAR);
         s.status_counters = get_check(page, IDC_STATUS_COUNTERS);
+        s.transparent = get_check(page, IDC_TRANSPARENT);
 
         s.files = static_cast<fs::FileMode>(get_combo(page, IDC_FILES, 1));
         s.show_hidden = get_check(page, IDC_SHOW_HIDDEN);
@@ -444,6 +445,7 @@ private:
         set_check(page, IDC_ZEBRA, s.zebra);
         set_check(page, IDC_SHOW_STATUS_BAR, s.show_status_bar);
         set_check(page, IDC_STATUS_COUNTERS, s.status_counters);
+        set_check(page, IDC_TRANSPARENT, s.transparent);
 
         set_combo(page, IDC_FILES, static_cast<int>(s.files));
         set_check(page, IDC_SHOW_HIDDEN, s.show_hidden);

@@ -102,14 +102,16 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
 
         const model::Tree::MergeResult merge = tree_.merge_children(node, records_);
         schedule_watch_sync(); // moved children: refresh the watch set's node indices
-        // Callbacks carry the node index they were made for: listings for moved children are
-        // asked for again under the new index (checks are simply dropped).
+        // Callbacks carry the node index they were made for: listings and checks for moved
+        // children are asked for again under the new index. Dropping a check would lose the
+        // change it was sent for (a parent's check usually lands first: its child's time changed).
         std::vector<std::uint32_t> relist;
+        std::vector<std::uint32_t> recheck;
         std::erase_if(pending_, [&](const PendingListing& p) {
             const std::uint32_t moved = merge.map(p.node);
             if (moved == p.node) return false;
             p.ticket.cancel();
-            if (!p.check && moved != model::no_node) relist.push_back(moved);
+            if (moved != model::no_node) (p.check ? recheck : relist).push_back(moved);
             return true;
         });
         for (const std::uint32_t moved : relist) {
@@ -117,6 +119,12 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
                 request_listing(moved);
             } catch (...) {
                 tree_.fail_load(moved);
+            }
+        }
+        for (const std::uint32_t moved : recheck) {
+            try {
+                request_check(moved);
+            } catch (...) {
             }
         }
         pending_select_.folder = merge.map(pending_select_.folder);

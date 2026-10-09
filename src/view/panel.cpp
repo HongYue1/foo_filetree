@@ -95,6 +95,7 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
     status_.set_counters_enabled(settings::current().status_counters);
     transparent_ = settings::current().transparent;
     status_.set_transparent(transparent_);
+    address_.set_transparent(transparent_);
     // WM_CREATE attaches the tree (it needs the window).
     tree_wnd_ = CreateWindowExW(0, tree_class, L"",
                                 WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_CLIPSIBLINGS |
@@ -246,6 +247,7 @@ void Panel::on_settings_changed(std::uint32_t changes) noexcept {
     status_.set_counters_enabled(settings::current().status_counters);
     transparent_ = settings::current().transparent;
     status_.set_transparent(transparent_);
+    address_.set_transparent(transparent_);
     const settings::FilterBox mode = settings::current().filter_box;
     if (mode != filter_mode_) {
         filter_.clear();

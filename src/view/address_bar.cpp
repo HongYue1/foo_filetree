@@ -106,6 +106,12 @@ void AddressBar::set_colours(const ViewColours& colours) noexcept {
     if (wnd_ != nullptr) InvalidateRect(wnd_, nullptr, TRUE);
 }
 
+void AddressBar::set_transparent(bool transparent) noexcept {
+    if (transparent == transparent_) return;
+    transparent_ = transparent;
+    if (wnd_ != nullptr) InvalidateRect(wnd_, nullptr, FALSE);
+}
+
 void AddressBar::set_font(const LOGFONTW& font) noexcept {
     base_font_ = font;
     has_base_font_ = true;
@@ -234,7 +240,12 @@ int AddressBar::hit(int x, int y) const noexcept {
 }
 
 void AddressBar::paint(HDC dc, const RECT& client) noexcept {
-    fill(dc, client, bar_background_);
+    if (transparent_) {
+        fill(dc, client, colours_.background); // fallback when the parent paints nothing
+        DrawThemeParentBackground(wnd_, dc, &client);
+    } else {
+        fill(dc, client, bar_background_);
+    }
     fill(dc, RECT{client.left, client.bottom - 1, client.right, client.bottom}, border_);
     if (!show_address_) return;
     const int pen = std::max(dpi::scale(3, dpi_) / 2, 1);

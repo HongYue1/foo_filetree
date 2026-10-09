@@ -38,6 +38,8 @@ public:
     [[nodiscard]] HWND wnd() const noexcept { return wnd_; }
 
     void set_colours(const ViewColours& colours) noexcept;
+    //! Draw what is behind the panel instead of the bar's tint (buttons, crumbs, hover stay).
+    void set_transparent(bool transparent) noexcept;
     //! A font as the host reports it (system DPI); scaled to the window's DPI here.
     void set_font(const LOGFONTW& font) noexcept;
     //! Call after a DPI change: rebuilds the font and the layout.
@@ -76,6 +78,7 @@ private:
     HWND wnd_{};
     HWND edit_{};
     bool show_address_{true};
+    bool transparent_{false};
     int filter_height_{0};
     RECT filter_rect_{}; //!< where the panel puts the filter box
     Hooks hooks_;

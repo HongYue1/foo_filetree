@@ -98,8 +98,9 @@ foobar2000 layout). General > On startup chooses between restoring that, startin
 folders closed, or opening a fixed folder.
 
 The View tab has the tooltips (off, full path, or only cut-off names shown in place), the hover
-highlight, shading every other row, a transparent background (the tree and status bar show
-what is behind the panel, for layouts with a background image) and the status bar. The status bar shows how many items are
+highlight, shading every other row, a transparent background (the address bar, tree and status bar
+show what is behind the panel, for layouts with a background image; with a plain host
+container it looks the same as off) and the status bar. The status bar shows how many items are
 selected with their size, or what the focused folder holds (folders, files, size of the files);
 with "Show performance counters" on, resting the mouse on it shows the panel's counters (rows,
 nodes, memory, watched folders, listings in flight).

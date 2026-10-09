@@ -100,8 +100,8 @@ folders closed, or opening a fixed folder.
 The View tab has the tooltips (off, full path, or only cut-off names shown in place), the hover
 highlight, shading every other row and the status bar. The status bar shows how many items are
 selected with their size, or what the focused folder holds (folders, files, size of the files);
-rest the mouse on it for the panel's counters (rows, nodes, memory, watched folders, listings in
-flight).
+with "Show performance counters" on, resting the mouse on it shows the panel's counters (rows,
+nodes, memory, watched folders, listings in flight).
 
 Favourites: right-click a folder > Add to favourites and it becomes a root (shown by its name)
 in every panel, before or after the drives. Manage the list on the Favourites tab. Folders that are

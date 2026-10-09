@@ -48,6 +48,7 @@ constexpr GUID guid_hover_highlight = {0xe3b05361, 0x4c4b, 0x4fb1, {0x92, 0xae, 
 constexpr GUID guid_zebra = {0xddfc1742, 0x6710, 0x41d8, {0xba, 0xf8, 0x7f, 0x9a, 0x98, 0xcc, 0x21, 0xac}};
 // M8b.
 constexpr GUID guid_show_status_bar = {0xc6839425, 0x8ba9, 0x4642, {0xbc, 0x2d, 0x23, 0xd0, 0x01, 0x81, 0x9b, 0x5a}};
+constexpr GUID guid_status_counters = {0xfaa522ce, 0xe123, 0x4ebb, {0x9b, 0xc2, 0xb0, 0xd1, 0x17, 0xbe, 0x63, 0xe8}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
 using cfg_int = cfg_var_modern::cfg_int;
@@ -93,6 +94,7 @@ cfg_int cfg_tooltips(guid_tooltips, static_cast<int>(defaults.tooltips));
 cfg_bool cfg_hover_highlight(guid_hover_highlight, defaults.hover_highlight);
 cfg_bool cfg_zebra(guid_zebra, defaults.zebra);
 cfg_bool cfg_show_status_bar(guid_show_status_bar, defaults.show_status_bar);
+cfg_bool cfg_status_counters(guid_status_counters, defaults.status_counters);
 
 std::optional<Settings> g_current; //!< saved
 std::optional<Settings> g_preview;
@@ -155,6 +157,7 @@ Settings load() {
     s.hover_highlight = cfg_hover_highlight.get();
     s.zebra = cfg_zebra.get();
     s.show_status_bar = cfg_show_status_bar.get();
+    s.status_counters = cfg_status_counters.get();
     s.sanitize();
     return s;
 }
@@ -197,6 +200,7 @@ void save(const Settings& s) {
     cfg_hover_highlight.set(s.hover_highlight);
     cfg_zebra.set(s.zebra);
     cfg_show_status_bar.set(s.show_status_bar);
+    cfg_status_counters.set(s.status_counters);
 }
 
 std::shared_ptr<const model::FilterRules> build_rules(const Settings& s) {

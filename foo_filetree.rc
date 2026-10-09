@@ -119,7 +119,8 @@ BEGIN
     LTEXT           "Status bar",IDC_STATIC,7,114,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,124,286,1
     CONTROL         "Show a status bar below the tree",IDC_SHOW_STATUS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,131,281,10
-    LTEXT           "Counts and sizes of the selected items, or of the focused folder's contents. Rest the mouse on it for the panel's performance counters.",IDC_STATIC,24,144,269,16
+    LTEXT           "Counts and sizes of the selected items, or of the focused folder's contents.",IDC_STATIC,24,144,269,8
+    CONTROL         "Show performance counters when the mouse rests on it",IDC_STATUS_COUNTERS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,24,157,269,10
 END
 
 IDD_TAB_FILTER DIALOGEX 0, 0, 300, 222

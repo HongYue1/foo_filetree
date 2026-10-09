@@ -32,6 +32,9 @@ public:
     void refresh_dpi() noexcept;
     [[nodiscard]] int height() const noexcept { return height_; }
 
+    //! The performance-counter tooltip (off: no tip at all).
+    void set_counters_enabled(bool enabled) noexcept;
+
     //! Repaints only when the text changed.
     void set_text(std::wstring text) noexcept;
 
@@ -54,6 +57,8 @@ private:
     HFONT font_{};
     int dpi_{96};
     int height_{20};
+    bool counters_enabled_{false};
+    void place_tip() noexcept;
 };
 
 } // namespace filetree::view

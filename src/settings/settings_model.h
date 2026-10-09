@@ -113,6 +113,7 @@ struct Settings {
     bool hover_highlight{true}; //!< the row under the mouse is tinted
     bool zebra{false};          //!< every other row slightly tinted
     bool show_status_bar{false}; //!< footer: counts and sizes of the selection or folder
+    bool status_counters{false}; //!< the status bar's tooltip shows performance counters
 
     // Filter
     bool show_hidden{false};

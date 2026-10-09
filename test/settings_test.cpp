@@ -142,6 +142,9 @@ void test_settings_model() {
     b = a;
     b.show_status_bar = true;
     CHECK(diff(a, b) == change_layout);
+    b = a;
+    b.status_counters = true;
+    CHECK(diff(a, b) == change_layout);
 
     Settings wild;
     wild.line_thickness = 99;

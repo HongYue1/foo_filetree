@@ -92,6 +92,7 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
                                  }
                              }});
     status_.create(host, [this] { return tree_.counters_text(); });
+    status_.set_counters_enabled(settings::current().status_counters);
     // WM_CREATE attaches the tree (it needs the window).
     tree_wnd_ = CreateWindowExW(0, tree_class, L"",
                                 WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_CLIPSIBLINGS |
@@ -240,6 +241,7 @@ void Panel::on_settings_changed(std::uint32_t changes) noexcept {
     if ((changes & settings::change_layout) == 0) return;
     show_address_ = settings::current().show_address_bar;
     show_status_ = settings::current().show_status_bar;
+    status_.set_counters_enabled(settings::current().status_counters);
     const settings::FilterBox mode = settings::current().filter_box;
     if (mode != filter_mode_) {
         filter_.clear();

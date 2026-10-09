@@ -95,6 +95,27 @@ void StatusBar::rebuild_font() noexcept {
     tooltip_.set_font(font_);
 }
 
+void StatusBar::set_counters_enabled(bool enabled) noexcept {
+    if (enabled == counters_enabled_) return;
+    counters_enabled_ = enabled;
+    place_tip();
+}
+
+void StatusBar::place_tip() noexcept {
+    if (wnd_ == nullptr) return;
+    if (!counters_enabled_) {
+        tooltip_.clear();
+        return;
+    }
+    RECT client{};
+    GetClientRect(wnd_, &client);
+    if (tooltip_.ensure(wnd_)) {
+        tooltip_.set_dark(colours_.dark);
+        tooltip_.set_font(font_);
+        tooltip_.set_area(client);
+    }
+}
+
 void StatusBar::set_text(std::wstring text) noexcept {
     if (text == text_) return;
     text_ = std::move(text);
@@ -138,17 +159,10 @@ LRESULT StatusBar::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept
         EndPaint(wnd, &ps);
         return 0;
     }
-    case WM_SIZE: {
-        RECT client{};
-        GetClientRect(wnd, &client);
-        if (tooltip_.ensure(wnd)) {
-            tooltip_.set_dark(colours_.dark);
-            tooltip_.set_font(font_);
-            tooltip_.set_area(client);
-        }
+    case WM_SIZE:
+        place_tip();
         InvalidateRect(wnd, nullptr, FALSE);
         return 0;
-    }
     case WM_NOTIFY: {
         const auto* header = reinterpret_cast<const NMHDR*>(lp);
         if (header != nullptr && header->hwndFrom == tooltip_.wnd() &&

@@ -380,6 +380,7 @@ private:
         s.hover_highlight = get_check(page, IDC_HOVER_HIGHLIGHT);
         s.zebra = get_check(page, IDC_ZEBRA);
         s.show_status_bar = get_check(page, IDC_SHOW_STATUS_BAR);
+        s.status_counters = get_check(page, IDC_STATUS_COUNTERS);
 
         s.files = static_cast<fs::FileMode>(get_combo(page, IDC_FILES, 1));
         s.show_hidden = get_check(page, IDC_SHOW_HIDDEN);
@@ -442,6 +443,7 @@ private:
         set_check(page, IDC_HOVER_HIGHLIGHT, s.hover_highlight);
         set_check(page, IDC_ZEBRA, s.zebra);
         set_check(page, IDC_SHOW_STATUS_BAR, s.show_status_bar);
+        set_check(page, IDC_STATUS_COUNTERS, s.status_counters);
 
         set_combo(page, IDC_FILES, static_cast<int>(s.files));
         set_check(page, IDC_SHOW_HIDDEN, s.show_hidden);

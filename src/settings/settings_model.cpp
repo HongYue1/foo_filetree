@@ -170,7 +170,7 @@ void Settings::sanitize() noexcept {
 std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
     std::uint32_t out = 0;
     if (a.show_drives != b.show_drives || a.hidden_drives != b.hidden_drives ||
-        a.favourites != b.favourites ||
+        a.favourites != b.favourites || a.library_roots != b.library_roots ||
         a.favourites_place != b.favourites_place) {
         out |= change_roots;
     }

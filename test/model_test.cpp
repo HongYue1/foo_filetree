@@ -539,10 +539,12 @@ void test_actions() {
 } // namespace
 
 void test_file_kinds();
+void test_library_index();
 
 int main() {
     test_actions();
     test_file_kinds();
+    test_library_index();
     test_filter_rules();
     test_settings_model();
     test_presets();

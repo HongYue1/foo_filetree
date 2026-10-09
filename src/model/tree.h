@@ -33,6 +33,7 @@ enum NodeFlag : std::uint16_t {
     node_root = 1 << 5,
     node_favourite = 1 << 6, //!< a root from the favourites list (else a drive)
     node_selected = 1 << 7,  //!< in the multi-selection (follows the node through merges)
+    node_library = 1 << 8,   //!< with node_favourite: a root from the Media Library folders
 };
 
 struct Node {

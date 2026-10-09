@@ -94,6 +94,7 @@ struct Settings {
     bool follow_playing{false}; //!< each new playing track is opened to and selected
     std::wstring startup_folder; //!< for Startup::folder
     std::vector<std::wstring> favourites; //!< shown as roots, in this order
+    bool library_roots{false}; //!< the Media Library folders join the favourites as roots
     FavouritesPlace favourites_place{FavouritesPlace::before};
     bool separate_favourites{true}; //!< a line between the favourites and the drives
     int favourites_gap{12};         //!< DIP of space between the two groups, 0-24

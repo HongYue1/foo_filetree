@@ -6,6 +6,7 @@
 #include "tree_view.h"
 
 #include "../fs/fb2k_glue.h"
+#include "../fs/library_folders.h"
 
 namespace filetree::view {
 
@@ -79,16 +80,31 @@ std::wstring TreeView::upper_path(std::uint32_t node) const {
     return path;
 }
 
-void TreeView::relist_all() noexcept {
+void TreeView::on_library_changed() noexcept {
+    if (wnd_ == nullptr || !settings::current().library_roots) return;
+    const auto index = fs::library_index();
+    if (index == nullptr) return;
+    const bool same = library_ != nullptr ? library_->same_roots(*index) : index->roots().empty();
+    if (same) {
+        library_ = index;
+        return;
+    }
+    relist_all(true); // also takes the new index
+    schedule_watch_sync();
+}
+
+void TreeView::relist_all(bool keep_pending) noexcept {
     try {
         end_rename(false);
-        restore_expand_.clear();
-        restore_select_.clear();
+        if (!keep_pending) {
+            restore_expand_.clear();
+            restore_select_.clear();
+        }
         for (const std::uint32_t node : tree_.rows()) {
             const model::Node& n = tree_.node(node);
             if (n.has(model::node_expanded)) restore_expand_.insert(upper_path(node));
         }
-        if (selected_row_ >= 0) {
+        if (selected_row_ >= 0 && (!keep_pending || restore_select_.empty())) {
             restore_select_ = upper_path(tree_.node_at_row(static_cast<std::size_t>(selected_row_)));
         }
         populate_roots();

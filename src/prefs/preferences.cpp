@@ -410,6 +410,7 @@ private:
         s.hide_patterns = get_text(page, IDC_HIDE_PATTERNS);
         s.menu = menu_.layout;
         s.favourites = favourites_.paths;
+        s.library_roots = get_check(page, IDC_LIBRARY_ROOTS);
         s.hidden_folders = hidden_.paths;
         s.favourites_place =
             static_cast<settings::FavouritesPlace>(get_combo(page, IDC_FAV_PLACE, 0));
@@ -482,6 +483,7 @@ private:
         }
         menu_.layout = s.menu;
         favourites_.paths = s.favourites;
+        set_check(page, IDC_LIBRARY_ROOTS, s.library_roots);
         hidden_.paths = s.hidden_folders;
         set_combo(page, IDC_FAV_PLACE, static_cast<int>(s.favourites_place));
         set_check(page, IDC_FAV_SEPARATE, s.separate_favourites);

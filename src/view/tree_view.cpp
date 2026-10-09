@@ -11,6 +11,7 @@
 
 #include "../fs/drives.h"
 #include "../fs/fb2k_glue.h"
+#include "../fs/library_folders.h"
 #include "../platform/dpi.h"
 #include "icon_font.h"
 
@@ -25,8 +26,18 @@ namespace {
 std::vector<TreeView*> g_views;
 TreeView* g_active_view = nullptr;
 
+void library_changed() {
+    const std::vector<TreeView*> views = g_views;
+    for (TreeView* view : views) {
+        if (std::find(g_views.begin(), g_views.end(), view) != g_views.end()) {
+            view->on_library_changed();
+        }
+    }
+}
+
 void register_view(TreeView* view) {
     try {
+        fs::set_library_listener(&library_changed);
         g_views.push_back(view);
     } catch (...) {
     }
@@ -130,6 +141,21 @@ void TreeView::populate_roots() {
     const auto add_favourites = [&] {
         for (const std::wstring& path : s.favourites) {
             tree_.add_root(path, FILE_ATTRIBUTE_DIRECTORY, model::node_favourite);
+        }
+        // Then the library folders that are not favourites already.
+        library_ = s.library_roots ? fs::library_index() : nullptr;
+        if (library_ == nullptr) return;
+        for (const std::wstring& root : library_->roots()) {
+            const bool listed = std::any_of(
+                s.favourites.begin(), s.favourites.end(), [&](const std::wstring& favourite) {
+                    return CompareStringOrdinal(favourite.c_str(), static_cast<int>(favourite.size()),
+                                                root.c_str(), static_cast<int>(root.size()),
+                                                TRUE) == CSTR_EQUAL;
+                });
+            if (!listed) {
+                tree_.add_root(root, FILE_ATTRIBUTE_DIRECTORY,
+                               static_cast<std::uint16_t>(model::node_favourite | model::node_library));
+            }
         }
     };
     if (s.favourites_place == settings::FavouritesPlace::before) add_favourites();

@@ -120,6 +120,8 @@
     <ClCompile Include="src\model\sort.cpp" />
     <ClCompile Include="src\model\extension_set.cpp" />
     <ClCompile Include="src\model\file_kind.cpp" />
+    <ClCompile Include="src\model\library_index.cpp" />
+    <ClCompile Include="src\fs\library_folders.cpp" />
     <ClCompile Include="src\model\name_pool.cpp" />
     <ClCompile Include="src\model\tree.cpp" />
     <ClCompile Include="src\model\tree_selection.cpp" />
@@ -178,6 +180,8 @@
   <ItemGroup>
     <ClInclude Include="src\guids.h" />
     <ClInclude Include="src\model\file_kind.h" />
+    <ClInclude Include="src\model\library_index.h" />
+    <ClInclude Include="src\fs\library_folders.h" />
     <ClInclude Include="src\prefs\prefs_util.h" />
     <ClInclude Include="src\prefs\list_editors.h" />
     <ClInclude Include="src\view\row_tooltip.h" />

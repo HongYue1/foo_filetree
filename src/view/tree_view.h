@@ -26,6 +26,7 @@
 #include "../fs/enumerate.h"
 #include "../fs/enumeration_service.h"
 #include "../fs/watcher.h"
+#include "../model/library_index.h"
 #include "../model/status_text.h"
 #include "../model/tree.h"
 #include "../settings/panel_state.h"
@@ -100,6 +101,8 @@ public:
 
     // Main-menu commands (main_menu.cpp) go to the panel that had the focus last.
     enum class Command : std::uint8_t { show_playing, refresh, collapse_all, new_folder };
+    //! A new Media Library index: rebuilds the roots if the library folders changed.
+    void on_library_changed() noexcept;
     //! The last focused panel, else any; null when no panel exists.
     [[nodiscard]] static TreeView* active() noexcept;
     void run_command(Command command) noexcept;
@@ -136,7 +139,9 @@ private:
     void refresh_options() noexcept;
     //! Rebuilds the tree (new filter, sort or roots), re-expanding what was open and restoring
     //! the selection by path as the listings come in.
-    void relist_all() noexcept;
+    //! `keep_pending`: also keep what an earlier restore is still waiting for (the library
+    //! roots arrive after the panel restored its state).
+    void relist_all(bool keep_pending = false) noexcept;
     //! Expands / selects `node` if a pending restore wants it.
     void try_restore(std::uint32_t node);
     //! Keeps restore_top_node_ as the first visible row until the restore finishes or the user
@@ -424,6 +429,7 @@ private:
     std::unordered_set<std::wstring> favourite_leaves_;
     std::wstring favourite_scratch_; //!< reused by is_favourite
     std::shared_ptr<const model::ExtensionSet> playable_; //!< for Extensions::non_playable
+    std::shared_ptr<const model::LibraryIndex> library_;  //!< the roots were built from this
 
     // Restore after relist_all(): upper-cased paths still to expand, and the path to select.
     std::unordered_set<std::wstring> restore_expand_;

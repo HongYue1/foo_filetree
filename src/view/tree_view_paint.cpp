@@ -379,7 +379,7 @@ void TreeView::paint_icon(HDC dc, const model::Node& node, const RECT& rect, COL
 
 bool TreeView::is_favourite(std::uint32_t index) noexcept {
     const model::Node& node = tree_.node(index);
-    if (node.has(model::node_favourite)) return true;
+    if (node.has(model::node_favourite) && !node.has(model::node_library)) return true;
     if (favourite_paths_.empty()) return false;
     try {
         // The last component first: building the full path is only needed on a name match.

@@ -170,6 +170,7 @@ BEGIN
     PUSHBUTTON      "Move down",IDC_FAV_DOWN,243,84,50,14
     LTEXT           "Show them:",IDC_STATIC,12,170,70,8
     COMBOBOX        IDC_FAV_PLACE,85,168,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Right-click a folder in the tree to add it or remove it.",IDC_STATIC,12,186,281,8
+    CONTROL         "Draw a line between the favourites and the drives",IDC_FAV_SEPARATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,185,208,10
+    LTEXT           "Right-click a folder in the tree to add it or remove it.",IDC_STATIC,12,203,281,8
 END
 

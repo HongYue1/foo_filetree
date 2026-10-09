@@ -134,6 +134,16 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
                             !(node.has(model::node_loaded) && node.child_count == 0);
     if (lines_ != settings::TreeLines::none) paint_lines(dc, index, rect, expandable);
 
+    // Favourites / drives boundary: roots are the first nodes, in display order, so the root
+    // before this one is index - 1. Drawn on this row's top edge; no extra row.
+    if (separate_favourites_ && node.has(model::node_root) && index > 0 &&
+        tree_.node(index - 1).has(model::node_root) &&
+        tree_.node(index - 1).has(model::node_favourite) != node.has(model::node_favourite)) {
+        const int margin = MulDiv(4, metrics_.dpi, 96);
+        const int thickness = std::max(metrics_.line_width, 1);
+        fill(dc, RECT{margin, rect.top, rect.right - margin, rect.top + thickness}, line_colour_);
+    }
+
     // Expander: folders that might have children. A loaded empty folder has none to show.
     if (expandable) {
         const bool open = node.has(model::node_expanded) && !node.has(model::node_load_failed);

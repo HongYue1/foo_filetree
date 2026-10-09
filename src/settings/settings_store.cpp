@@ -34,6 +34,7 @@ constexpr GUID guid_favourites = {0x25bdcd87, 0x51a1, 0x4a89, {0xb5, 0x48, 0x5d,
 constexpr GUID guid_favourites_place = {0xa9cb41bf, 0x0efa, 0x401c, {0xa1, 0x85, 0xab, 0xd9, 0x9c, 0x3a, 0xf3, 0xde}};
 constexpr GUID guid_show_icons = {0xf9d0a057, 0x6a52, 0x4cc9, {0xaa, 0x4f, 0x8b, 0x40, 0x85, 0x9e, 0x2c, 0x2b}};
 constexpr GUID guid_mark_favourites = {0xe3e51223, 0x74ff, 0x4e48, {0xb7, 0x7d, 0x03, 0x47, 0x9f, 0x5b, 0xe5, 0xd7}};
+constexpr GUID guid_separate_favourites = {0x9615dedb, 0x4915, 0x47e6, {0x96, 0x7c, 0x15, 0x4b, 0x69, 0xa9, 0x76, 0x8f}};
 constexpr GUID guid_filter_box = {0x95efa8c6, 0x13ae, 0x4993, {0xbf, 0xaf, 0x74, 0x7a, 0xeb, 0xa7, 0x74, 0xe3}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
@@ -62,6 +63,7 @@ cfg_string cfg_never_show(guid_never_show, "");
 cfg_string cfg_hide_patterns(guid_hide_patterns, "");
 cfg_string cfg_menu(guid_menu, "");
 cfg_bool cfg_show_address_bar(guid_show_address_bar, defaults.show_address_bar);
+cfg_bool cfg_separate_favourites(guid_separate_favourites, defaults.separate_favourites);
 cfg_bool cfg_show_icons(guid_show_icons, defaults.show_icons);
 cfg_bool cfg_mark_favourites(guid_mark_favourites, defaults.mark_favourites);
 cfg_int cfg_filter_box(guid_filter_box, static_cast<int>(defaults.filter_box));
@@ -114,6 +116,7 @@ Settings load() {
     s.menu = MenuLayout::decode(wide(cfg_menu.get()));
     s.show_address_bar = cfg_show_address_bar.get();
     s.show_icons = cfg_show_icons.get();
+    s.separate_favourites = cfg_separate_favourites.get();
     s.mark_favourites = cfg_mark_favourites.get();
     s.filter_box = as_enum<FilterBox>(cfg_filter_box.get());
     s.startup = as_enum<Startup>(cfg_startup.get());
@@ -145,6 +148,7 @@ void save(const Settings& s) {
     cfg_menu.set(utf8(s.menu.encode()));
     cfg_show_address_bar.set(s.show_address_bar);
     cfg_show_icons.set(s.show_icons);
+    cfg_separate_favourites.set(s.separate_favourites);
     cfg_mark_favourites.set(s.mark_favourites);
     cfg_filter_box.set(static_cast<int>(s.filter_box));
     cfg_startup.set(static_cast<int>(s.startup));

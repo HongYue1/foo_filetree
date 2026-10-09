@@ -78,6 +78,7 @@ struct Settings {
     std::wstring startup_folder; //!< for Startup::folder
     std::vector<std::wstring> favourites; //!< shown as roots, in this order
     FavouritesPlace favourites_place{FavouritesPlace::before};
+    bool separate_favourites{true}; //!< a line between the favourites and the drives
 
     // Display
     TreeLines lines{TreeLines::none};

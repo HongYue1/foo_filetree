@@ -479,6 +479,7 @@ private:
         s.favourites = favourites_;
         s.favourites_place =
             static_cast<settings::FavouritesPlace>(get_combo(page, IDC_FAV_PLACE, 0));
+        s.separate_favourites = get_check(page, IDC_FAV_SEPARATE);
         s.sanitize();
 
         for (std::size_t g = 0; g < actions::gesture_count; ++g) {
@@ -535,6 +536,7 @@ private:
         menu_ = s.menu;
         favourites_ = s.favourites;
         set_combo(page, IDC_FAV_PLACE, static_cast<int>(s.favourites_place));
+        set_check(page, IDC_FAV_SEPARATE, s.separate_favourites);
         show_menu_list(std::max(menu_selection(), 0));
         show_fav_list(std::max(fav_selection(), 0));
         ::InvalidateRect(find_control(page, IDC_LINE_SWATCH), nullptr, FALSE);

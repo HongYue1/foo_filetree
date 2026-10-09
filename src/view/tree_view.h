@@ -263,6 +263,7 @@ private:
     settings::Extensions extensions_{settings::Extensions::always};
     bool show_icons_{false};
     bool mark_favourites_{false};
+    bool separate_favourites_{false};
     COLORREF icon_colour_{};
     // Favourites as upper-cased full paths, and their last components for a cheap first test.
     std::unordered_set<std::wstring> favourite_paths_;

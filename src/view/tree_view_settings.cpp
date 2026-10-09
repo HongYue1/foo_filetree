@@ -20,6 +20,7 @@ void TreeView::refresh_options() noexcept {
     extensions_ = s.extensions;
     show_icons_ = s.show_icons;
     mark_favourites_ = s.mark_favourites;
+    separate_favourites_ = s.separate_favourites;
     try {
         favourite_paths_.clear();
         favourite_leaves_.clear();

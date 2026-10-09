@@ -25,6 +25,8 @@ void TreeView::set_colours(const ViewColours& colours) noexcept {
     dim_text_ = blend(colours.text, colours.background, 0.45);
     expander_colour_ = blend(colours.text, colours.background, 0.35);
     icon_colour_ = blend(colours.text, colours.background, 0.2);
+    zebra_background_ = blend(colours.background, colours.text, colours.dark ? 0.05 : 0.035);
+    tooltip_.set_dark(colours.dark);
     const settings::Settings& s = settings::current();
     line_colour_ = s.line_custom_colour
                        ? s.line_colour
@@ -50,6 +52,7 @@ void TreeView::rebuild_font() noexcept {
     scaled.lfHeight = MulDiv(base_font_.lfHeight, metrics_.dpi, system_dpi());
     if (font_ != nullptr) DeleteObject(font_);
     font_ = CreateFontIndirectW(&scaled);
+    tooltip_.set_font(font_);
 }
 
 void TreeView::remeasure() noexcept {
@@ -241,6 +244,7 @@ void TreeView::scroll_to(std::size_t top_row) noexcept {
     top_row = std::min(top_row, max_top_row());
     if (top_row == top_row_ || wnd_ == nullptr) return;
     end_rename(false); // the editor would no longer sit on its row
+    update_tooltip(-1); // until the mouse moves onto a row again
 
     // The scroll moves pixels: paint the hovered row plain first, or its highlight moves along.
     if (hover_row_ >= 0) {

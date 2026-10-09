@@ -144,10 +144,10 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     const model::Node& node = tree_.node(index);
     const bool selected = node.has(model::node_selected);
     const bool focus = static_cast<std::ptrdiff_t>(row) == selected_row_;
-    const bool hovered = static_cast<std::ptrdiff_t>(row) == hover_row_ ||
+    const bool hovered = (hover_highlight_ && static_cast<std::ptrdiff_t>(row) == hover_row_) ||
                          static_cast<std::ptrdiff_t>(row) == drop_row_;
 
-    COLORREF background = colours_.background;
+    COLORREF background = zebra_ && row % 2 == 1 ? zebra_background_ : colours_.background;
     COLORREF text = colours_.text;
     COLORREF glyph = expander_colour_;
     if (selected) {
@@ -188,14 +188,7 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         paint_icon(dc, node, rect, strong ? text : icon_colour_, playing == 2);
     }
 
-    std::wstring_view name = model::display_name(node);
-    if (extensions_ != settings::Extensions::always && !node.has(model::node_container)) {
-        const std::wstring_view extension = model::extension_of(name);
-        const bool hide = !extension.empty() &&
-                          (extensions_ == settings::Extensions::never ||
-                           (playable_ != nullptr && playable_->contains(extension)));
-        if (hide) name.remove_suffix(extension.size() + 1);
-    }
+    const std::wstring_view name = shown_name(node);
 
     RECT text_rect{text_left(node.depth), rect.top, rect.right - metrics_.text_gap, rect.bottom};
     if (text_rect.left >= text_rect.right) return;

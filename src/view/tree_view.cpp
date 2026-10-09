@@ -96,6 +96,8 @@ void TreeView::detach() noexcept {
     ++generation_;
     alive_.reset();
     release_buffer();
+    tooltip_.destroy();
+    tip_row_ = -1;
     if (icon_font_ != nullptr) {
         DeleteObject(icon_font_);
         icon_font_ = nullptr;
@@ -379,6 +381,8 @@ void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
 bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept {
     result = 0;
     switch (msg) {
+    case WM_NOTIFY:
+        return lp != 0 && on_tooltip_notify(*reinterpret_cast<const NMHDR*>(lp), result);
     case WM_CLIPBOARDUPDATE:
         on_clipboard_update();
         return false; // others may listen too

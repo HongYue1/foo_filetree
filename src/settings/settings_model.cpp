@@ -160,6 +160,7 @@ void Settings::sanitize() noexcept {
     filter_box = clamp_enum(filter_box, FilterBox::off);
     startup = clamp_enum(startup, Startup::folder);
     favourites_place = clamp_enum(favourites_place, FavouritesPlace::after);
+    tooltips = clamp_enum(tooltips, Tooltips::path);
     favourites = split_paths(join_paths(favourites));
 }
 
@@ -182,7 +183,8 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
     if (a.mark_favourites != b.mark_favourites || a.mark_playing != b.mark_playing ||
         a.follow_playing != b.follow_playing ||
         a.separate_favourites != b.separate_favourites ||
-        a.watch_changes != b.watch_changes) {
+        a.watch_changes != b.watch_changes || a.tooltips != b.tooltips ||
+        a.hover_highlight != b.hover_highlight || a.zebra != b.zebra) {
         out |= change_repaint;
     }
     if (a.show_address_bar != b.show_address_bar || a.filter_box != b.filter_box) {

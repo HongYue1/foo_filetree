@@ -132,6 +132,13 @@ void test_settings_model() {
     b = a;
     b.follow_playing = true;
     CHECK(diff(a, b) == change_repaint);
+    b = a;
+    b.zebra = true;
+    b.tooltips = Tooltips::path;
+    CHECK(diff(a, b) == change_repaint);
+    b = a;
+    b.hover_highlight = false;
+    CHECK(diff(a, b) == change_repaint);
 
     Settings wild;
     wild.line_thickness = 99;
@@ -140,7 +147,9 @@ void test_settings_model() {
     wild.lines = static_cast<TreeLines>(7);
     wild.files = static_cast<fs::FileMode>(9);
     wild.hidden_drives = 0xffffffffu;
+    wild.tooltips = static_cast<Tooltips>(5);
     wild.sanitize();
+    CHECK(wild.tooltips == Tooltips::off);
     CHECK(wild.line_thickness == 4 && wild.row_padding == 0 && wild.line_opacity == 10);
     CHECK(wild.lines == TreeLines::none && wild.files == fs::FileMode::all);
     CHECK(wild.hidden_drives == (1u << 26) - 1);

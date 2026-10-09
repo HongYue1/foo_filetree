@@ -18,6 +18,7 @@
 #include "../guids.h"
 #include "../settings/settings_store.h"
 #include "../version.h"
+#include "list_editors.h"
 #include "prefs_util.h"
 
 #pragma comment(lib, "comctl32.lib")
@@ -25,9 +26,12 @@
 namespace filetree::prefs {
 namespace {
 
-constexpr int tab_count = 6;
-constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Display", L"Filter",
+constexpr int tab_count = 7;
+constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Display", L"View",      L"Filter",
                                                  L"Actions", L"Menu",    L"Favourites"};
+constexpr int tab_dialogs[tab_count] = {IDD_TAB_GENERAL, IDD_TAB_DISPLAY, IDD_TAB_VIEW,
+                                        IDD_TAB_FILTER,  IDD_TAB_ACTIONS, IDD_TAB_MENU,
+                                        IDD_TAB_FAVOURITES};
 
 //! Everything the page edits, so "changed?" is one comparison.
 struct PageState {
@@ -133,6 +137,8 @@ private:
                    {L"Always show", L"Never show", L"Hide for playable files"});
         fill_combo(page, IDC_SORT_FIELD,
                    {L"Name (natural)", L"Name", L"Date modified", L"Size", L"Type"});
+        fill_combo(page, IDC_TOOLTIPS,
+                   {L"Off", L"Full name when it is cut off", L"Full path"});
         fill_combo(page, IDC_FILES,
                    {L"All files", L"Playable files only", L"No files (folders only)"});
         for (int id = IDC_BIND_FIRST; id < IDC_BIND_FIRST + 2 * int(actions::gesture_count); ++id) {
@@ -170,7 +176,7 @@ private:
         ::MapWindowPoints(nullptr, m_hWnd, reinterpret_cast<POINT*>(&host), 2);
         for (int i = 0; i < tab_count; ++i) {
             const HWND tab = ::CreateDialogParamW(core_api::get_my_instance(),
-                                                  MAKEINTRESOURCEW(IDD_TAB_GENERAL + i), m_hWnd,
+                                                  MAKEINTRESOURCEW(tab_dialogs[i]), m_hWnd,
                                                   &PreferencesPage::tab_proc, 0);
             tabs_[static_cast<std::size_t>(i)] = tab;
             if (tab == nullptr) continue;
@@ -292,127 +298,24 @@ private:
         draw_swatch(*item, parse_hex(get_text(m_hWnd, IDC_LINE_HEX), settings::stored().line_colour));
     }
 
-    // --- Favourites tab: the list is edited in favourites_. ---
+    // List editors (list_editors.cpp); each marks the page changed when it changed something.
 
-    void show_fav_list(int select) {
-        const HWND list = find_control(m_hWnd, IDC_FAV_LIST);
-        if (list == nullptr) return;
-        ::SendMessageW(list, LB_RESETCONTENT, 0, 0);
-        int widest = 0;
-        HDC dc = ::GetDC(list);
-        const auto font = reinterpret_cast<HGDIOBJ>(::SendMessageW(list, WM_GETFONT, 0, 0));
-        const HGDIOBJ old = ::SelectObject(dc, font);
-        for (const std::wstring& path : favourites_) {
-            ::SendMessageW(list, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(path.c_str()));
-            SIZE size{};
-            ::GetTextExtentPoint32W(dc, path.c_str(), static_cast<int>(path.size()), &size);
-            widest = std::max(widest, static_cast<int>(size.cx));
-        }
-        ::SelectObject(dc, old);
-        ::ReleaseDC(list, dc);
-        ::SendMessageW(list, LB_SETHORIZONTALEXTENT, static_cast<WPARAM>(widest + 8), 0);
-        select = std::min(select, static_cast<int>(favourites_.size()) - 1);
-        ::SendMessageW(list, LB_SETCURSEL, static_cast<WPARAM>(select), 0);
-        on_fav_select(0, 0, nullptr);
-    }
-
-    [[nodiscard]] int fav_selection() const {
-        const auto index = static_cast<int>(
-            ::SendMessageW(find_control(m_hWnd, IDC_FAV_LIST), LB_GETCURSEL, 0, 0));
-        return index >= 0 && index < static_cast<int>(favourites_.size()) ? index : -1;
-    }
-
-    void on_fav_select(UINT, int, CWindow) {
-        const int index = fav_selection();
-        enable(m_hWnd, IDC_FAV_REMOVE, index >= 0);
-        enable(m_hWnd, IDC_FAV_UP, index > 0);
-        enable(m_hWnd, IDC_FAV_DOWN,
-               index >= 0 && index + 1 < static_cast<int>(favourites_.size()));
-    }
-
-    void on_fav_add(UINT, int id, CWindow) {
-        std::wstring path;
-        if (!pick_folder(m_hWnd, path)) return;
-        std::vector<std::wstring> next = favourites_;
-        next.push_back(path);
-        next = settings::split_paths(settings::join_paths(next)); // cleans, drops a repeat
-        if (next == favourites_) return;
-        favourites_ = std::move(next);
-        show_fav_list(static_cast<int>(favourites_.size()) - 1);
-        on_changed(0, id, nullptr);
-    }
-
-    void on_fav_remove(UINT, int id, CWindow) {
-        const int index = fav_selection();
-        if (index < 0) return;
-        favourites_.erase(favourites_.begin() + index);
-        show_fav_list(index);
-        on_changed(0, id, nullptr);
-    }
-
-    void on_fav_move(UINT, int id, CWindow) {
-        const int index = fav_selection();
-        const int target = id == IDC_FAV_UP ? index - 1 : index + 1;
-        if (index < 0 || target < 0 || target >= static_cast<int>(favourites_.size())) return;
-        std::swap(favourites_[static_cast<std::size_t>(index)],
-                  favourites_[static_cast<std::size_t>(target)]);
-        show_fav_list(target);
-        on_changed(0, id, nullptr);
-    }
-
-    // --- Menu tab: the layout is edited in menu_ and shown in the list box. ---
-
-    void show_menu_list(int select) {
-        const HWND list = find_control(m_hWnd, IDC_MENU_LIST);
-        if (list == nullptr) return;
-        ::SendMessageW(list, WM_SETREDRAW, FALSE, 0);
-        ::SendMessageW(list, LB_RESETCONTENT, 0, 0);
-        for (const settings::MenuItem item : menu_.order) {
-            std::wstring text = settings::menu_item_label(item);
-            if (!menu_.visible(item)) text += L"   (hidden)";
-            ::SendMessageW(list, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(text.c_str()));
-        }
-        ::SendMessageW(list, LB_SETCURSEL, static_cast<WPARAM>(select), 0);
-        ::SendMessageW(list, WM_SETREDRAW, TRUE, 0);
-        ::InvalidateRect(list, nullptr, TRUE);
-        on_menu_select(0, 0, nullptr);
-    }
-
-    [[nodiscard]] int menu_selection() const {
-        const auto index = static_cast<int>(
-            ::SendMessageW(find_control(m_hWnd, IDC_MENU_LIST), LB_GETCURSEL, 0, 0));
-        return index >= 0 && index < int(settings::menu_item_count) ? index : -1;
-    }
-
-    void on_menu_select(UINT, int, CWindow) {
-        const int index = menu_selection();
-        const bool was_updating = updating_;
-        updating_ = true;
-        set_check(m_hWnd, IDC_MENU_SHOW,
-                  index >= 0 && menu_.visible(menu_.order[static_cast<std::size_t>(index)]));
-        updating_ = was_updating;
-        enable(m_hWnd, IDC_MENU_SHOW, index >= 0);
-        enable(m_hWnd, IDC_MENU_UP, index > 0);
-        enable(m_hWnd, IDC_MENU_DOWN, index >= 0 && index + 1 < int(settings::menu_item_count));
-    }
-
+    void on_menu_select(UINT, int, CWindow) { menu_.on_select(); }
     void on_menu_move(UINT, int id, CWindow) {
-        const int index = menu_selection();
-        const int target = id == IDC_MENU_UP ? index - 1 : index + 1;
-        if (index < 0 || target < 0 || target >= int(settings::menu_item_count)) return;
-        std::swap(menu_.order[static_cast<std::size_t>(index)],
-                  menu_.order[static_cast<std::size_t>(target)]);
-        show_menu_list(target);
-        on_changed(0, id, nullptr);
+        if (menu_.move(id == IDC_MENU_UP)) on_changed(0, id, nullptr);
     }
-
     void on_menu_show(UINT, int id, CWindow) {
-        const int index = menu_selection();
-        if (index < 0 || updating_) return;
-        const auto bit = 1u << static_cast<unsigned>(menu_.order[static_cast<std::size_t>(index)]);
-        menu_.hidden = get_check(m_hWnd, IDC_MENU_SHOW) ? menu_.hidden & ~bit : menu_.hidden | bit;
-        show_menu_list(index);
-        on_changed(0, id, nullptr);
+        if (!updating_ && menu_.toggle_shown()) on_changed(0, id, nullptr);
+    }
+    void on_fav_select(UINT, int, CWindow) { favourites_.on_select(); }
+    void on_fav_add(UINT, int id, CWindow) {
+        if (favourites_.add()) on_changed(0, id, nullptr);
+    }
+    void on_fav_remove(UINT, int id, CWindow) {
+        if (favourites_.remove()) on_changed(0, id, nullptr);
+    }
+    void on_fav_move(UINT, int id, CWindow) {
+        if (favourites_.move(id == IDC_FAV_UP)) on_changed(0, id, nullptr);
     }
 
     void update_enabled() {
@@ -473,6 +376,9 @@ private:
         s.sort.field = static_cast<model::SortField>(get_combo(page, IDC_SORT_FIELD, 0));
         s.sort.folders_first = get_check(page, IDC_FOLDERS_FIRST);
         s.sort.reverse = get_check(page, IDC_SORT_REVERSE);
+        s.tooltips = static_cast<settings::Tooltips>(get_combo(page, IDC_TOOLTIPS, 1));
+        s.hover_highlight = get_check(page, IDC_HOVER_HIGHLIGHT);
+        s.zebra = get_check(page, IDC_ZEBRA);
 
         s.files = static_cast<fs::FileMode>(get_combo(page, IDC_FILES, 1));
         s.show_hidden = get_check(page, IDC_SHOW_HIDDEN);
@@ -480,8 +386,8 @@ private:
         s.always_show = get_text(page, IDC_ALWAYS_SHOW);
         s.never_show = get_text(page, IDC_NEVER_SHOW);
         s.hide_patterns = get_text(page, IDC_HIDE_PATTERNS);
-        s.menu = menu_;
-        s.favourites = favourites_;
+        s.menu = menu_.layout;
+        s.favourites = favourites_.paths;
         s.favourites_place =
             static_cast<settings::FavouritesPlace>(get_combo(page, IDC_FAV_PLACE, 0));
         s.separate_favourites = get_check(page, IDC_FAV_SEPARATE);
@@ -531,6 +437,9 @@ private:
         set_combo(page, IDC_SORT_FIELD, static_cast<int>(s.sort.field));
         set_check(page, IDC_FOLDERS_FIRST, s.sort.folders_first);
         set_check(page, IDC_SORT_REVERSE, s.sort.reverse);
+        set_combo(page, IDC_TOOLTIPS, static_cast<int>(s.tooltips));
+        set_check(page, IDC_HOVER_HIGHLIGHT, s.hover_highlight);
+        set_check(page, IDC_ZEBRA, s.zebra);
 
         set_combo(page, IDC_FILES, static_cast<int>(s.files));
         set_check(page, IDC_SHOW_HIDDEN, s.show_hidden);
@@ -544,13 +453,13 @@ private:
             set_combo(page, id, static_cast<int>(actions::preset_index(binding.folder, true)));
             set_combo(page, id + 1, static_cast<int>(actions::preset_index(binding.file, false)));
         }
-        menu_ = s.menu;
-        favourites_ = s.favourites;
+        menu_.layout = s.menu;
+        favourites_.paths = s.favourites;
         set_combo(page, IDC_FAV_PLACE, static_cast<int>(s.favourites_place));
         set_check(page, IDC_FAV_SEPARATE, s.separate_favourites);
         set_int(page, IDC_FAV_GAP, s.favourites_gap);
-        show_menu_list(std::max(menu_selection(), 0));
-        show_fav_list(std::max(fav_selection(), 0));
+        menu_.show(std::max(menu_.selection(), 0));
+        favourites_.show(std::max(favourites_.selection(), 0));
         ::InvalidateRect(find_control(page, IDC_LINE_SWATCH), nullptr, FALSE);
         updating_ = false;
         update_enabled();
@@ -561,8 +470,8 @@ private:
 
     const preferences_page_callback::ptr callback_;
     std::array<HWND, tab_count> tabs_{};
-    settings::MenuLayout menu_{settings::MenuLayout::defaults()};
-    std::vector<std::wstring> favourites_;
+    MenuEditor menu_{m_hWnd};
+    FavouritesEditor favourites_{m_hWnd};
     bool initialised_{false};
     bool updating_{false};
     // A member: it hooks this dialog and its controls for the lifetime of both.

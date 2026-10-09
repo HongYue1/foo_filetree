@@ -287,12 +287,14 @@ void TreeView::on_mouse_move(int, int y) noexcept {
     if (hover_row_ >= 0) invalidate_row(static_cast<std::size_t>(hover_row_));
     hover_row_ = row;
     if (row >= 0) invalidate_row(static_cast<std::size_t>(row));
+    update_tooltip(row);
 }
 
 void TreeView::on_mouse_leave() noexcept {
     tracking_mouse_ = false;
     if (hover_row_ >= 0) invalidate_row(static_cast<std::size_t>(hover_row_));
     hover_row_ = -1;
+    update_tooltip(-1);
 }
 
 } // namespace filetree::view

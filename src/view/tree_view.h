@@ -31,6 +31,7 @@
 #include "../settings/settings_store.h"
 #include "drop_target.h"
 #include "now_playing.h"
+#include "row_tooltip.h"
 #include "theme.h"
 
 namespace filetree::view {
@@ -293,6 +294,15 @@ private:
     static LRESULT CALLBACK edit_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR id,
                                       DWORD_PTR data) noexcept;
 
+    // Row tooltips (tree_view_tooltip.cpp).
+    //! The hover row changed (-1: none): the tool follows it.
+    void update_tooltip(std::ptrdiff_t row) noexcept;
+    bool on_tooltip_notify(const NMHDR& header, LRESULT& result) noexcept;
+    //! The name as drawn: the extension dropped per the Extensions setting.
+    [[nodiscard]] std::wstring_view shown_name(const model::Node& node) const noexcept;
+    //! Whether the row cuts its name off (marks after it allowed for); `extent` is its size.
+    bool text_cut_off(std::size_t row, SIZE& extent) noexcept;
+
     // tree_view_paint.cpp
     void paint(HDC target, const RECT& dirty) noexcept;
     void paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept;
@@ -305,6 +315,7 @@ private:
     ViewColours colours_{};
     // Derived once per set_colours().
     COLORREF hover_background_{};
+    COLORREF zebra_background_{};
     COLORREF dim_text_{};
     COLORREF expander_colour_{};
     COLORREF line_colour_{};
@@ -361,6 +372,13 @@ private:
     bool show_icons_{false};
     bool mark_favourites_{false};
     bool separate_favourites_{false};
+    bool hover_highlight_{true};
+    bool zebra_{false};
+    settings::Tooltips tooltips_{settings::Tooltips::off};
+    RowTooltip tooltip_;
+    std::ptrdiff_t tip_row_{-1};
+    std::wstring tip_text_; //!< what TTN_GETDISPINFO points at
+    bool tip_in_place_{false};
     std::uint32_t boundary_node_{model::no_node}; //!< first root of the second group
     // Change watching (tree_view_watch.cpp): upper-cased path, node as of the last sync.
     struct Watched {

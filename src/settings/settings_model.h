@@ -22,6 +22,8 @@ enum class FilterBox : std::uint8_t { bar, floating, off };
 //! What a panel shows when foobar2000 starts.
 enum class Startup : std::uint8_t { restore, collapsed, folder };
 enum class FavouritesPlace : std::uint8_t { before, after }; //!< relative to the drives
+//! Row tooltips: none, the full name when it is cut off (in place), or the full path.
+enum class Tooltips : std::uint8_t { off, truncated, path };
 
 //! Favourites are stored as one string: paths joined by '|' (never part of a Windows path).
 [[nodiscard]] std::wstring join_paths(const std::vector<std::wstring>& paths);
@@ -105,6 +107,11 @@ struct Settings {
     int icon_size{16};          //!< file / folder icon size in DIP, 12-24
     int mark_size{12};          //!< star / play mark size in DIP, 8-16
     model::SortOptions sort{};
+
+    // View
+    Tooltips tooltips{Tooltips::truncated};
+    bool hover_highlight{true}; //!< the row under the mouse is tinted
+    bool zebra{false};          //!< every other row slightly tinted
 
     // Filter
     bool show_hidden{false};

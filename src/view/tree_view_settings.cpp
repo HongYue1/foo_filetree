@@ -26,6 +26,12 @@ void TreeView::refresh_options() noexcept {
         resolve_playing();
     }
     separate_favourites_ = s.separate_favourites;
+    hover_highlight_ = s.hover_highlight;
+    zebra_ = s.zebra;
+    if (tooltips_ != s.tooltips) {
+        tooltips_ = s.tooltips;
+        update_tooltip(hover_row_);
+    }
     watch_changes_ = s.watch_changes;
     try {
         favourite_paths_.clear();

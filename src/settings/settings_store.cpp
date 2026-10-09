@@ -42,6 +42,10 @@ constexpr GUID guid_separate_favourites = {0x9615dedb, 0x4915, 0x47e6, {0x96, 0x
 constexpr GUID guid_favourites_gap = {0xa28695a1, 0xdcf4, 0x413f, {0xae, 0x80, 0xa0, 0x06, 0x01, 0xe2, 0x19, 0x5d}};
 constexpr GUID guid_watch_changes = {0x5051725b, 0xdb03, 0x4e50, {0x91, 0x3c, 0x96, 0xf7, 0xad, 0x84, 0x6d, 0x14}};
 constexpr GUID guid_filter_box = {0x95efa8c6, 0x13ae, 0x4993, {0xbf, 0xaf, 0x74, 0x7a, 0xeb, 0xa7, 0x74, 0xe3}};
+// M8a.
+constexpr GUID guid_tooltips = {0xcbdf7b49, 0xc5c2, 0x4bd1, {0x97, 0x60, 0x4a, 0xb0, 0x6a, 0x4e, 0x79, 0xd9}};
+constexpr GUID guid_hover_highlight = {0xe3b05361, 0x4c4b, 0x4fb1, {0x92, 0xae, 0x7c, 0x27, 0x59, 0x5e, 0x81, 0x3d}};
+constexpr GUID guid_zebra = {0xddfc1742, 0x6710, 0x41d8, {0xba, 0xf8, 0x7f, 0x9a, 0x98, 0xcc, 0x21, 0xac}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
 using cfg_int = cfg_var_modern::cfg_int;
@@ -83,6 +87,9 @@ cfg_int cfg_startup(guid_startup, static_cast<int>(defaults.startup));
 cfg_string cfg_startup_folder(guid_startup_folder, "");
 cfg_string cfg_favourites(guid_favourites, "");
 cfg_int cfg_favourites_place(guid_favourites_place, static_cast<int>(defaults.favourites_place));
+cfg_int cfg_tooltips(guid_tooltips, static_cast<int>(defaults.tooltips));
+cfg_bool cfg_hover_highlight(guid_hover_highlight, defaults.hover_highlight);
+cfg_bool cfg_zebra(guid_zebra, defaults.zebra);
 
 std::optional<Settings> g_current; //!< saved
 std::optional<Settings> g_preview;
@@ -141,6 +148,9 @@ Settings load() {
     s.startup_folder = wide(cfg_startup_folder.get());
     s.favourites = split_paths(wide(cfg_favourites.get()));
     s.favourites_place = as_enum<FavouritesPlace>(cfg_favourites_place.get());
+    s.tooltips = as_enum<Tooltips>(cfg_tooltips.get());
+    s.hover_highlight = cfg_hover_highlight.get();
+    s.zebra = cfg_zebra.get();
     s.sanitize();
     return s;
 }
@@ -179,6 +189,9 @@ void save(const Settings& s) {
     cfg_startup_folder.set(utf8(s.startup_folder));
     cfg_favourites.set(utf8(join_paths(s.favourites)));
     cfg_favourites_place.set(static_cast<int>(s.favourites_place));
+    cfg_tooltips.set(static_cast<int>(s.tooltips));
+    cfg_hover_highlight.set(s.hover_highlight);
+    cfg_zebra.set(s.zebra);
 }
 
 std::shared_ptr<const model::FilterRules> build_rules(const Settings& s) {

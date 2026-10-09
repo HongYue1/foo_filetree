@@ -132,6 +132,8 @@
     <ClCompile Include="src\view\tree_view_paint.cpp" />
     <ClCompile Include="src\view\tree_view_input.cpp" />
     <ClCompile Include="src\view\tree_view_select.cpp" />
+    <ClCompile Include="src\view\tree_view_tooltip.cpp" />
+    <ClCompile Include="src\view\row_tooltip.cpp" />
     <ClCompile Include="src\view\tree_view_items.cpp" />
     <ClCompile Include="src\actions\action.cpp" />
     <ClCompile Include="src\actions\action_settings.cpp" />
@@ -140,6 +142,7 @@
     <ClCompile Include="src\actions\presets.cpp" />
     <ClCompile Include="src\prefs\preferences.cpp" />
     <ClCompile Include="src\prefs\prefs_util.cpp" />
+    <ClCompile Include="src\prefs\list_editors.cpp" />
     <ClCompile Include="src\model\filter_rules.cpp" />
     <ClCompile Include="src\settings\settings_model.cpp" />
     <ClCompile Include="src\settings\panel_state.cpp" />
@@ -170,6 +173,8 @@
   <ItemGroup>
     <ClInclude Include="src\guids.h" />
     <ClInclude Include="src\prefs\prefs_util.h" />
+    <ClInclude Include="src\prefs\list_editors.h" />
+    <ClInclude Include="src\view\row_tooltip.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\version.h" />
     <ClInclude Include="src\platform\gdi.h" />

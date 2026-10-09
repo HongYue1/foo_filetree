@@ -78,7 +78,7 @@ struct Settings {
     // General
     std::uint32_t hidden_drives{0}; //!< bit 0 = A: ... bit 25 = Z:
     bool show_address_bar{true};
-    FilterBox filter_box{FilterBox::bar};
+    FilterBox filter_box{FilterBox::floating};
     Startup startup{Startup::restore};
     bool watch_changes{true}; //!< open folders update when their contents change on disk
     std::wstring startup_folder; //!< for Startup::folder
@@ -88,14 +88,14 @@ struct Settings {
     int favourites_gap{12};         //!< DIP of space between the two groups, 0-24
 
     // Display
-    TreeLines lines{TreeLines::none};
+    TreeLines lines{TreeLines::connectors};
     int line_thickness{1};  //!< DIP, 1-4
     bool line_custom_colour{false};
     COLORREF line_colour{RGB(128, 128, 128)};
     int line_opacity{35};   //!< percent of the text colour over the background, 10-100
     Extensions extensions{Extensions::always};
     int row_padding{3};     //!< DIP above and below the text, 0-12
-    bool show_icons{false};     //!< folder / file / drive glyphs from the system icon font
+    bool show_icons{true};      //!< folder / file / drive glyphs from the system icon font
     bool mark_favourites{true}; //!< a star after folders that are in the favourites
     bool mark_playing{true};    //!< a play mark on the playing file, or its folder if closed
     int icon_size{16};          //!< file / folder icon size in DIP, 12-24

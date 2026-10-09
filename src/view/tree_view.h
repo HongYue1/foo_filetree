@@ -164,6 +164,7 @@ private:
     void request_check(std::uint32_t node);
     void on_check(std::uint32_t node, std::uint64_t generation, fs::Listing& listing) noexcept;
     void retry_failed(std::uint32_t node) noexcept;
+    void merge_listing(std::uint32_t node, fs::Listing& listing) noexcept;
     //! Right-click below the last row: Refresh all, Collapse all, Preferences.
     void show_background_menu(POINT point) noexcept;
     void collapse_all() noexcept;

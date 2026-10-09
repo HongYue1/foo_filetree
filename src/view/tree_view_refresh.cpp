@@ -61,6 +61,11 @@ void TreeView::on_check(std::uint32_t node, std::uint64_t generation,
                         fs::Listing& listing) noexcept {
     std::erase_if(pending_, [node](const PendingListing& p) { return p.node == node && p.check; });
     if (generation != generation_ || wnd_ == nullptr || node >= tree_.node_count()) return;
+    merge_listing(node, listing);
+    apply_pending_select(node); // after rename/delete (reload_and_select)
+}
+
+void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept {
     // Gone meanwhile (an orphan has no row) or reloading: nothing to merge into. A folder that
     // vanished is removed by its parent's check.
     const model::Node& n = tree_.node(node);

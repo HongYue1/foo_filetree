@@ -343,6 +343,24 @@ void TreeView::delete_node(std::uint32_t node, bool permanent) noexcept {
 void TreeView::reload_and_select(std::uint32_t folder, std::wstring name,
                                  std::wstring fallback) noexcept {
     if (folder >= tree_.node_count()) return;
+    const model::Node& f = tree_.node(folder);
+    if (f.has(model::node_loaded) && !f.has(model::node_loading) &&
+        f.has(model::node_expanded) && tree_.row_of(folder)) {
+        // Open and listed: merge the change in place (no collapse, no scroll jump). A check
+        // already in flight may predate the change, so it is replaced.
+        try {
+            std::erase_if(pending_, [folder](const PendingListing& p) {
+                if (!p.check || p.node != folder) return false;
+                p.ticket.cancel();
+                return true;
+            });
+            pending_select_ = {folder, std::move(name), std::move(fallback)};
+            request_check(folder);
+            return;
+        } catch (...) {
+            pending_select_ = {};
+        }
+    }
     const model::Tree::ReloadResult result = tree_.reload(folder);
     // Listings for the forgotten children will be ignored; stop them early.
     std::erase_if(pending_, [this](const PendingListing& p) {

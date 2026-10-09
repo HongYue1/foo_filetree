@@ -95,6 +95,15 @@ void TreeView::populate_roots() {
         tree_.add_root(root);
     }
     if (s.favourites_place == settings::FavouritesPlace::after) add_favourites();
+    boundary_node_ = model::no_node;
+    boundary_row_cache_ = 0;
+    for (std::uint32_t root = 1;
+         root < tree_.node_count() && tree_.node(root).has(model::node_root); ++root) {
+        if (tree_.node(root).has(model::node_favourite) != tree_.node(0).has(model::node_favourite)) {
+            boundary_node_ = root;
+            break;
+        }
+    }
     selected_row_ = hover_row_ = -1;
     top_row_ = 0;
     filter_hidden_selection_ = model::no_node;
@@ -219,12 +228,37 @@ void TreeView::remeasure() noexcept {
         if (icon_font_ == nullptr) metrics_.icon = 0;
     }
     if (show_icons_ && icon_font_ != nullptr) metrics_.icon_width = metrics_.icon + scale(4, dpi);
+    metrics_.group_gap = scale(settings::current().favourites_gap, dpi);
 }
 
 // --- Geometry -------------------------------------------------------------------------------
 
 int TreeView::visible_rows() const noexcept {
-    return std::max(client_height_ / metrics_.row_height, 1);
+    // The boundary gap is subtracted whether or not it is on screen: simple and never too many.
+    const int gap = boundary_node_ != model::no_node ? metrics_.group_gap : 0;
+    return std::max((client_height_ - gap) / metrics_.row_height, 1);
+}
+
+std::optional<std::size_t> TreeView::boundary_row() const noexcept {
+    if (boundary_node_ == model::no_node) return std::nullopt;
+    // Cached: re-searched only after rows above it changed.
+    if (boundary_row_cache_ < tree_.row_count() &&
+        tree_.node_at_row(boundary_row_cache_) == boundary_node_) {
+        return boundary_row_cache_;
+    }
+    const auto row = tree_.row_of(boundary_node_);
+    if (row) boundary_row_cache_ = *row;
+    return row;
+}
+
+int TreeView::gap_above(std::size_t row) const noexcept {
+    if (metrics_.group_gap == 0 || row < top_row_) return 0;
+    const auto boundary = boundary_row();
+    return boundary && *boundary >= top_row_ && row >= *boundary ? metrics_.group_gap : 0;
+}
+
+int TreeView::row_top(std::size_t row) const noexcept {
+    return static_cast<int>(row - top_row_) * metrics_.row_height + gap_above(row);
 }
 
 std::size_t TreeView::max_top_row() const noexcept {
@@ -247,6 +281,16 @@ int TreeView::text_left(std::uint16_t depth) const noexcept {
 
 std::ptrdiff_t TreeView::row_at(int y) const noexcept {
     if (y < 0) return -1;
+    if (metrics_.group_gap > 0) {
+        if (const auto boundary = boundary_row(); boundary && *boundary >= top_row_) {
+            const int gap_top = static_cast<int>(*boundary - top_row_) * metrics_.row_height;
+            if (y >= gap_top + metrics_.group_gap) {
+                y -= metrics_.group_gap;
+            } else if (y >= gap_top) {
+                return -1; // in the gap
+            }
+        }
+    }
     const std::size_t row = top_row_ + static_cast<std::size_t>(y / metrics_.row_height);
     return row < tree_.row_count() ? static_cast<std::ptrdiff_t>(row) : -1;
 }
@@ -255,7 +299,7 @@ void TreeView::invalidate_row(std::size_t row) noexcept {
     if (wnd_ == nullptr || row < top_row_) return;
     const std::size_t offset = row - top_row_;
     if (offset > static_cast<std::size_t>(visible_rows())) return;
-    const int top = static_cast<int>(offset) * metrics_.row_height;
+    const int top = row_top(row);
     const RECT rect{0, top, client_width_, top + metrics_.row_height};
     InvalidateRect(wnd_, &rect, FALSE);
 }
@@ -263,7 +307,7 @@ void TreeView::invalidate_row(std::size_t row) noexcept {
 void TreeView::invalidate_from(std::size_t row) noexcept {
     if (wnd_ == nullptr) return;
     const std::size_t first = std::max(row, top_row_);
-    const int top = static_cast<int>(first - top_row_) * metrics_.row_height;
+    const int top = static_cast<int>(first - top_row_) * metrics_.row_height; // gap included
     if (top >= client_height_) return;
     const RECT rect{0, top, client_width_, client_height_};
     InvalidateRect(wnd_, &rect, FALSE);
@@ -297,8 +341,11 @@ void TreeView::scroll_to(std::size_t top_row) noexcept {
     }
     const std::ptrdiff_t delta = static_cast<std::ptrdiff_t>(top_row_) -
                                  static_cast<std::ptrdiff_t>(top_row);
+    // The gap moves with the rows only while it stays on screen; otherwise repaint everything.
+    const auto boundary = metrics_.group_gap > 0 ? boundary_row() : std::nullopt;
+    const bool gap_jumps = boundary && ((*boundary >= top_row_) != (*boundary >= top_row));
     top_row_ = top_row;
-    if (std::abs(delta) < visible_rows()) {
+    if (std::abs(delta) < visible_rows() && !gap_jumps) {
         // Move what is already on screen; only the uncovered strip gets painted.
         ScrollWindowEx(wnd_, 0, static_cast<int>(delta) * metrics_.row_height, nullptr, nullptr,
                        nullptr, nullptr, SW_INVALIDATE);

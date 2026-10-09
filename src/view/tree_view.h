@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -101,6 +102,7 @@ private:
         int line_width{1};  //!< tree line thickness in pixels
         int icon{};         //!< icon glyph box (square); 0 without an icon font
         int icon_width{};   //!< icon column before the text, gap included; 0 with icons off
+        int group_gap{};    //!< space between the favourites and the drives
     };
 
     // tree_view.cpp
@@ -131,6 +133,12 @@ private:
     [[nodiscard]] int text_left(std::uint16_t depth) const noexcept;
     //! Where the icon column starts (the text when icons are off).
     [[nodiscard]] int content_left(std::uint16_t depth) const noexcept;
+    //! The row of the first root after the favourites / drives boundary, if both groups exist.
+    [[nodiscard]] std::optional<std::size_t> boundary_row() const noexcept;
+    //! The space above `row` from the boundary gap (0 unless the gap is on screen above it).
+    [[nodiscard]] int gap_above(std::size_t row) const noexcept;
+    //! Client y of a visible row's top edge.
+    [[nodiscard]] int row_top(std::size_t row) const noexcept;
     //! In the favourites list (a favourite root, or the same folder elsewhere in the tree).
     [[nodiscard]] bool is_favourite(std::uint32_t index) noexcept;
     void paint_icon(HDC dc, const model::Node& node, const RECT& rect, COLORREF colour) noexcept;
@@ -264,6 +272,8 @@ private:
     bool show_icons_{false};
     bool mark_favourites_{false};
     bool separate_favourites_{false};
+    std::uint32_t boundary_node_{model::no_node}; //!< first root of the second group
+    mutable std::size_t boundary_row_cache_{0};   //!< checked against boundary_node_ on use
     COLORREF icon_colour_{};
     // Favourites as upper-cased full paths, and their last components for a cheap first test.
     std::unordered_set<std::wstring> favourite_paths_;

@@ -89,16 +89,43 @@ void TreeView::paint(HDC target, const RECT& dirty) noexcept {
     const HGDIOBJ old_font = SelectObject(dc, font_ != nullptr ? font_ : GetStockObject(DEFAULT_GUI_FONT));
 
     const int row_height = metrics_.row_height;
-    const int first = std::max<int>(dirty.top, 0) / row_height;
-    const int last = std::max<int>(dirty.bottom - 1, 0) / row_height;
     const std::size_t rows = tree_.row_count();
+    const auto boundary = boundary_row();
+    const bool gap_shown = boundary && *boundary >= top_row_;
 
+    // Rows from the first one the dirty rectangle touches (the gap shifts those below it).
+    std::size_t row = top_row_ + static_cast<std::size_t>(std::max<int>(dirty.top, 0) / row_height);
+    if (gap_shown && row > *boundary) {
+        row = std::max(*boundary, top_row_ + static_cast<std::size_t>(
+                                                  std::max<int>(dirty.top - metrics_.group_gap, 0) /
+                                                  row_height));
+    }
     int bottom = std::max<int>(dirty.top, 0);
-    for (int offset = first; offset <= last; ++offset) {
-        const std::size_t row = top_row_ + static_cast<std::size_t>(offset);
-        if (row >= rows) break;
-        const RECT rect{0, offset * row_height, client_width_, (offset + 1) * row_height};
-        paint_row(dc, row, rect);
+    for (; row < rows; ++row) {
+        const int top = row_top(row);
+        const int gap_top = gap_shown && row == *boundary ? top - metrics_.group_gap : top;
+        if (gap_top >= dirty.bottom) break;
+        if (gap_shown && row == *boundary) {
+            // The gap above the second group, with the optional line through its middle.
+            const int gap = metrics_.group_gap;
+            const RECT gap_rect{0, top - gap, client_width_, top};
+            if (gap > 0) fill(dc, gap_rect, colours_.background);
+            if (separate_favourites_) {
+                const int margin = MulDiv(4, metrics_.dpi, 96);
+                const int thickness = std::max(metrics_.line_width, 1);
+                const int y = gap > 0 ? top - (gap + thickness) / 2 : top;
+                fill(dc, RECT{margin, y, client_width_ - margin, y + thickness}, line_colour_);
+            }
+        }
+        const RECT rect{0, top, client_width_, top + row_height};
+        if (rect.bottom > dirty.top) {
+            paint_row(dc, row, rect);
+            if (gap_shown && row == *boundary && separate_favourites_ && metrics_.group_gap == 0) {
+                const int margin = MulDiv(4, metrics_.dpi, 96);
+                const int thickness = std::max(metrics_.line_width, 1);
+                fill(dc, RECT{margin, top, client_width_ - margin, top + thickness}, line_colour_);
+            }
+        }
         bottom = rect.bottom;
     }
     if (bottom < dirty.bottom) {
@@ -134,15 +161,6 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
                             !(node.has(model::node_loaded) && node.child_count == 0);
     if (lines_ != settings::TreeLines::none) paint_lines(dc, index, rect, expandable);
 
-    // Favourites / drives boundary: roots are the first nodes, in display order, so the root
-    // before this one is index - 1. Drawn on this row's top edge; no extra row.
-    if (separate_favourites_ && node.has(model::node_root) && index > 0 &&
-        tree_.node(index - 1).has(model::node_root) &&
-        tree_.node(index - 1).has(model::node_favourite) != node.has(model::node_favourite)) {
-        const int margin = MulDiv(4, metrics_.dpi, 96);
-        const int thickness = std::max(metrics_.line_width, 1);
-        fill(dc, RECT{margin, rect.top, rect.right - margin, rect.top + thickness}, line_colour_);
-    }
 
     // Expander: folders that might have children. A loaded empty folder has none to show.
     if (expandable) {

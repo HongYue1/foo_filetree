@@ -79,6 +79,7 @@ struct Settings {
     std::vector<std::wstring> favourites; //!< shown as roots, in this order
     FavouritesPlace favourites_place{FavouritesPlace::before};
     bool separate_favourites{true}; //!< a line between the favourites and the drives
+    int favourites_gap{6};          //!< DIP of space between the two groups, 0-24
 
     // Display
     TreeLines lines{TreeLines::none};

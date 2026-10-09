@@ -34,7 +34,7 @@ void TreeView::begin_rename(std::uint32_t node) noexcept {
 
     const int pad = MulDiv(2, metrics_.dpi, 96);
     const int left = std::max(text_left(n.depth) - pad - 1, 0);
-    const int top = static_cast<int>(*row - top_row_) * metrics_.row_height;
+    const int top = row_top(*row);
     const int width = std::max(client_width_ - left - pad, metrics_.indent * 4);
     const std::wstring name(n.name_view());
 

@@ -133,6 +133,7 @@ void Settings::sanitize() noexcept {
     line_colour &= 0xffffff;
     extensions = clamp_enum(extensions, Extensions::non_playable);
     row_padding = std::clamp(row_padding, 0, 12);
+    favourites_gap = std::clamp(favourites_gap, 0, 24);
     sort.field = clamp_enum(sort.field, model::SortField::type);
     files = clamp_enum(files, fs::FileMode::none);
     filter_box = clamp_enum(filter_box, FilterBox::off);
@@ -152,7 +153,10 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         a.line_opacity != b.line_opacity || a.extensions != b.extensions) {
         out |= change_repaint;
     }
-    if (a.row_padding != b.row_padding || a.show_icons != b.show_icons) out |= change_remeasure;
+    if (a.row_padding != b.row_padding || a.show_icons != b.show_icons ||
+        a.favourites_gap != b.favourites_gap) {
+        out |= change_remeasure;
+    }
     if (a.mark_favourites != b.mark_favourites || a.separate_favourites != b.separate_favourites) {
         out |= change_repaint;
     }

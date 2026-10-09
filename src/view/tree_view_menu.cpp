@@ -69,8 +69,7 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
         ensure_visible(static_cast<std::size_t>(row));
         const model::Node& n = tree_.node(tree_.node_at_row(static_cast<std::size_t>(row)));
         point = {text_left(n.depth),
-                 static_cast<int>(static_cast<std::size_t>(row) - top_row_ + 1) *
-                     metrics_.row_height};
+                 row_top(static_cast<std::size_t>(row)) + metrics_.row_height};
         ClientToScreen(wnd_, &point);
     } else {
         POINT client = point;

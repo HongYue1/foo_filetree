@@ -47,6 +47,7 @@ std::wstring normalise(std::wstring_view input) {
 } // namespace
 
 void TreeView::notify_selection() noexcept {
+    acc_focus_changed();
     if (!selection_listener_) return;
     try {
         selection_listener_();

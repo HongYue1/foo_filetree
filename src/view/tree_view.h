@@ -30,6 +30,7 @@
 #include "../model/tree.h"
 #include "../settings/panel_state.h"
 #include "../settings/settings_store.h"
+#include "accessible.h"
 #include "drop_target.h"
 #include "now_playing.h"
 #include "row_tooltip.h"
@@ -39,6 +40,7 @@ namespace filetree::view {
 
 class TreeView final : private settings::Listener,
                        private DropSink,
+                       private AccessSource,
                        private now_playing::Listener {
 public:
     TreeView();
@@ -308,6 +310,22 @@ private:
     //! Whether the row cuts its name off (marks after it allowed for); `extent` is its size.
     bool text_cut_off(std::size_t row, SIZE& extent) noexcept;
 
+    // tree_view_access.cpp
+    bool on_get_object(WPARAM wp, LPARAM lp, LRESULT& result) noexcept;
+    void release_accessible() noexcept;
+    void acc_event(DWORD event, std::ptrdiff_t row) const noexcept;
+    //! After the focus row moved (or the window got the focus): EVENT_OBJECT_FOCUS.
+    void acc_focus_changed() const noexcept;
+    [[nodiscard]] std::size_t acc_row_count() const noexcept override;
+    bool acc_row(std::size_t row, AccessRow& out) const override;
+    bool acc_row_rect(std::size_t row, RECT& out) const noexcept override;
+    [[nodiscard]] std::ptrdiff_t acc_focus_row() const noexcept override;
+    [[nodiscard]] bool acc_has_focus() const noexcept override;
+    [[nodiscard]] std::ptrdiff_t acc_row_at(POINT client) const noexcept override;
+    void acc_selected_rows(std::vector<std::size_t>& out) const override;
+    void acc_select(std::size_t row, long flags) noexcept override;
+    void acc_default_action(std::size_t row) noexcept override;
+
     // tree_view_paint.cpp
     void paint(HDC target, const RECT& dirty) noexcept;
     void paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept;
@@ -455,6 +473,8 @@ private:
 
     std::function<void()> selection_listener_;
     std::uint32_t filter_hidden_selection_{model::no_node}; //!< selected, then filtered out
+
+    TreeAccessible* accessible_{}; //!< made on the first WM_GETOBJECT
 
     // Inline rename (inline_edit.cpp).
     HWND edit_{};

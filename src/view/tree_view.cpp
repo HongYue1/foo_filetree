@@ -96,6 +96,7 @@ void TreeView::detach() noexcept {
     ++generation_;
     alive_.reset();
     release_buffer();
+    release_accessible();
     tooltip_.destroy();
     tip_row_ = -1;
     if (icon_font_ != nullptr) {
@@ -205,12 +206,15 @@ void TreeView::set_filter(std::wstring_view text) noexcept {
 void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
     if (splice.empty()) return;
     schedule_watch_sync();
+    acc_event(EVENT_OBJECT_REORDER, -1); // child ids are rows
     if (splice.full) {
         apply_full_splice();
         follow_rename();
         resolve_playing();
         return;
     }
+    // The folder above the change opened or closed.
+    if (splice.row > 0) acc_event(EVENT_OBJECT_STATECHANGE, static_cast<std::ptrdiff_t>(splice.row) - 1);
     bool moved_to_parent = false;
     const auto shift = [&](std::ptrdiff_t& row) {
         if (row < 0 || static_cast<std::size_t>(row) < splice.row) return;
@@ -447,6 +451,7 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
     case WM_KILLFOCUS:
         focused_ = msg == WM_SETFOCUS;
         if (focused_) set_active_view(this);
+        if (focused_) acc_focus_changed();
         if (tree_.selection_hint() > 1) {
             InvalidateRect(wnd_, nullptr, FALSE); // every selected row changes colour
         } else if (selected_row_ >= 0) {
@@ -455,6 +460,8 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
         return true;
     case WM_TIMER:
         return on_watch_timer(static_cast<UINT_PTR>(wp));
+    case WM_GETOBJECT:
+        return on_get_object(wp, lp, result);
     case watch_message:
         on_watch_notify(static_cast<fs::WatchId>(lp));
         return true;

@@ -49,6 +49,8 @@ void TreeView::toggle_row(std::size_t row) noexcept {
     } catch (...) {
     }
     tree_.set_anchor(node);
+    acc_event(tree_.is_selected(node) ? EVENT_OBJECT_SELECTIONADD : EVENT_OBJECT_SELECTIONREMOVE,
+              static_cast<std::ptrdiff_t>(row));
     // Going from one to several selected rows (or back) adds or drops the focus frame.
     if ((before > 1) != (tree_.selection_hint() > 1) && selected_row_ >= 0) {
         invalidate_row(static_cast<std::size_t>(selected_row_));

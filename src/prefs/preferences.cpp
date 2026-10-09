@@ -468,6 +468,7 @@ private:
         s.show_icons = get_check(page, IDC_SHOW_ICONS);
         s.mark_favourites = get_check(page, IDC_MARK_FAVOURITES);
         s.mark_playing = get_check(page, IDC_MARK_PLAYING);
+        s.follow_playing = get_check(page, IDC_FOLLOW_PLAYING);
         s.extensions = static_cast<settings::Extensions>(get_combo(page, IDC_EXTENSIONS, 0));
         s.sort.field = static_cast<model::SortField>(get_combo(page, IDC_SORT_FIELD, 0));
         s.sort.folders_first = get_check(page, IDC_FOLDERS_FIRST);
@@ -525,6 +526,7 @@ private:
         set_check(page, IDC_SHOW_ICONS, s.show_icons);
         set_check(page, IDC_MARK_FAVOURITES, s.mark_favourites);
         set_check(page, IDC_MARK_PLAYING, s.mark_playing);
+        set_check(page, IDC_FOLLOW_PLAYING, s.follow_playing);
         set_combo(page, IDC_EXTENSIONS, static_cast<int>(s.extensions));
         set_combo(page, IDC_SORT_FIELD, static_cast<int>(s.sort.field));
         set_check(page, IDC_FOLDERS_FIRST, s.sort.folders_first);

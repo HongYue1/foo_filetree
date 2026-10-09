@@ -95,6 +95,8 @@ public:
     //! The last focused panel, else any; null when no panel exists.
     [[nodiscard]] static TreeView* active() noexcept;
     void run_command(Command command) noexcept;
+    //! Alt+Enter: the shell's Properties for the selected item.
+    void show_selected_properties() noexcept;
 
     //! Window styles the hosts must create the window with (beyond WS_CHILD etc.).
     //! WS_CLIPCHILDREN keeps paint off the inline rename editor.
@@ -238,6 +240,8 @@ private:
     void copy_into(std::uint32_t folder, std::vector<std::wstring> paths, bool move,
                    DWORD clipboard_sequence) noexcept;
     void check_if_open(std::uint32_t folder) noexcept;
+    void show_properties(std::uint32_t node) noexcept;
+    void save_as_playlist(std::uint32_t folder) noexcept;
 
     // Now playing marker (tree_view_playing.cpp).
     void on_now_playing_changed() noexcept override;
@@ -371,6 +375,7 @@ private:
 
     // Now playing marker.
     bool mark_playing_{true};
+    bool follow_playing_{false}; //!< select each new playing track (setting)
     std::array<std::uint32_t, 4> playing_nodes_{};
     std::size_t playing_count_{0};
     bool playing_exact_{false}; //!< playing_nodes_ are the file itself (not a folder holding it)

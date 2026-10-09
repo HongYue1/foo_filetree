@@ -5,6 +5,7 @@
 #include <shlobj.h>
 #include <shobjidl.h>
 
+#include <iterator>
 #include <memory>
 #include <utility>
 
@@ -120,6 +121,55 @@ void rename_path(std::wstring path, std::wstring new_name, HWND owner, ShellDone
         });
     } catch (...) {
     }
+}
+
+void show_properties(const std::wstring& path, HWND owner) noexcept {
+    if (!path.empty()) SHObjectProperties(top_level(owner), SHOP_FILEPATH, path.c_str(), nullptr);
+}
+
+void open_with(const std::wstring& path, HWND owner) noexcept {
+    if (path.empty()) return;
+    OPENASINFO info{};
+    info.pcszFile = path.c_str();
+    info.oaifInFlags = OAIF_ALLOW_REGISTRATION | OAIF_EXEC;
+    SHOpenWithDialog(top_level(owner), &info);
+}
+
+bool pick_playlist_file(HWND owner, const std::wstring& folder, const std::wstring& name,
+                        std::wstring& out) noexcept {
+    CComPtr<IFileSaveDialog> dialog;
+    if (FAILED(dialog.CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_INPROC_SERVER))) {
+        return false;
+    }
+    const COMDLG_FILTERSPEC types[] = {
+        {L"M3U8 playlist", L"*.m3u8"},
+        {L"foobar2000 playlist", L"*.fpl"},
+        {L"M3U playlist", L"*.m3u"},
+    };
+    dialog->SetFileTypes(static_cast<UINT>(std::size(types)), types);
+    dialog->SetFileTypeIndex(1);
+    dialog->SetDefaultExtension(L"m3u8");
+    dialog->SetTitle(L"Save folder as playlist");
+    dialog->SetFileName(name.c_str());
+    if (CComPtr<IShellItem> start;
+        SUCCEEDED(SHCreateItemFromParsingName(folder.c_str(), nullptr, IID_PPV_ARGS(&start)))) {
+        dialog->SetFolder(start);
+    }
+    if (FAILED(dialog->Show(top_level(owner)))) return false;
+    CComPtr<IShellItem> result;
+    PWSTR chosen = nullptr;
+    if (FAILED(dialog->GetResult(&result)) ||
+        FAILED(result->GetDisplayName(SIGDN_FILESYSPATH, &chosen))) {
+        return false;
+    }
+    try {
+        out = chosen;
+    } catch (...) {
+        CoTaskMemFree(chosen);
+        return false;
+    }
+    CoTaskMemFree(chosen);
+    return true;
 }
 
 void restore_recycled(std::wstring path, ShellDone done) noexcept {

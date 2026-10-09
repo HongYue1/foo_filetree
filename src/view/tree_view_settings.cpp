@@ -20,6 +20,7 @@ void TreeView::refresh_options() noexcept {
     extensions_ = s.extensions;
     show_icons_ = s.show_icons;
     mark_favourites_ = s.mark_favourites;
+    follow_playing_ = s.follow_playing;
     if (mark_playing_ != s.mark_playing) {
         mark_playing_ = s.mark_playing;
         resolve_playing();

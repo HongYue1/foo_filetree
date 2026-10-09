@@ -50,8 +50,11 @@ enum class MenuItem : std::uint8_t {
     cut,
     copy,
     queue,
+    save_playlist,
+    open_with,
+    properties,
 };
-inline constexpr std::size_t menu_item_count = 17;
+inline constexpr std::size_t menu_item_count = 20;
 
 //! Items that share a group get no separator between them.
 [[nodiscard]] int menu_group(MenuItem item) noexcept;
@@ -81,6 +84,7 @@ struct Settings {
     FilterBox filter_box{FilterBox::floating};
     Startup startup{Startup::restore};
     bool watch_changes{true}; //!< open folders update when their contents change on disk
+    bool follow_playing{false}; //!< each new playing track is opened to and selected
     std::wstring startup_folder; //!< for Startup::folder
     std::vector<std::wstring> favourites; //!< shown as roots, in this order
     FavouritesPlace favourites_place{FavouritesPlace::before};

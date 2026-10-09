@@ -32,6 +32,17 @@ void delete_path(std::wstring path, bool permanent, HWND owner, ShellDone done) 
 //! Renames through the shell (undoable; the shell reports collisions and invalid names).
 void rename_path(std::wstring path, std::wstring new_name, HWND owner, ShellDone done) noexcept;
 
+//! The shell's Properties sheet for the path (modeless; Alt+Enter in Explorer).
+void show_properties(const std::wstring& path, HWND owner) noexcept;
+
+//! Windows' "Open with" chooser for a file; opens it with the chosen program.
+void open_with(const std::wstring& path, HWND owner) noexcept;
+
+//! Save dialog for a playlist: starts in `folder` with `name`; offers m3u8, fpl and m3u.
+//! Returns false if cancelled.
+bool pick_playlist_file(HWND owner, const std::wstring& folder, const std::wstring& name,
+                        std::wstring& out) noexcept;
+
 //! Puts back the most recently recycled item that was deleted from `path` (Undo delete).
 //! See recycle_bin.h.
 void restore_recycled(std::wstring path, ShellDone done) noexcept;

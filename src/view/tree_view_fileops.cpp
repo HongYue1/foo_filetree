@@ -6,6 +6,7 @@
 #include "tree_view.h"
 
 #include "../actions/file_ops.h"
+#include "../actions/playlist_send.h"
 
 namespace filetree::view {
 namespace {
@@ -27,6 +28,37 @@ void TreeView::check_if_open(std::uint32_t folder) noexcept {
     if (!f.has(model::node_loaded) || f.has(model::node_loading) || !tree_.row_of(folder)) return;
     try {
         request_check(folder);
+    } catch (...) {
+    }
+}
+
+void TreeView::show_properties(std::uint32_t node) noexcept {
+    try {
+        tree_.build_path(node, path_);
+        actions::show_properties(path_, wnd_);
+    } catch (...) {
+    }
+}
+
+void TreeView::show_selected_properties() noexcept {
+    if (selected_row_ < 0) {
+        MessageBeep(MB_ICONWARNING);
+        return;
+    }
+    show_properties(tree_.node_at_row(static_cast<std::size_t>(selected_row_)));
+}
+
+void TreeView::save_as_playlist(std::uint32_t folder) noexcept {
+    try {
+        std::wstring path;
+        tree_.build_path(folder, path);
+        std::wstring name(model::display_name(tree_.node(folder)));
+        while (!name.empty() && (name.back() == L'\\' || name.back() == L':')) name.pop_back();
+        if (name.empty()) name = L"Playlist";
+        std::wstring file;
+        if (actions::pick_playlist_file(wnd_, path, name, file)) {
+            actions::save_as_playlist(path, std::move(file), wnd_);
+        }
     } catch (...) {
     }
 }

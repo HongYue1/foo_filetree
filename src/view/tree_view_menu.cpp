@@ -32,6 +32,9 @@ enum MenuId : UINT {
     id_cut,
     id_copy,
     id_queue,
+    id_save_playlist,
+    id_open_with,
+    id_properties,
     // Empty-area menu.
     id_refresh_all,
     id_collapse_all,
@@ -112,6 +115,8 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             if (item == MenuItem::undo && undo_.kind == UndoRecord::Kind::none) continue;
             if (item == MenuItem::fb2k_menu && folder) continue;
             if (item == MenuItem::favourite && !folder) continue;
+            if (item == MenuItem::save_playlist && !folder) continue;
+            if (item == MenuItem::open_with && folder) continue;
             if (item == MenuItem::paste && !actions::clipboard_has_files()) continue;
             const int group = settings::menu_group(item);
             if (last_group >= 0 && group != last_group) AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
@@ -126,6 +131,15 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
                 break;
             case MenuItem::queue:
                 AppendMenuW(menu, MF_STRING, id_queue, L"Add to playback queue");
+                break;
+            case MenuItem::save_playlist:
+                AppendMenuW(menu, MF_STRING, id_save_playlist, L"Save as playlist...");
+                break;
+            case MenuItem::open_with:
+                AppendMenuW(menu, MF_STRING, id_open_with, L"Open with...");
+                break;
+            case MenuItem::properties:
+                AppendMenuW(menu, MF_STRING, id_properties, L"Properties\tAlt+Enter");
                 break;
             case MenuItem::open_explorer:
                 AppendMenuW(menu, MF_STRING, id_open_explorer,
@@ -276,6 +290,16 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
         send_node(action, node);
         break;
     case id_open_explorer: open_in_explorer(node); break;
+    case id_save_playlist: save_as_playlist(node); break;
+    case id_open_with:
+        try {
+            std::wstring path;
+            tree_.build_path(node, path);
+            actions::open_with(path, wnd_);
+        } catch (...) {
+        }
+        break;
+    case id_properties: show_properties(node); break;
     case id_copy_path: copy_path(node); break;
     case id_rename: begin_rename(node); break;
     case id_delete: delete_node(node, GetKeyState(VK_SHIFT) < 0); break;

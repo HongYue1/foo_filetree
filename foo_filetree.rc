@@ -90,7 +90,8 @@ BEGIN
     LTEXT           "Star && play size (8-16):",IDC_STATIC,180,158,74,8
     EDITTEXT        IDC_MARK_SIZE,256,156,20,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "px",IDC_STATIC,279,158,14,8
-    CONTROL         "Mark the playing track (or its closed folder)",IDC_MARK_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,171,208,10
+    CONTROL         "Mark the playing track",IDC_MARK_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,171,92,10
+    CONTROL         "Select each new track",IDC_FOLLOW_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,180,171,113,10
 
     LTEXT           "Sorting",IDC_STATIC,7,188,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,198,286,1

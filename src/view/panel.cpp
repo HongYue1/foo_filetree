@@ -279,6 +279,7 @@ bool Panel::on_panel_key(UINT msg, WPARAM key) noexcept {
         case VK_LEFT: go_back(); return true;
         case VK_RIGHT: go_forward(); return true;
         case VK_UP: tree_.select_parent(); return true;
+        case VK_RETURN: tree_.show_selected_properties(); return true;
         default: return false;
         }
     }

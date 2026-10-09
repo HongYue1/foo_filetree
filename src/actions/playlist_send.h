@@ -24,4 +24,9 @@ struct SendRequest {
 
 void send(const SendRequest& request) noexcept;
 
+//! Writes every playable file under `folder` (subfolders included, fb2k's sort order) to the
+//! playlist file `file`; its extension picks the format. Tags are read in fb2k's background
+//! operation; failures go to the console.
+void save_as_playlist(const std::wstring& folder, std::wstring file, HWND parent) noexcept;
+
 } // namespace filetree::actions

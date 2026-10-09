@@ -19,6 +19,7 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 | F7 | New folder (inside the selected folder, or next to the selected file), then rename it |
 | Ctrl+C / Ctrl+X / Ctrl+V | Copy / cut the item / paste files into the selected folder (as in Explorer) |
 | Ctrl+Shift+C | Copy the full path |
+| Alt+Enter | Properties (the Explorer properties dialog) |
 | Ctrl+Z | Undo the last rename or delete |
 | Right click, Apps key, Shift+F10 | Context menu |
 
@@ -27,6 +28,9 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
   copies too, unless Shift is held.
 - The playing track is marked with a play triangle (its icon, or after the name without icons);
   while its folder is closed, the closed folder holding it gets a dimmer one (Display tab: "Mark the playing track").
+  "Select each new track" moves the selection to every new track as it starts.
+- Context menu extras: Open with (files), Properties, Save as playlist (folders: all their tracks,
+  recursively, into an .m3u8 / .fpl / .m3u file).
 - Main menu **View > Folder Tree**: Show now playing, Refresh, Collapse all, New folder. They act
   on the panel focused last and can be given keyboard shortcuts in Preferences > Keyboard Shortcuts.
 - Type letters to jump to the next visible row whose name starts with them; press the same letter

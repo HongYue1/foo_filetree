@@ -144,4 +144,29 @@ void send(const SendRequest& request) noexcept {
     }
 }
 
+void save_as_playlist(const std::wstring& folder, std::wstring file, HWND parent) noexcept {
+    try {
+        pfc::list_t<const char*> urls;
+        const pfc::string8 location = to_location(folder);
+        urls.add_item(location.c_str());
+        const pfc::string8 target = pfc::stringcvt::string_utf8_from_wide(file.c_str()).get_ptr();
+        auto notify = process_locations_notify::create([target](metadb_handle_list_cref items) {
+            try {
+                playlist_loader::g_save_playlist(target, items, fb2k::noAbort);
+                FB2K_console_formatter() << FILETREE_NAME << ": saved " << items.get_count()
+                                         << " tracks to " << target;
+            } catch (const std::exception& error) {
+                FB2K_console_formatter() << FILETREE_NAME << ": saving " << target
+                                         << " failed: " << error.what();
+            }
+        });
+        playlist_incoming_item_filter_v2::get()->process_locations_async(
+            urls, playlist_incoming_item_filter_v2::op_flag_delay_ui, nullptr, nullptr, parent,
+            notify);
+    } catch (const std::exception& error) {
+        FB2K_console_formatter() << FILETREE_NAME << ": save as playlist failed: " << error.what();
+    } catch (...) {
+    }
+}
+
 } // namespace filetree::actions

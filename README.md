@@ -5,6 +5,13 @@
   Default UI and Columns UI.
 </p>
 
+<table>
+  <tr>
+    <td width="50%" align="center"><img src="docs/images/light.png" alt="Folder Tree in a light theme, with favourites, tree lines, the playing track and the status bar" width="100%" /><br /><sub>Light theme: favourites, tree lines, the playing track</sub></td>
+    <td width="50%" align="center"><img src="docs/images/dark-filter.png" alt="Folder Tree in dark mode, with the filter box narrowing the tree to Linkin" width="100%" /><br /><sub>Dark mode: the filter box narrowing the tree</sub></td>
+  </tr>
+</table>
+
 ## Features
 
 - **Drives and favourite folders** as roots. Folders are read in the background, so a slow,

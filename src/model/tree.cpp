@@ -247,6 +247,13 @@ bool Tree::collect_filtered(std::uint32_t index, bool inside_match) {
     return true;
 }
 
+RowSplice Tree::collapse_all() {
+    for (Node& node : nodes_) {
+        node.flags = static_cast<std::uint16_t>(node.flags & ~(node_expanded | node_load_failed));
+    }
+    return rebuild_rows();
+}
+
 RowSplice Tree::rebuild_rows() {
     previous_rows_.swap(rows_);
     rows_.clear();

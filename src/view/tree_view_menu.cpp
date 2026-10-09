@@ -10,6 +10,7 @@
 #include "../actions/fb2k_menu.h"
 #include "../actions/shell_menu.h"
 #include "../actions/shell_ops.h"
+#include "../guids.h"
 
 namespace filetree::view {
 namespace {
@@ -24,6 +25,10 @@ enum MenuId : UINT {
     id_delete,
     id_refresh,
     id_undo,
+    // Empty-area menu.
+    id_refresh_all,
+    id_collapse_all,
+    id_preferences,
 };
 
 } // namespace
@@ -41,7 +46,12 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
     std::ptrdiff_t row = -1;
     if (point.x == -1 && point.y == -1) {
         // Keyboard (Apps key, Shift+F10): at the selected row.
-        if (selected_row_ < 0) return;
+        if (selected_row_ < 0) {
+            POINT corner{metrics_.indent, metrics_.row_height};
+            ClientToScreen(wnd_, &corner);
+            show_background_menu(corner);
+            return;
+        }
         row = selected_row_;
         ensure_visible(static_cast<std::size_t>(row));
         const model::Node& n = tree_.node(tree_.node_at_row(static_cast<std::size_t>(row)));
@@ -53,7 +63,11 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
         POINT client = point;
         ScreenToClient(wnd_, &client);
         row = row_at(client.y);
-        if (row < 0) return;
+        if (row < 0) {
+            if (GetFocus() != wnd_) SetFocus(wnd_);
+            show_background_menu(point);
+            return;
+        }
         if (GetFocus() != wnd_) SetFocus(wnd_);
         select_row(static_cast<std::size_t>(row));
     }
@@ -147,6 +161,43 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
         DestroyMenu(menu); // destroys the submenus too
     } catch (...) {
         menu_ = nullptr;
+    }
+}
+
+void TreeView::show_background_menu(POINT point) noexcept {
+    HMENU menu = CreatePopupMenu();
+    if (menu == nullptr) return;
+    AppendMenuW(menu, MF_STRING, id_refresh_all, L"Refresh all");
+    AppendMenuW(menu, MF_STRING, id_collapse_all, L"Collapse all");
+    AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(menu, MF_STRING, id_preferences, L"Preferences...");
+    const UINT id = static_cast<UINT>(TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON,
+                                                     point.x, point.y, 0, wnd_, nullptr));
+    DestroyMenu(menu);
+    switch (id) {
+    case id_refresh_all: relist_all(); break;
+    case id_collapse_all: collapse_all(); break;
+    case id_preferences:
+        try {
+            ui_control::get()->show_preferences(guids::preferences_page);
+        } catch (...) {
+        }
+        break;
+    default: break;
+    }
+}
+
+void TreeView::collapse_all() noexcept {
+    try {
+        std::uint32_t root = model::no_node;
+        if (selected_row_ >= 0) {
+            root = tree_.node_at_row(static_cast<std::size_t>(selected_row_));
+            while (tree_.node(root).parent != model::no_node) root = tree_.node(root).parent;
+        }
+        apply_splice(tree_.collapse_all());
+        if (root != model::no_node) select_node(root);
+        scroll_to(0);
+    } catch (...) {
     }
 }
 
@@ -291,19 +342,53 @@ void TreeView::delete_node(std::uint32_t node, bool permanent) noexcept {
 
 void TreeView::refresh_node(std::uint32_t node) noexcept {
     try {
+        // Like Explorer's F5 on what you look at: list the folder that holds the item again, so
+        // new, renamed or deleted siblings show, and the item's own contents too. What was open
+        // below it is reopened and the selection kept, by path, as the listings arrive.
         const model::Node& n = tree_.node(node);
-        if (n.has(model::node_container)) {
-            // Keep a selected direct child selected; otherwise the folder.
-            std::wstring keep;
-            if (selected_row_ >= 0) {
-                const auto selected = tree_.node_at_row(static_cast<std::size_t>(selected_row_));
-                if (tree_.node(selected).parent == node) keep.assign(tree_.node(selected).name_view());
+        const std::uint32_t folder =
+            n.has(model::node_root) || n.parent == model::no_node ? node : n.parent;
+        const model::Node& f = tree_.node(folder);
+        if (f.has(model::node_loading)) return; // a listing is already on its way
+
+        end_rename(false);
+        restore_expand_.clear();
+        restore_select_.clear();
+        if (const auto row = tree_.row_of(folder)) {
+            for (std::size_t r = *row + 1;
+                 r < tree_.row_count() && tree_.node(tree_.node_at_row(r)).depth > f.depth; ++r) {
+                const std::uint32_t below = tree_.node_at_row(r);
+                if (tree_.node(below).has(model::node_expanded)) {
+                    restore_expand_.insert(upper_path(below));
+                }
             }
-            reload_and_select(node, std::move(keep), {});
-        } else if (n.parent != model::no_node) {
-            reload_and_select(n.parent, std::wstring(n.name_view()), {});
+        }
+        if (selected_row_ >= 0) {
+            const std::uint32_t selected = tree_.node_at_row(static_cast<std::size_t>(selected_row_));
+            if (selected != folder) restore_select_ = upper_path(selected);
+        }
+        const model::Tree::ReloadResult result = tree_.reload(folder);
+        std::erase_if(pending_, [this](const PendingListing& p) {
+            if (tree_.node(p.node).has(model::node_loading)) return false;
+            p.ticket.cancel();
+            return true;
+        });
+        apply_splice(result.splice);
+        if (result.needs_load) {
+            try {
+                request_listing(folder);
+            } catch (...) {
+                tree_.fail_load(folder);
+            }
+        }
+        if (const auto row = tree_.row_of(folder)) invalidate_row(*row);
+        if (!result.needs_load) {
+            restore_expand_.clear();
+            restore_select_.clear();
         }
     } catch (...) {
+        restore_expand_.clear();
+        restore_select_.clear();
     }
 }
 

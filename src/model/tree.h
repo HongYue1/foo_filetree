@@ -134,6 +134,8 @@ public:
     //! active, row changes rebuild the whole list (RowSplice::full).
     RowSplice set_filter(std::wstring_view text);
     [[nodiscard]] bool filtered() const noexcept { return !filter_.empty(); }
+    //! Closes every folder (children stay listed). Returns a full rebuild.
+    RowSplice collapse_all();
     //! Rebuilds the rows from the expanded state (after the roots were re-added).
     RowSplice rebuild_rows();
     //! The node a row showed before the last full rebuild, or no_node.

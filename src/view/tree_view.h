@@ -157,8 +157,12 @@ private:
     void open_in_explorer(std::uint32_t node) noexcept;
     void copy_path(std::uint32_t node) noexcept;
     void delete_node(std::uint32_t node, bool permanent) noexcept;
-    //! A folder lists itself again, a file its parent folder; the selection is kept by name.
+    //! Lists the folder holding the item again (a root lists itself); what was open below it
+    //! reopens and the selection is kept, by path.
     void refresh_node(std::uint32_t node) noexcept;
+    //! Right-click below the last row: Refresh all, Collapse all, Preferences.
+    void show_background_menu(POINT point) noexcept;
+    void collapse_all() noexcept;
     //! Reloads `folder` and, once its listing arrives, selects the child called `name` (or
     //! `fallback`, or the folder itself). An empty `name` selects the folder.
     void reload_and_select(std::uint32_t folder, std::wstring name, std::wstring fallback) noexcept;

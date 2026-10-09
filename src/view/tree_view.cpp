@@ -56,6 +56,11 @@ void TreeView::detach() noexcept {
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
     pending_.clear();
     stop_watching();
+    if (drop_target_ != nullptr) {
+        drop_target_->detach();
+        drop_target_ = nullptr;
+    }
+    drop_row_ = -1;
     ++generation_;
     alive_.reset();
     release_buffer();

@@ -10,6 +10,7 @@
 
 #include "../fs/fb2k_glue.h"
 #include "recycle_bin.h"
+#include "shell_common.h"
 
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "ole32.lib")
@@ -17,34 +18,9 @@
 namespace filetree::actions {
 namespace {
 
-//! COM for one task on the shell worker. The worker thread is ours, so STA is safe to enter
-//! and leave around each task.
-class ComScope {
-public:
-    ComScope() noexcept
-        : hr_(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE)) {}
-    ~ComScope() {
-        if (SUCCEEDED(hr_)) CoUninitialize();
-    }
-    ComScope(const ComScope&) = delete;
-    ComScope& operator=(const ComScope&) = delete;
-
-private:
-    HRESULT hr_;
-};
-
-//! Shell dialogs need a top-level owner; the panel window is a child.
-HWND top_level(HWND wnd) noexcept {
-    HWND root = wnd != nullptr ? GetAncestor(wnd, GA_ROOT) : nullptr;
-    return root != nullptr ? root : wnd;
-}
-
-void finish(ShellDone& done, ShellResult result) {
-    if (!done) return;
-    // std::function needs a copyable callable.
-    auto shared = std::make_shared<ShellDone>(std::move(done));
-    fs::post_to_main([shared, result] { (*shared)(result); });
-}
+using detail::ComScope;
+using detail::finish;
+using detail::top_level;
 
 //! Runs one IFileOperation. Failures are reported by the shell's own UI.
 template <typename Queue>

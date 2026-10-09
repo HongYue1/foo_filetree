@@ -16,10 +16,15 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 | F2 | Rename (Enter saves, Esc or clicking away cancels) |
 | Del / Shift+Del | Delete to the Recycle Bin / delete permanently |
 | F5 | Refresh: every open folder is checked again; changes appear in place |
-| Ctrl+C | Copy the full path |
+| F7 | New folder (inside the selected folder, or next to the selected file), then rename it |
+| Ctrl+C / Ctrl+X / Ctrl+V | Copy / cut the item / paste files into the selected folder (as in Explorer) |
+| Ctrl+Shift+C | Copy the full path |
 | Ctrl+Z | Undo the last rename or delete |
 | Right click, Apps key, Shift+F10 | Context menu |
 
+- Drop files from Explorer onto a folder to copy them there, hold Shift to move. Hovering over a
+  closed folder opens it; near the top or bottom edge the tree scrolls. Dragging out of the panel
+  copies too, unless Shift is held.
 - Type letters to jump to the next visible row whose name starts with them; press the same letter
   again to step through matches. A pause of one second starts a new search.
 

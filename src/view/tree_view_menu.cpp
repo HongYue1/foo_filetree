@@ -7,6 +7,7 @@
 
 #include <windowsx.h>
 
+#include "../actions/file_ops.h"
 #include "../actions/fb2k_menu.h"
 #include "../actions/shell_menu.h"
 #include "../actions/shell_ops.h"
@@ -26,6 +27,8 @@ enum MenuId : UINT {
     id_refresh,
     id_undo,
     id_favourite,
+    id_new_folder,
+    id_paste,
     // Empty-area menu.
     id_refresh_all,
     id_collapse_all,
@@ -106,6 +109,7 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             if (item == MenuItem::undo && undo_.kind == UndoRecord::Kind::none) continue;
             if (item == MenuItem::fb2k_menu && folder) continue;
             if (item == MenuItem::favourite && !folder) continue;
+            if (item == MenuItem::paste && !actions::clipboard_has_files()) continue;
             const int group = settings::menu_group(item);
             if (last_group >= 0 && group != last_group) AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
             last_group = group;
@@ -122,7 +126,14 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
                             folder ? L"Open in Explorer" : L"Show in folder");
                 break;
             case MenuItem::copy_path:
-                AppendMenuW(menu, MF_STRING, id_copy_path, L"Copy path\tCtrl+C");
+                AppendMenuW(menu, MF_STRING, id_copy_path, L"Copy path\tCtrl+Shift+C");
+                break;
+            case MenuItem::new_folder:
+                AppendMenuW(menu, MF_STRING, id_new_folder,
+                            folder ? L"New folder\tF7" : L"New folder here\tF7");
+                break;
+            case MenuItem::paste:
+                AppendMenuW(menu, MF_STRING, id_paste, folder ? L"Paste\tCtrl+V" : L"Paste here\tCtrl+V");
                 break;
             case MenuItem::rename:
                 AppendMenuW(menu, MF_STRING | root_flags, id_rename, L"Rename\tF2");
@@ -252,6 +263,8 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
     case id_refresh: refresh_open_folders(); break;
     case id_undo: undo(); break;
     case id_favourite: toggle_favourite(node); break;
+    case id_new_folder: new_folder(node); break;
+    case id_paste: paste_into(node); break;
     default: break;
     }
 }
@@ -377,8 +390,8 @@ void TreeView::delete_node(std::uint32_t node, bool permanent) noexcept {
     }
 }
 
-void TreeView::reload_and_select(std::uint32_t folder, std::wstring name,
-                                 std::wstring fallback) noexcept {
+void TreeView::reload_and_select(std::uint32_t folder, std::wstring name, std::wstring fallback,
+                                 bool rename) noexcept {
     if (folder >= tree_.node_count()) return;
     const model::Node& f = tree_.node(folder);
     if (f.has(model::node_loaded) && !f.has(model::node_loading) &&
@@ -391,7 +404,7 @@ void TreeView::reload_and_select(std::uint32_t folder, std::wstring name,
                 p.ticket.cancel();
                 return true;
             });
-            pending_select_ = {folder, std::move(name), std::move(fallback)};
+            pending_select_ = {folder, std::move(name), std::move(fallback), rename};
             request_check(folder);
             return;
         } catch (...) {
@@ -406,7 +419,7 @@ void TreeView::reload_and_select(std::uint32_t folder, std::wstring name,
         return true;
     });
     apply_splice(result.splice);
-    pending_select_ = {folder, std::move(name), std::move(fallback)};
+    pending_select_ = {folder, std::move(name), std::move(fallback), rename};
     if (result.needs_load) {
         try {
             request_listing(folder);
@@ -428,8 +441,12 @@ void TreeView::apply_pending_select(std::uint32_t folder) noexcept {
     if (target == model::no_node && !select.fallback.empty()) {
         target = tree_.find_child(folder, select.fallback);
     }
+    const bool rename = select.rename && target != model::no_node;
     if (target == model::no_node) target = folder;
-    if (const auto row = tree_.row_of(target)) select_row(*row);
+    if (const auto row = tree_.row_of(target)) {
+        select_row(*row);
+        if (rename) begin_rename(target);
+    }
 }
 
 } // namespace filetree::view

@@ -16,9 +16,10 @@ namespace {
 
 // Where each item goes in a fresh layout (newer items are not always last).
 constexpr std::array<MenuItem, menu_item_count> default_order = {
-    MenuItem::play,        MenuItem::add_active, MenuItem::new_playlist, MenuItem::open_explorer,
-    MenuItem::copy_path,   MenuItem::favourite,  MenuItem::rename,       MenuItem::remove,
-    MenuItem::refresh,     MenuItem::undo,       MenuItem::fb2k_menu,    MenuItem::explorer_menu,
+    MenuItem::play,       MenuItem::add_active, MenuItem::new_playlist, MenuItem::open_explorer,
+    MenuItem::copy_path,  MenuItem::favourite,  MenuItem::new_folder,   MenuItem::paste,
+    MenuItem::rename,     MenuItem::remove,     MenuItem::refresh,      MenuItem::undo,
+    MenuItem::fb2k_menu,  MenuItem::explorer_menu,
 };
 
 std::size_t default_rank(MenuItem item) noexcept {
@@ -38,6 +39,8 @@ int menu_group(MenuItem item) noexcept {
     case MenuItem::open_explorer:
     case MenuItem::copy_path:
     case MenuItem::favourite: return 1;
+    case MenuItem::new_folder:
+    case MenuItem::paste:
     case MenuItem::rename:
     case MenuItem::remove:
     case MenuItem::refresh:
@@ -62,6 +65,8 @@ const wchar_t* menu_item_label(MenuItem item) noexcept {
     case MenuItem::fb2k_menu: return L"foobar2000 submenu (files)";
     case MenuItem::explorer_menu: return L"Explorer submenu";
     case MenuItem::favourite: return L"Add to / Remove from favourites";
+    case MenuItem::new_folder: return L"New folder";
+    case MenuItem::paste: return L"Paste (when files are on the clipboard)";
     }
     return L"";
 }

@@ -45,8 +45,10 @@ enum class MenuItem : std::uint8_t {
     fb2k_menu,
     explorer_menu,
     favourite, //!< Add to / Remove from favourites
+    new_folder,
+    paste,
 };
-inline constexpr std::size_t menu_item_count = 12;
+inline constexpr std::size_t menu_item_count = 14;
 
 //! Items that share a group get no separator between them.
 [[nodiscard]] int menu_group(MenuItem item) noexcept;

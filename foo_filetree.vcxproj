@@ -147,6 +147,9 @@
     <ClCompile Include="src\view\tree_view_menu.cpp" />
     <ClCompile Include="src\view\inline_edit.cpp" />
     <ClCompile Include="src\actions\drag_out.cpp" />
+    <ClCompile Include="src\actions\file_ops.cpp" />
+    <ClCompile Include="src\view\drop_target.cpp" />
+    <ClCompile Include="src\view\tree_view_fileops.cpp" />
     <ClCompile Include="src\view\tree_view_nav.cpp" />
     <ClCompile Include="src\view\tree_view_refresh.cpp" />
     <ClCompile Include="src\view\icon_font.cpp" />
@@ -181,6 +184,9 @@
     <ClInclude Include="src\actions\playlist_send.h" />
     <ClInclude Include="src\actions\shell_ops.h" />
     <ClInclude Include="src\actions\drag_out.h" />
+    <ClInclude Include="src\actions\file_ops.h" />
+    <ClInclude Include="src\actions\shell_common.h" />
+    <ClInclude Include="src\view\drop_target.h" />
     <ClInclude Include="src\view\address_bar.h" />
     <ClInclude Include="src\view\panel.h" />
     <ClInclude Include="src\view\filter_box.h" />

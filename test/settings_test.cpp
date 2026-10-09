@@ -87,7 +87,8 @@ void test_settings_model() {
     // An older config without the last two items: they come back after their predecessors.
     const MenuLayout old = MenuLayout::decode(L"5,0,1,2,3,4,6,7,8");
     CHECK(old.order[0] == MenuItem::rename);
-    CHECK(old.order[10] == MenuItem::fb2k_menu && old.order[11] == MenuItem::explorer_menu);
+    CHECK(old.order[12] == MenuItem::fb2k_menu && old.order[13] == MenuItem::explorer_menu);
+    CHECK(old.order[7] == MenuItem::new_folder && old.order[8] == MenuItem::paste);
     // A newer item goes to its default place (Favourites after Copy path), not to the end.
     CHECK(old.order[5] == MenuItem::copy_path && old.order[6] == MenuItem::favourite);
     CHECK(defaults.order[5] == MenuItem::favourite);

@@ -143,7 +143,8 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     const std::uint32_t index = tree_.node_at_row(row);
     const model::Node& node = tree_.node(index);
     const bool selected = static_cast<std::ptrdiff_t>(row) == selected_row_;
-    const bool hovered = static_cast<std::ptrdiff_t>(row) == hover_row_;
+    const bool hovered = static_cast<std::ptrdiff_t>(row) == hover_row_ ||
+                         static_cast<std::ptrdiff_t>(row) == drop_row_;
 
     COLORREF background = colours_.background;
     COLORREF text = colours_.text;

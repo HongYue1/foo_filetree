@@ -86,7 +86,7 @@ bool TreeView::on_key(WPARAM key) noexcept {
     case VK_RETURN:
         if (has_selection) run_gesture(actions::Gesture::enter, node);
         return true;
-    // Explorer's keys. Ctrl/Alt combinations other than Ctrl+C fall through to fb2k's shortcuts.
+    // Explorer's keys. Other Ctrl/Alt combinations fall through to fb2k's shortcuts.
     case VK_F2:
         if (!has_selection || ctrl || alt) return false;
         begin_rename(node);
@@ -99,9 +99,25 @@ bool TreeView::on_key(WPARAM key) noexcept {
         if (ctrl || alt) return false;
         refresh_open_folders();
         return true;
-    case 'C':
+    case VK_F7:
+        if (!has_selection || ctrl || alt || shift) return false;
+        new_folder(node);
+        return true;
+    case 'C': // Explorer: Ctrl+C copies the item, Ctrl+Shift+C its path
+        if (!has_selection || !ctrl || alt) return false;
+        if (shift) {
+            copy_path(node);
+        } else {
+            put_on_clipboard(node, false);
+        }
+        return true;
+    case 'X':
         if (!has_selection || !ctrl || alt || shift) return false;
-        copy_path(node);
+        put_on_clipboard(node, true);
+        return true;
+    case 'V':
+        if (!has_selection || !ctrl || alt || shift) return false;
+        paste_into(node);
         return true;
     case 'Z':
         if (!ctrl || alt || shift) return false;

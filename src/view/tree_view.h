@@ -29,11 +29,12 @@
 #include "../model/tree.h"
 #include "../settings/panel_state.h"
 #include "../settings/settings_store.h"
+#include "drop_target.h"
 #include "theme.h"
 
 namespace filetree::view {
 
-class TreeView final : private settings::Listener {
+class TreeView final : private settings::Listener, private DropSink {
 public:
     TreeView();
     ~TreeView();
@@ -207,8 +208,24 @@ private:
     void collapse_all() noexcept;
     //! Reloads `folder` and, once its listing arrives, selects the child called `name` (or
     //! `fallback`, or the folder itself). An empty `name` selects the folder.
-    void reload_and_select(std::uint32_t folder, std::wstring name, std::wstring fallback) noexcept;
+    void reload_and_select(std::uint32_t folder, std::wstring name, std::wstring fallback,
+                           bool rename = false) noexcept;
     void apply_pending_select(std::uint32_t folder) noexcept;
+
+    // New folder, clipboard and dropping onto the panel (tree_view_fileops.cpp).
+    //! The folder an operation on `node` goes into: itself if a folder, else its parent.
+    [[nodiscard]] std::uint32_t target_folder(std::uint32_t node) const noexcept;
+    void new_folder(std::uint32_t node) noexcept;
+    void put_on_clipboard(std::uint32_t node, bool cut) noexcept;
+    void paste_into(std::uint32_t node) noexcept;
+    void copy_into(std::uint32_t folder, std::vector<std::wstring> paths, bool move,
+                   DWORD clipboard_sequence) noexcept;
+    void check_if_open(std::uint32_t folder) noexcept;
+    void set_drop_row(std::ptrdiff_t row) noexcept;
+    DWORD drag_over(IDataObject* data, DWORD keys, POINT point, DWORD allowed,
+                    bool enter) noexcept override;
+    void drag_leave() noexcept override;
+    DWORD drop(IDataObject* data, DWORD keys, POINT point, DWORD allowed) noexcept override;
     //! Runs `work` on the main thread later if this view and its tree still exist.
     [[nodiscard]] actions::ShellDone guard(
         std::function<void(TreeView&, actions::ShellResult)> work);
@@ -318,8 +335,17 @@ private:
         std::uint32_t folder{model::no_node};
         std::wstring name;
         std::wstring fallback;
+        bool rename{false}; //!< start renaming the named item (New folder)
     };
     PendingSelect pending_select_;
+
+    // Dropping onto the panel.
+    DropTarget* drop_target_{};
+    std::ptrdiff_t drop_row_{-1}; //!< the folder row a drop would go into, highlighted
+    bool drop_files_{false};      //!< the current drag carries files
+    std::uint32_t drop_hover_node_{model::no_node}; //!< closed folder under the cursor...
+    ULONGLONG drop_hover_since_{};                   //!< ...since, to open it after a pause
+    ULONGLONG drop_scrolled_at_{};                   //!< auto-scroll pace at the edges
 
     // One level of undo for this panel's own rename/delete (Explorer's undo history is private
     // to Explorer). Paths, not nodes: the tree may have been reloaded since.

@@ -121,6 +121,29 @@ public:
     //! folder is expanded it is marked loading; if it is already loading nothing changes.
     ReloadResult reload(std::uint32_t index);
 
+    //! Soft refresh: true when a fresh listing has exactly the loaded children (same order,
+    //! names, attributes, sizes and times). False if the folder is not loaded.
+    [[nodiscard]] bool children_match(std::uint32_t index,
+                                      std::span<const ChildRecord> children) const noexcept;
+
+    struct MergeResult {
+        RowSplice splice;                 //!< the folder's visible descendants, replaced
+        std::uint32_t old_first{no_node}; //!< the old child range...
+        std::vector<std::uint32_t> moved; //!< ...and where each went (no_node: gone)
+        [[nodiscard]] std::uint32_t map(std::uint32_t old) const noexcept {
+            if (old_first == no_node || old < old_first || old - old_first >= moved.size()) {
+                return old;
+            }
+            return moved[old - old_first];
+        }
+    };
+
+    //! Replaces a loaded folder's children with a fresh listing in one step. Children whose
+    //! name (exact) and kind are unchanged keep their state and subtree (open folders stay
+    //! open, nothing is listed again) but move to a new index: translate held indices with
+    //! MergeResult::map. Gone children become orphans. No-op unless loaded and not loading.
+    MergeResult merge_children(std::uint32_t index, std::span<const ChildRecord> children);
+
     //! The child of `parent` with this name (case-insensitive, as NTFS), or no_node. Linear.
     [[nodiscard]] std::uint32_t find_child(std::uint32_t parent,
                                            std::wstring_view name) const noexcept;

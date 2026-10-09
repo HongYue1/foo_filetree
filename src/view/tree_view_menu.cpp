@@ -230,7 +230,7 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
     case id_copy_path: copy_path(node); break;
     case id_rename: begin_rename(node); break;
     case id_delete: delete_node(node, GetKeyState(VK_SHIFT) < 0); break;
-    case id_refresh: refresh_node(node); break;
+    case id_refresh: refresh_open_folders(); break;
     case id_undo: undo(); break;
     default: break;
     }
@@ -340,65 +340,13 @@ void TreeView::delete_node(std::uint32_t node, bool permanent) noexcept {
     }
 }
 
-void TreeView::refresh_node(std::uint32_t node) noexcept {
-    try {
-        // Like Explorer's F5 on what you look at: list the folder that holds the item again, so
-        // new, renamed or deleted siblings show, and the item's own contents too. What was open
-        // below it is reopened and the selection kept, by path, as the listings arrive.
-        const model::Node& n = tree_.node(node);
-        const std::uint32_t folder =
-            n.has(model::node_root) || n.parent == model::no_node ? node : n.parent;
-        const model::Node& f = tree_.node(folder);
-        if (f.has(model::node_loading)) return; // a listing is already on its way
-
-        end_rename(false);
-        restore_expand_.clear();
-        restore_select_.clear();
-        if (const auto row = tree_.row_of(folder)) {
-            for (std::size_t r = *row + 1;
-                 r < tree_.row_count() && tree_.node(tree_.node_at_row(r)).depth > f.depth; ++r) {
-                const std::uint32_t below = tree_.node_at_row(r);
-                if (tree_.node(below).has(model::node_expanded)) {
-                    restore_expand_.insert(upper_path(below));
-                }
-            }
-        }
-        if (selected_row_ >= 0) {
-            const std::uint32_t selected = tree_.node_at_row(static_cast<std::size_t>(selected_row_));
-            if (selected != folder) restore_select_ = upper_path(selected);
-        }
-        const model::Tree::ReloadResult result = tree_.reload(folder);
-        std::erase_if(pending_, [this](const PendingListing& p) {
-            if (tree_.node(p.node).has(model::node_loading)) return false;
-            p.ticket.cancel();
-            return true;
-        });
-        apply_splice(result.splice);
-        if (result.needs_load) {
-            try {
-                request_listing(folder);
-            } catch (...) {
-                tree_.fail_load(folder);
-            }
-        }
-        if (const auto row = tree_.row_of(folder)) invalidate_row(*row);
-        if (!result.needs_load) {
-            restore_expand_.clear();
-            restore_select_.clear();
-        }
-    } catch (...) {
-        restore_expand_.clear();
-        restore_select_.clear();
-    }
-}
-
 void TreeView::reload_and_select(std::uint32_t folder, std::wstring name,
                                  std::wstring fallback) noexcept {
     if (folder >= tree_.node_count()) return;
     const model::Tree::ReloadResult result = tree_.reload(folder);
     // Listings for the forgotten children will be ignored; stop them early.
     std::erase_if(pending_, [this](const PendingListing& p) {
-        if (tree_.node(p.node).has(model::node_loading)) return false;
+        if (p.check || tree_.node(p.node).has(model::node_loading)) return false;
         p.ticket.cancel();
         return true;
     });

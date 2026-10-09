@@ -419,6 +419,10 @@ void TreeView::expand(std::uint32_t node) noexcept {
     switch (tree_.expand(node, &splice)) {
     case model::Tree::ExpandResult::expanded:
         apply_splice(splice);
+        try {
+            request_check(node); // listed earlier: catch up with changes since, in the background
+        } catch (...) {
+        }
         break;
     case model::Tree::ExpandResult::needs_load:
         try {
@@ -460,7 +464,8 @@ void TreeView::request_listing(std::uint32_t node) {
 
 void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
                           fs::Listing& listing) noexcept {
-    std::erase_if(pending_, [node](const PendingListing& p) { return p.node == node; });
+    std::erase_if(pending_,
+                  [node](const PendingListing& p) { return p.node == node && !p.check; });
     if (generation != generation_ || wnd_ == nullptr || node >= tree_.node_count()) return;
 
     model::RowSplice splice;

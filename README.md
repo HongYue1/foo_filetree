@@ -15,7 +15,7 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 | Page Up / Page Down | Parent folder / next folder after the parent |
 | F2 | Rename (Enter saves, Esc or clicking away cancels) |
 | Del / Shift+Del | Delete to the Recycle Bin / delete permanently |
-| F5 | Refresh the folder (a file refreshes its folder) |
+| F5 | Refresh: every open folder is checked again; changes appear in place |
 | Ctrl+C | Copy the full path |
 | Ctrl+Z | Undo the last rename or delete |
 | Right click, Apps key, Shift+F10 | Context menu |
@@ -61,3 +61,4 @@ Changes made through **Explorer >** are not picked up automatically yet; press F
 
 Settings live under Preferences > Tools > Folder Tree. Changes preview live in open panels and are
 kept only when you press OK or Apply.
+

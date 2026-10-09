@@ -222,6 +222,55 @@ void test_tree_reload() {
     CHECK(tree.expand(d) == Tree::ExpandResult::needs_load);
 }
 
+void test_tree_merge() {
+    using model::Tree;
+    Tree tree;
+    const auto c = tree.add_root(L"C:\\");
+    tree.add_root(L"D:\\");
+    tree.expand(c);
+    tree.apply_children(c, records({L"Music", L"Old", L"Users"}, {L"a.mp3"}));
+    const auto music = tree.find_child(c, L"Music");
+    tree.expand(music);
+    tree.apply_children(music, records({L"Album"}, {L"x.flac"}));
+    const auto album = tree.find_child(music, L"Album");
+    CHECK(tree.row_count() == 8); // C, Music, Album, x.flac, Old, Users, a.mp3, D
+
+    CHECK(tree.children_match(c, records({L"Music", L"Old", L"Users"}, {L"a.mp3"})));
+    CHECK(!tree.children_match(c, records({L"Music", L"Users"}, {L"a.mp3"})));
+    CHECK(!tree.children_match(c, records({L"Music", L"Old", L"users"}, {L"a.mp3"})));
+    CHECK(!tree.children_match(music, records({L"Album"}, {})) );
+    CHECK(!tree.children_match(album, {}));                    // not loaded
+
+    // Old is gone, New appears, a.mp3 grew: Music keeps its open subtree in one splice.
+    auto fresh = records({L"Music", L"New", L"Users"}, {L"a.mp3"});
+    fresh[3].size = 99;
+    auto result = tree.merge_children(c, fresh);
+    CHECK(result.splice.row == 1 && result.splice.removed == 6 && result.splice.inserted == 6);
+    CHECK(tree.row_count() == 8);
+    const auto music2 = result.map(music);
+    CHECK(music2 != music && music2 == tree.find_child(c, L"Music"));
+    CHECK(tree.node(music2).has(model::node_expanded) && tree.node(music2).has(model::node_loaded));
+    CHECK(tree.node(album).parent == music2);
+    CHECK(result.map(album) == album);           // deeper nodes keep their index
+    CHECK(row_name(tree, 2) == L"Album" && row_name(tree, 4) == L"New");
+    CHECK(tree.node(tree.find_child(c, L"a.mp3")).size == 99);
+    CHECK(tree.find_child(c, L"Old") == model::no_node);
+    CHECK(tree.children_match(c, fresh));
+    std::wstring path;
+    tree.build_path(album, path);
+    CHECK(path == L"C:\\Music\\Album");
+
+    // A folder that became a file is a new node; collapsed folders splice nothing.
+    tree.collapse(c);
+    result = tree.merge_children(c, records({L"New", L"Users"}, {L"Music"}));
+    CHECK(result.splice.empty());
+    CHECK(!tree.node(tree.find_child(c, L"Music")).has(model::node_container));
+    CHECK(result.map(music2) == model::no_node);
+    // Loading or unloaded folders are left alone.
+    CHECK(tree.expand(tree.find_child(c, L"Users")) == Tree::ExpandResult::needs_load);
+    CHECK(tree.merge_children(tree.find_child(c, L"Users"), {}).moved.empty());
+}
+
 void test_tree_filter() {
     using model::Tree;
     Tree tree;
@@ -493,6 +542,7 @@ int main() {
     test_extensions();
     test_tree();
     test_tree_reload();
+    test_tree_merge();
     test_tree_filter();
     test_tree_large();
     test_search_pattern();

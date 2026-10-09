@@ -96,8 +96,8 @@ bool TreeView::on_key(WPARAM key) noexcept {
         delete_node(node, shift);
         return true;
     case VK_F5:
-        if (!has_selection || ctrl || alt) return false;
-        refresh_node(node);
+        if (ctrl || alt) return false;
+        refresh_open_folders();
         return true;
     case 'C':
         if (!has_selection || !ctrl || alt || shift) return false;

@@ -147,6 +147,7 @@
     <ClCompile Include="src\view\inline_edit.cpp" />
     <ClCompile Include="src\actions\drag_out.cpp" />
     <ClCompile Include="src\view\tree_view_nav.cpp" />
+    <ClCompile Include="src\view\tree_view_refresh.cpp" />
     <ClCompile Include="src\view\address_bar.cpp" />
     <ClCompile Include="src\view\panel.cpp" />
     <ClCompile Include="src\view\filter_box.cpp" />

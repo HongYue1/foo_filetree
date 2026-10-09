@@ -157,9 +157,13 @@ private:
     void open_in_explorer(std::uint32_t node) noexcept;
     void copy_path(std::uint32_t node) noexcept;
     void delete_node(std::uint32_t node, bool permanent) noexcept;
-    //! Lists the folder holding the item again (a root lists itself); what was open below it
-    //! reopens and the selection is kept, by path.
-    void refresh_node(std::uint32_t node) noexcept;
+    // tree_view_refresh.cpp. Like Explorer's F5: every open folder is listed again in the
+    // background and, where something changed, its children are merged in place (open folders
+    // stay open, selection and scroll stay). Unchanged folders cost one listing, no repaint.
+    void refresh_open_folders() noexcept;
+    void request_check(std::uint32_t node);
+    void on_check(std::uint32_t node, std::uint64_t generation, fs::Listing& listing) noexcept;
+    void retry_failed(std::uint32_t node) noexcept;
     //! Right-click below the last row: Refresh all, Collapse all, Preferences.
     void show_background_menu(POINT point) noexcept;
     void collapse_all() noexcept;
@@ -225,6 +229,7 @@ private:
     struct PendingListing {
         std::uint32_t node;
         fs::EnumerationService::Ticket ticket;
+        bool check{false}; //!< a refresh re-check of a loaded folder (on_check), not a load
     };
     std::vector<PendingListing> pending_;
     std::uint64_t generation_{1};

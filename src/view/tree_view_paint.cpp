@@ -7,6 +7,7 @@
 #include <uxtheme.h>
 
 #include "icon_font.h"
+#include "../model/file_kind.h"
 
 #pragma comment(lib, "uxtheme.lib")
 
@@ -343,9 +344,20 @@ void TreeView::paint_icon(HDC dc, const model::Node& node, const RECT& rect, COL
         icon = open ? glyph::folder_open : glyph::folder;
     } else if (playing) {
         icon = glyph::playing;
-    } else if (playable_ != nullptr) {
+    } else {
         const std::wstring_view extension = model::extension_of(node.name_view());
-        if (!extension.empty() && playable_->contains(extension)) icon = glyph::audio;
+        switch (model::file_kind(extension)) {
+        case model::FileKind::video: icon = glyph::video; break;
+        case model::FileKind::image: icon = glyph::image; break;
+        case model::FileKind::text: icon = glyph::text; break;
+        case model::FileKind::pdf: icon = glyph::pdf; break;
+        case model::FileKind::playlist: icon = glyph::playlist; break;
+        case model::FileKind::other:
+            if (playable_ != nullptr && !extension.empty() && playable_->contains(extension)) {
+                icon = glyph::audio;
+            }
+            break;
+        }
     }
     const int left = content_left(node.depth);
     RECT box{left, rect.top, left + metrics_.icon, rect.bottom};

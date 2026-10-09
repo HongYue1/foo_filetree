@@ -538,8 +538,11 @@ void test_actions() {
 
 } // namespace
 
+void test_file_kinds();
+
 int main() {
     test_actions();
+    test_file_kinds();
     test_filter_rules();
     test_settings_model();
     test_presets();

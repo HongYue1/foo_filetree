@@ -69,8 +69,35 @@ void TreeView::put_on_clipboard(std::uint32_t node, bool cut) noexcept {
     }
     try {
         tree_.build_path(node, path_);
-        if (!actions::set_clipboard_file(path_, cut)) MessageBeep(MB_ICONWARNING);
+        if (!actions::set_clipboard_file(path_, cut)) {
+            MessageBeep(MB_ICONWARNING);
+            return;
+        }
+        set_cut(cut ? node : model::no_node);
     } catch (...) {
+    }
+}
+
+void TreeView::set_cut(std::uint32_t node) noexcept {
+    if (wnd_ == nullptr) return;
+    if (cut_node_ != model::no_node && cut_node_ < tree_.node_count()) {
+        if (const auto row = tree_.row_of(cut_node_)) invalidate_row(*row);
+    }
+    cut_node_ = node;
+    if (node != model::no_node) {
+        cut_sequence_ = GetClipboardSequenceNumber();
+        if (const auto row = tree_.row_of(node)) invalidate_row(*row);
+        // Told when anything else takes the clipboard (only while a cut is shown).
+        if (!clipboard_listening_) clipboard_listening_ = AddClipboardFormatListener(wnd_) != FALSE;
+    } else if (clipboard_listening_) {
+        RemoveClipboardFormatListener(wnd_);
+        clipboard_listening_ = false;
+    }
+}
+
+void TreeView::on_clipboard_update() noexcept {
+    if (cut_node_ != model::no_node && GetClipboardSequenceNumber() != cut_sequence_) {
+        set_cut(model::no_node);
     }
 }
 

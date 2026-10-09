@@ -33,14 +33,12 @@ void TreeView::begin_rename(std::uint32_t node) noexcept {
     select_row(*row);
 
     const int pad = MulDiv(2, metrics_.dpi, 96);
-    const int left = std::max(text_left(n.depth) - pad - 1, 0);
-    const int top = row_top(*row);
-    const int width = std::max(client_width_ - left - pad, metrics_.indent * 4);
+    const RECT rect = rename_rect(*row);
     const std::wstring name(n.name_view());
 
     edit_ = CreateWindowExW(0, WC_EDITW, name.c_str(),
-                            WS_CHILD | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT, left, top, width,
-                            metrics_.row_height, wnd_, nullptr,
+                            WS_CHILD | WS_BORDER | ES_AUTOHSCROLL | ES_LEFT, rect.left, rect.top,
+                            rect.right - rect.left, rect.bottom - rect.top, wnd_, nullptr,
                             reinterpret_cast<HINSTANCE>(GetWindowLongPtrW(wnd_, GWLP_HINSTANCE)),
                             nullptr);
     if (edit_ == nullptr) return;
@@ -58,6 +56,29 @@ void TreeView::begin_rename(std::uint32_t node) noexcept {
     SetWindowSubclass(edit_, edit_proc, edit_subclass_id, reinterpret_cast<DWORD_PTR>(this));
     ShowWindow(edit_, SW_SHOW);
     SetFocus(edit_);
+}
+
+RECT TreeView::rename_rect(std::size_t row) const noexcept {
+    const model::Node& n = tree_.node(tree_.node_at_row(row));
+    const int pad = MulDiv(2, metrics_.dpi, 96);
+    const int left = std::max(text_left(n.depth) - pad - 1, 0);
+    const int top = row_top(row);
+    const int width = std::max(client_width_ - left - pad, metrics_.indent * 4);
+    return {left, top, left + width, top + metrics_.row_height};
+}
+
+void TreeView::follow_rename() noexcept {
+    if (edit_ == nullptr) return;
+    const auto row =
+        edit_node_ < tree_.node_count() ? tree_.row_of(edit_node_) : std::optional<std::size_t>{};
+    if (!row || *row < top_row_ ||
+        *row >= top_row_ + static_cast<std::size_t>(std::max(visible_rows(), 1))) {
+        end_rename(false);
+        return;
+    }
+    const RECT rect = rename_rect(*row);
+    SetWindowPos(edit_, nullptr, rect.left, rect.top, rect.right - rect.left,
+                 rect.bottom - rect.top, SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 void TreeView::end_rename(bool commit) noexcept {

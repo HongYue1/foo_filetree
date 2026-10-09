@@ -26,7 +26,7 @@ protected:
 class DropTarget final : public IDropTarget {
 public:
     //! Registers a new target for `wnd` (RegisterDragDrop). Null if OLE refused.
-    static DropTarget* attach(HWND wnd, DropSink& sink) noexcept;
+    static DropTarget* attach(HWND wnd, DropSink& sink, HRESULT& hr) noexcept;
     //! Revokes it and lets go of the sink; releases the caller's reference.
     void detach() noexcept;
 

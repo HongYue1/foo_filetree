@@ -153,8 +153,9 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         background = focused_ ? colours_.selection_background : colours_.inactive_selection_background;
         text = focused_ ? colours_.selection_text : colours_.inactive_selection_text;
         glyph = text;
-    } else if (hovered) {
-        background = hover_background_;
+    } else {
+        if (hovered) background = hover_background_;
+        if (index == cut_node_) text = dim_text_; // cut, as Explorer ghosts it
     }
     fill(dc, rect, background);
 
@@ -172,7 +173,8 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         draw_expander(dc, cx, cy, metrics_.expander, open, colour);
     }
 
-    if (metrics_.icon_width > 0) paint_icon(dc, node, rect, selected ? text : icon_colour_);
+    if (metrics_.icon_width > 0) paint_icon(dc, node, rect,
+                                             selected || index == cut_node_ ? text : icon_colour_);
 
     std::wstring_view name = model::display_name(node);
     if (extensions_ != settings::Extensions::always && !node.has(model::node_container)) {

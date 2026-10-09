@@ -217,6 +217,9 @@ private:
     [[nodiscard]] std::uint32_t target_folder(std::uint32_t node) const noexcept;
     void new_folder(std::uint32_t node) noexcept;
     void put_on_clipboard(std::uint32_t node, bool cut) noexcept;
+    //! Shows `node` dimmed as cut (no_node: none) until the clipboard changes.
+    void set_cut(std::uint32_t node) noexcept;
+    void on_clipboard_update() noexcept;
     void paste_into(std::uint32_t node) noexcept;
     void copy_into(std::uint32_t folder, std::vector<std::wstring> paths, bool move,
                    DWORD clipboard_sequence) noexcept;
@@ -235,6 +238,10 @@ private:
     // inline_edit.cpp
     void begin_rename(std::uint32_t node) noexcept;
     void end_rename(bool commit) noexcept;
+    //! After rows changed under the editor: move it to its item's row, or cancel if it is gone
+    //! or out of view.
+    void follow_rename() noexcept;
+    [[nodiscard]] RECT rename_rect(std::size_t row) const noexcept;
     bool on_edit_colour(HDC dc, HWND control, LRESULT& result) noexcept;
     static LRESULT CALLBACK edit_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, UINT_PTR id,
                                       DWORD_PTR data) noexcept;
@@ -338,6 +345,11 @@ private:
         bool rename{false}; //!< start renaming the named item (New folder)
     };
     PendingSelect pending_select_;
+
+    // Cut item, dimmed while it is what the clipboard holds.
+    std::uint32_t cut_node_{model::no_node};
+    DWORD cut_sequence_{};
+    bool clipboard_listening_{false};
 
     // Dropping onto the panel.
     DropTarget* drop_target_{};

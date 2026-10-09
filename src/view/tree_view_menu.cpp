@@ -29,6 +29,8 @@ enum MenuId : UINT {
     id_favourite,
     id_new_folder,
     id_paste,
+    id_cut,
+    id_copy,
     // Empty-area menu.
     id_refresh_all,
     id_collapse_all,
@@ -131,6 +133,14 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             case MenuItem::new_folder:
                 AppendMenuW(menu, MF_STRING, id_new_folder,
                             folder ? L"New folder\tF7" : L"New folder here\tF7");
+                break;
+            case MenuItem::cut:
+                AppendMenuW(menu, MF_STRING | (root && !n.has(model::node_favourite) ? MF_GRAYED : 0u),
+                            id_cut, L"Cut\tCtrl+X");
+                break;
+            case MenuItem::copy:
+                AppendMenuW(menu, MF_STRING | (root && !n.has(model::node_favourite) ? MF_GRAYED : 0u),
+                            id_copy, L"Copy\tCtrl+C");
                 break;
             case MenuItem::paste:
                 AppendMenuW(menu, MF_STRING, id_paste, folder ? L"Paste\tCtrl+V" : L"Paste here\tCtrl+V");
@@ -265,6 +275,8 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
     case id_favourite: toggle_favourite(node); break;
     case id_new_folder: new_folder(node); break;
     case id_paste: paste_into(node); break;
+    case id_cut: put_on_clipboard(node, true); break;
+    case id_copy: put_on_clipboard(node, false); break;
     default: break;
     }
 }

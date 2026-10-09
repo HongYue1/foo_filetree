@@ -18,10 +18,12 @@ DropTarget::~DropTarget() {
     if (helper_ != nullptr) helper_->Release();
 }
 
-DropTarget* DropTarget::attach(HWND wnd, DropSink& sink) noexcept {
+DropTarget* DropTarget::attach(HWND wnd, DropSink& sink, HRESULT& hr) noexcept {
+    hr = E_OUTOFMEMORY;
     auto* target = new (std::nothrow) DropTarget(wnd, sink);
     if (target == nullptr) return nullptr;
-    if (FAILED(RegisterDragDrop(wnd, target))) {
+    hr = RegisterDragDrop(wnd, target);
+    if (FAILED(hr)) {
         target->Release();
         return nullptr;
     }

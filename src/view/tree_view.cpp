@@ -38,6 +38,13 @@ void TreeView::attach(HWND wnd) noexcept {
     refresh_options();
     SystemParametersInfoW(SPI_GETWHEELSCROLLLINES, 0, &wheel_lines_, 0);
     remeasure();
+    HRESULT drop_hr = S_OK;
+    drop_target_ = DropTarget::attach(wnd, *this, drop_hr);
+    if (drop_target_ == nullptr) {
+        FB2K_console_formatter() << "Folder Tree: dropping onto the panel is unavailable "
+                                    "(RegisterDragDrop "
+                                 << pfc::format_hex(static_cast<std::uint32_t>(drop_hr), 8) << ")";
+    }
     try {
         populate_roots();
     } catch (...) {
@@ -56,6 +63,7 @@ void TreeView::detach() noexcept {
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
     pending_.clear();
     stop_watching();
+    set_cut(model::no_node);
     if (drop_target_ != nullptr) {
         drop_target_->detach();
         drop_target_ = nullptr;
@@ -82,6 +90,7 @@ void TreeView::populate_roots() {
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
     pending_.clear();
     ++generation_;
+    set_cut(model::no_node);
     tree_.clear();
     pending_select_ = {};
     const settings::Settings& s = settings::current();
@@ -456,9 +465,9 @@ void TreeView::select_row(std::size_t row) noexcept {
 void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
     if (splice.empty()) return;
     schedule_watch_sync();
-    end_rename(false);
     if (splice.full) {
         apply_full_splice();
+        follow_rename();
         return;
     }
     bool moved_to_parent = false;
@@ -492,6 +501,7 @@ void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
     } else {
         invalidate_from(splice.row > 0 ? splice.row - 1 : 0);
     }
+    follow_rename(); // a listing landing elsewhere must not end a rename
 
     // Like Explorer: when the expanded folder is the selected one, scroll so its new children
     // show, without pushing the folder itself off the top.
@@ -617,6 +627,9 @@ void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
 bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept {
     result = 0;
     switch (msg) {
+    case WM_CLIPBOARDUPDATE:
+        on_clipboard_update();
+        return false; // others may listen too
     case WM_CONTEXTMENU:
         on_context_menu(lp);
         return true;

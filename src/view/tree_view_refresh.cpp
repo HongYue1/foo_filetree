@@ -92,7 +92,6 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
         listing.to_records(records_);
         if (tree_.children_match(node, records_)) return;
 
-        end_rename(false);
         const std::uint32_t selected =
             selected_row_ >= 0 ? tree_.node_at_row(static_cast<std::size_t>(selected_row_))
                                : model::no_node;
@@ -131,6 +130,8 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
         undo_.folder = merge.map(undo_.folder);
         filter_hidden_selection_ = merge.map(filter_hidden_selection_);
         restore_top_node_ = merge.map(restore_top_node_);
+        cut_node_ = merge.map(cut_node_);
+        if (edit_ != nullptr) edit_node_ = merge.map(edit_node_);
 
         // Keep the selection and the first visible row on the same items. A selected item that
         // disappeared hands the selection to the refreshed folder.
@@ -148,6 +149,7 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
         hover_row_ = -1;
         update_scrollbar();
         InvalidateRect(wnd_, nullptr, FALSE);
+        follow_rename(); // a change in the folder (often a watch notification) keeps the editor
         const std::uint32_t selected_now =
             selected_row_ >= 0 ? tree_.node_at_row(static_cast<std::size_t>(selected_row_))
                                : model::no_node;

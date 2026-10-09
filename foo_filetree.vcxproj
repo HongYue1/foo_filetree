@@ -131,6 +131,7 @@
     <ClCompile Include="src\view\tree_view_paint.cpp" />
     <ClCompile Include="src\view\tree_view_input.cpp" />
     <ClCompile Include="src\view\tree_view_select.cpp" />
+    <ClCompile Include="src\view\tree_view_items.cpp" />
     <ClCompile Include="src\actions\action.cpp" />
     <ClCompile Include="src\actions\action_settings.cpp" />
     <ClCompile Include="src\actions\playlist_send.cpp" />
@@ -149,6 +150,7 @@
     <ClCompile Include="src\view\tree_view_menu.cpp" />
     <ClCompile Include="src\view\inline_edit.cpp" />
     <ClCompile Include="src\actions\drag_out.cpp" />
+    <ClCompile Include="src\actions\shell_items.cpp" />
     <ClCompile Include="src\actions\file_ops.cpp" />
     <ClCompile Include="src\view\drop_target.cpp" />
     <ClCompile Include="src\view\tree_view_fileops.cpp" />
@@ -189,6 +191,7 @@
     <ClInclude Include="src\actions\playlist_send.h" />
     <ClInclude Include="src\actions\shell_ops.h" />
     <ClInclude Include="src\actions\drag_out.h" />
+    <ClInclude Include="src\actions\shell_items.h" />
     <ClInclude Include="src\actions\file_ops.h" />
     <ClInclude Include="src\actions\shell_common.h" />
     <ClInclude Include="src\view\drop_target.h" />

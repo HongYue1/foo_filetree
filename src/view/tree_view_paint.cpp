@@ -156,7 +156,7 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         glyph = text;
     } else {
         if (hovered) background = hover_background_;
-        if (index == cut_node_) text = dim_text_; // cut, as Explorer ghosts it
+        if (is_cut(index)) text = dim_text_; // cut, as Explorer ghosts it
     }
     fill(dc, rect, background);
     // The focus row of a multi-selection (or an unselected focus row after Ctrl+Space) gets a
@@ -182,7 +182,7 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
 
     const int playing = playing_mark(index);
     if (metrics_.icon_width > 0) {
-        const bool strong = selected || index == cut_node_ || playing == 2;
+        const bool strong = selected || is_cut(index) || playing == 2;
         paint_icon(dc, node, rect, strong ? text : icon_colour_, playing == 2);
     }
 

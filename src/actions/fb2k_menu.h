@@ -1,12 +1,13 @@
 #pragma once
 
-// foobar2000's track context menu (the one playlists show) for one file, as a submenu of ours.
+// foobar2000's track context menu (the one playlists show) for one or more files, as a submenu.
 // Main thread only. Filled lazily on WM_INITMENUPOPUP, so nothing is built unless it is opened.
 
 #include <windows.h>
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace filetree::actions {
 
@@ -20,7 +21,7 @@ public:
     Fb2kMenu(const Fb2kMenu&) = delete;
     Fb2kMenu& operator=(const Fb2kMenu&) = delete;
 
-    void prepare(HMENU submenu, std::wstring path);
+    void prepare(HMENU submenu, std::vector<std::wstring> paths);
 
     //! WM_INITMENUPOPUP for our submenu fills it. Returns true if it was ours.
     bool handle_message(UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept;

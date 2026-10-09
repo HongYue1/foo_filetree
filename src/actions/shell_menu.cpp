@@ -22,10 +22,11 @@ void add_placeholder(HMENU menu) noexcept {
 
 } // namespace
 
-void ShellMenu::prepare(HMENU submenu, std::wstring path, HWND owner, bool extended) {
+void ShellMenu::prepare(HMENU submenu, std::vector<std::wstring> paths, HWND owner,
+                        bool extended) {
     reset();
     submenu_ = submenu;
-    path_ = std::move(path);
+    paths_ = std::move(paths);
     owner_ = owner;
     extended_ = extended;
 }
@@ -40,18 +41,34 @@ void ShellMenu::reset() noexcept {
 
 bool ShellMenu::populate() noexcept {
     populated_ = true;
-    PIDLIST_ABSOLUTE pidl = nullptr;
-    if (FAILED(SHParseDisplayName(path_.c_str(), nullptr, &pidl, 0, nullptr))) return false;
-
-    IShellFolder* parent = nullptr;
-    PCUITEMID_CHILD child = nullptr;
-    HRESULT hr = SHBindToParent(pidl, IID_PPV_ARGS(&parent), &child);
-    if (SUCCEEDED(hr)) {
-        hr = parent->GetUIObjectOf(owner_, 1, &child, IID_IContextMenu, nullptr,
-                                   reinterpret_cast<void**>(&menu_));
-        parent->Release();
+    if (paths_.empty()) return false;
+    // All items are children of the first one's parent (the caller checked).
+    std::vector<PIDLIST_ABSOLUTE> pidls;
+    std::vector<PCUITEMID_CHILD> children;
+    HRESULT hr = S_OK;
+    try {
+        pidls.reserve(paths_.size());
+        children.reserve(paths_.size());
+        for (const std::wstring& path : paths_) {
+            PIDLIST_ABSOLUTE pidl = nullptr;
+            hr = SHParseDisplayName(path.c_str(), nullptr, &pidl, 0, nullptr);
+            if (FAILED(hr) || pidl == nullptr) break;
+            pidls.push_back(pidl);
+            children.push_back(ILFindLastID(pidl));
+        }
+    } catch (...) {
+        hr = E_OUTOFMEMORY;
     }
-    CoTaskMemFree(pidl);
+    if (SUCCEEDED(hr) && !pidls.empty()) {
+        IShellFolder* parent = nullptr;
+        hr = SHBindToParent(pidls[0], IID_PPV_ARGS(&parent), nullptr);
+        if (SUCCEEDED(hr)) {
+            hr = parent->GetUIObjectOf(owner_, static_cast<UINT>(children.size()), children.data(),
+                                       IID_IContextMenu, nullptr, reinterpret_cast<void**>(&menu_));
+            parent->Release();
+        }
+    }
+    for (PIDLIST_ABSOLUTE pidl : pidls) CoTaskMemFree(pidl);
     if (FAILED(hr) || menu_ == nullptr) return false;
 
     menu_->QueryInterface(IID_PPV_ARGS(&menu3_));

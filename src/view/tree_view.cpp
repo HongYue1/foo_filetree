@@ -88,7 +88,7 @@ void TreeView::detach() noexcept {
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
     pending_.clear();
     stop_watching();
-    set_cut(model::no_node);
+    set_cut({});
     now_playing::unsubscribe(this);
     unregister_view(this);
     playing_count_ = 0;
@@ -122,7 +122,7 @@ void TreeView::populate_roots() {
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
     pending_.clear();
     ++generation_;
-    set_cut(model::no_node);
+    set_cut({});
     tree_.clear();
     pending_select_ = {};
     const settings::Settings& s = settings::current();

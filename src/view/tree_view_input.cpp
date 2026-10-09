@@ -272,37 +272,6 @@ void TreeView::run_gesture(actions::Gesture gesture, std::uint32_t node) noexcep
     }
 }
 
-void TreeView::send_node(const actions::Action& action, std::uint32_t node) noexcept {
-    try {
-        const model::Node& n = tree_.node(node);
-        actions::SendRequest request;
-        request.action = action;
-        tree_.build_path(node, request.path);
-        std::wstring_view name = n.name_view();
-        if (n.has(model::node_root) && name.size() == 3 && name[1] == L':') {
-            name.remove_suffix(1);
-        }
-        request.display_name.assign(name);
-        request.is_folder = n.has(model::node_container);
-        request.shift = GetKeyState(VK_SHIFT) < 0;
-        request.ctrl = GetKeyState(VK_CONTROL) < 0;
-        request.parent = wnd_;
-        actions::send(request);
-    } catch (...) {
-    }
-}
-
-void TreeView::drag_node(std::uint32_t node) noexcept {
-    try {
-        std::wstring path;
-        tree_.build_path(node, path);
-        actions::drag_out(wnd_, path);
-    } catch (...) {
-    }
-    // The drag loop swallowed the mouse messages: the hover row is stale.
-    on_mouse_leave();
-}
-
 void TreeView::on_mouse_move(int, int y) noexcept {
     if (!tracking_mouse_ && wnd_ != nullptr) {
         TRACKMOUSEEVENT track{sizeof(track), TME_LEAVE, wnd_, 0};

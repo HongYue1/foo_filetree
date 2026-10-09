@@ -32,37 +32,6 @@ void TreeView::check_if_open(std::uint32_t folder) noexcept {
     }
 }
 
-void TreeView::show_properties(std::uint32_t node) noexcept {
-    try {
-        tree_.build_path(node, path_);
-        actions::show_properties(path_, wnd_);
-    } catch (...) {
-    }
-}
-
-void TreeView::show_selected_properties() noexcept {
-    if (selected_row_ < 0) {
-        MessageBeep(MB_ICONWARNING);
-        return;
-    }
-    show_properties(tree_.node_at_row(static_cast<std::size_t>(selected_row_)));
-}
-
-void TreeView::save_as_playlist(std::uint32_t folder) noexcept {
-    try {
-        std::wstring path;
-        tree_.build_path(folder, path);
-        std::wstring name(model::display_name(tree_.node(folder)));
-        while (!name.empty() && (name.back() == L'\\' || name.back() == L':')) name.pop_back();
-        if (name.empty()) name = L"Playlist";
-        std::wstring file;
-        if (actions::pick_playlist_file(wnd_, path, name, file)) {
-            actions::save_as_playlist(path, std::move(file), wnd_);
-        }
-    } catch (...) {
-    }
-}
-
 void TreeView::new_folder(std::uint32_t node) noexcept {
     const std::uint32_t folder = target_folder(node);
     if (folder == model::no_node) {
@@ -89,47 +58,6 @@ void TreeView::new_folder(std::uint32_t node) noexcept {
                 view.reload_and_select(folder, std::move(name), {}, true);
             });
     } catch (...) {
-    }
-}
-
-void TreeView::put_on_clipboard(std::uint32_t node, bool cut) noexcept {
-    const model::Node& n = tree_.node(node);
-    // A drive cannot be moved; a favourite root is a real folder and can.
-    if (n.parent == model::no_node && !n.has(model::node_favourite)) {
-        MessageBeep(MB_ICONWARNING);
-        return;
-    }
-    try {
-        tree_.build_path(node, path_);
-        if (!actions::set_clipboard_file(path_, cut)) {
-            MessageBeep(MB_ICONWARNING);
-            return;
-        }
-        set_cut(cut ? node : model::no_node);
-    } catch (...) {
-    }
-}
-
-void TreeView::set_cut(std::uint32_t node) noexcept {
-    if (wnd_ == nullptr) return;
-    if (cut_node_ != model::no_node && cut_node_ < tree_.node_count()) {
-        if (const auto row = tree_.row_of(cut_node_)) invalidate_row(*row);
-    }
-    cut_node_ = node;
-    if (node != model::no_node) {
-        cut_sequence_ = GetClipboardSequenceNumber();
-        if (const auto row = tree_.row_of(node)) invalidate_row(*row);
-        // Told when anything else takes the clipboard (only while a cut is shown).
-        if (!clipboard_listening_) clipboard_listening_ = AddClipboardFormatListener(wnd_) != FALSE;
-    } else if (clipboard_listening_) {
-        RemoveClipboardFormatListener(wnd_);
-        clipboard_listening_ = false;
-    }
-}
-
-void TreeView::on_clipboard_update() noexcept {
-    if (cut_node_ != model::no_node && GetClipboardSequenceNumber() != cut_sequence_) {
-        set_cut(model::no_node);
     }
 }
 

@@ -6,23 +6,33 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 
 | Input | Action |
 | --- | --- |
-| Click | Select |
+| Click | Select (one item) |
+| Ctrl+click / Ctrl+Space | Add the item to the selection or take it out |
+| Shift+click / Shift+arrows, Home, End, Page Up / Down | Select a range (Ctrl+Shift+click adds it) |
+| Ctrl+arrows | Move the focus without changing the selection |
+| Ctrl+A | Select every visible row |
 | Double click / Enter | Folder: expand or collapse. File: play it in the "Folder Tree" playlist |
 | Middle click | Add to the active playlist |
-| Shift + click action | Flip "include subfolders" for that action |
-| Ctrl + click action | Send to the active playlist instead |
+| Shift + Enter / middle click | Flip "include subfolders" for that action |
+| Ctrl + Enter / middle click | Send to the active playlist instead |
 | Arrows, Home, End, + / - | Move, expand, collapse |
 | Page Up / Page Down | Parent folder / next folder after the parent |
 | F2 | Rename (Enter saves, Esc or clicking away cancels) |
 | Del / Shift+Del | Delete to the Recycle Bin / delete permanently |
 | F5 | Refresh: every open folder is checked again; changes appear in place |
 | F7 | New folder (inside the selected folder, or next to the selected file), then rename it |
-| Ctrl+C / Ctrl+X / Ctrl+V | Copy / cut the item / paste files into the selected folder (as in Explorer) |
-| Ctrl+Shift+C | Copy the full path |
+| Ctrl+C / Ctrl+X / Ctrl+V | Copy / cut the selected items / paste files into the focused folder (as in Explorer) |
+| Ctrl+Shift+C | Copy the full paths (one per line) |
 | Alt+Enter | Properties (the Explorer properties dialog) |
 | Ctrl+Z | Undo the last rename or delete |
 | Right click, Apps key, Shift+F10 | Context menu |
 
+- With several items selected, Enter, Play, the playlist commands, Add to playback queue, Save as
+  playlist, Copy, Cut, Copy path, Delete, Properties, dragging out and the foobar2000 submenu act
+  on all of them (one playlist operation; one delete confirmation). The Explorer submenu covers
+  them when they are in one folder, else only the clicked item. Rename, New folder, Open with and
+  favourites stay single-item. Right-clicking inside the selection keeps it; pressing on a
+  selected item and dragging drags them all.
 - Drop files from Explorer onto a folder to copy them there, hold Shift to move. Hovering over a
   closed folder opens it; near the top or bottom edge the tree scrolls. Dragging out of the panel
   copies too, unless Shift is held.

@@ -12,6 +12,7 @@
 #include "../fs/fb2k_glue.h"
 #include "recycle_bin.h"
 #include "shell_common.h"
+#include "shell_items.h"
 
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "ole32.lib")
@@ -84,18 +85,29 @@ bool copy_text(HWND owner, std::wstring_view text) noexcept {
     return ok;
 }
 
-void delete_path(std::wstring path, bool permanent, HWND owner, ShellDone done) noexcept {
+void delete_paths(std::vector<std::wstring> paths, bool permanent, HWND owner,
+                  ShellDone done) noexcept {
     try {
-        fs::shell_worker().submit([path = std::move(path), permanent, owner = top_level(owner),
+        fs::shell_worker().submit([paths = std::move(paths), permanent, owner = top_level(owner),
                                    done = std::move(done)]() mutable {
             ComScope com;
             const DWORD flags = permanent ? FOF_WANTNUKEWARNING
                                           : FOF_ALLOWUNDO | FOFX_RECYCLEONDELETE;
             ShellResult result;
             try {
-                result = run_file_operation(path, owner, flags, [](IFileOperation& op, IShellItem* item) {
-                    return op.DeleteItem(item, nullptr);
-                });
+                CComPtr<IFileOperation> op;
+                CComPtr<IShellItemArray> items;
+                if (SUCCEEDED(op.CoCreateInstance(CLSID_FileOperation, nullptr, CLSCTX_ALL)) &&
+                    SUCCEEDED(make_item_array(paths, &items))) {
+                    if (owner != nullptr) op->SetOwnerWindow(owner);
+                    if (SUCCEEDED(op->SetOperationFlags(flags)) &&
+                        SUCCEEDED(op->DeleteItems(items))) {
+                        const HRESULT hr = op->PerformOperations();
+                        BOOL aborted = FALSE;
+                        op->GetAnyOperationsAborted(&aborted);
+                        result = {true, SUCCEEDED(hr) && !aborted};
+                    }
+                }
             } catch (...) {
             }
             finish(done, result);
@@ -123,8 +135,13 @@ void rename_path(std::wstring path, std::wstring new_name, HWND owner, ShellDone
     }
 }
 
-void show_properties(const std::wstring& path, HWND owner) noexcept {
-    if (!path.empty()) SHObjectProperties(top_level(owner), SHOP_FILEPATH, path.c_str(), nullptr);
+void show_properties(const std::vector<std::wstring>& paths, HWND owner) noexcept {
+    if (paths.size() == 1) {
+        SHObjectProperties(top_level(owner), SHOP_FILEPATH, paths[0].c_str(), nullptr);
+        return;
+    }
+    CComPtr<IDataObject> data;
+    if (SUCCEEDED(make_data_object(paths, &data)) && data) SHMultiFileProperties(data, 0);
 }
 
 void open_with(const std::wstring& path, HWND owner) noexcept {

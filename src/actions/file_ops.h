@@ -28,9 +28,9 @@ void new_folder(std::wstring parent, HWND owner, NewFolderDone done) noexcept;
 void copy_items(std::vector<std::wstring> paths, std::wstring folder, bool move, HWND owner,
                 ShellDone done) noexcept;
 
-//! Puts `path` on the clipboard as a file, like Ctrl+C / Ctrl+X in Explorer (any program that
+//! Puts `paths` on the clipboard as files, like Ctrl+C / Ctrl+X in Explorer (any program that
 //! pastes files accepts it). Returns false if that failed.
-bool set_clipboard_file(const std::wstring& path, bool cut) noexcept;
+bool set_clipboard_files(const std::vector<std::wstring>& paths, bool cut) noexcept;
 
 //! Files on the clipboard (CF_HDROP) and whether they were cut.
 struct ClipboardFiles {

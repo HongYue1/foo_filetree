@@ -4,24 +4,16 @@
 #include <shobjidl.h>
 #include <wrl/client.h>
 
+#include "shell_items.h"
+
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "ole32.lib")
 
 namespace filetree::actions {
 
-bool drag_out(HWND source, const std::wstring& path) noexcept {
-    if (path.empty()) return false;
-    PIDLIST_ABSOLUTE pidl = nullptr;
-    if (FAILED(SHParseDisplayName(path.c_str(), nullptr, &pidl, 0, nullptr)) || pidl == nullptr) {
-        return false;
-    }
-    PCIDLIST_ABSOLUTE list[] = {pidl};
-    Microsoft::WRL::ComPtr<IShellItemArray> items;
+bool drag_out(HWND source, const std::vector<std::wstring>& paths) noexcept {
     Microsoft::WRL::ComPtr<IDataObject> data;
-    HRESULT hr = SHCreateShellItemArrayFromIDLists(1, list, &items);
-    if (SUCCEEDED(hr)) hr = items->BindToHandler(nullptr, BHID_DataObject, IID_PPV_ARGS(&data));
-    CoTaskMemFree(pidl);
-    if (FAILED(hr) || !data) return false;
+    if (FAILED(make_data_object(paths, &data)) || !data) return false;
 
     // Copy unless Shift asks for a move: Explorer and other shell targets take their default
     // effect from the preferred one, so a plain drop never moves the user's files.

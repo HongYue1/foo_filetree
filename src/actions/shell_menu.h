@@ -1,6 +1,6 @@
 #pragma once
 
-// The Windows Explorer context menu for one path, as a submenu of ours. Main thread only.
+// The Windows Explorer context menu for one path, or several in one folder, as a submenu of ours. Main thread only.
 //
 // The submenu is filled lazily when the user opens it (WM_INITMENUPOPUP), so the shell extension
 // handlers (which may touch the disk or the network) only load if the user asks for them. While
@@ -12,6 +12,7 @@
 #include <shobjidl.h>
 
 #include <string>
+#include <vector>
 
 namespace filetree::actions {
 
@@ -25,8 +26,9 @@ public:
     ShellMenu(const ShellMenu&) = delete;
     ShellMenu& operator=(const ShellMenu&) = delete;
 
-    //! Remembers what to fill `submenu` with. `extended` adds Shift-only verbs.
-    void prepare(HMENU submenu, std::wstring path, HWND owner, bool extended);
+    //! Remembers what to fill `submenu` with. Several paths must share one parent folder.
+    //! `extended` adds Shift-only verbs.
+    void prepare(HMENU submenu, std::vector<std::wstring> paths, HWND owner, bool extended);
 
     //! WM_INITMENUPOPUP, WM_DRAWITEM, WM_MEASUREITEM, WM_MENUCHAR while our menu is open.
     //! Returns true if the message was for the shell menu.
@@ -42,7 +44,7 @@ private:
     bool populate() noexcept;
 
     HMENU submenu_{};
-    std::wstring path_;
+    std::vector<std::wstring> paths_;
     HWND owner_{};
     bool extended_{false};
     bool populated_{false};

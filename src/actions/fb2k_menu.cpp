@@ -8,7 +8,7 @@ namespace filetree::actions {
 
 struct Fb2kMenu::State {
     HMENU submenu{};
-    std::wstring path;
+    std::vector<std::wstring> paths;
     bool populated{false};
     service_ptr_t<contextmenu_manager> manager;
 };
@@ -16,9 +16,9 @@ struct Fb2kMenu::State {
 Fb2kMenu::Fb2kMenu() : state_(std::make_unique<State>()) {}
 Fb2kMenu::~Fb2kMenu() = default;
 
-void Fb2kMenu::prepare(HMENU submenu, std::wstring path) {
+void Fb2kMenu::prepare(HMENU submenu, std::vector<std::wstring> paths) {
     state_->submenu = submenu;
-    state_->path = std::move(path);
+    state_->paths = std::move(paths);
     state_->populated = false;
     state_->manager.release();
 }
@@ -34,11 +34,14 @@ bool Fb2kMenu::handle_message(UINT msg, WPARAM wp, LPARAM, LRESULT& result) noex
     s.populated = true;
     try {
         // A handle is just the location; creating it reads nothing from disk.
-        const pfc::stringcvt::string_utf8_from_wide utf8(s.path.c_str());
-        pfc::string8 canonical;
-        filesystem::g_get_canonical_path(utf8, canonical);
         metadb_handle_list handles;
-        handles.add_item(metadb::get()->handle_create(make_playable_location(canonical, 0)));
+        auto db = metadb::get();
+        pfc::string8 canonical;
+        for (const std::wstring& path : s.paths) {
+            const pfc::stringcvt::string_utf8_from_wide utf8(path.c_str());
+            filesystem::g_get_canonical_path(utf8, canonical);
+            handles.add_item(db->handle_create(make_playable_location(canonical, 0)));
+        }
 
         s.manager = contextmenu_manager::g_create();
         s.manager->init_context(handles, contextmenu_manager::flag_show_shortcuts);

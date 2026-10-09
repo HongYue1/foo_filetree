@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "shell_common.h"
+#include "shell_items.h"
 
 #pragma comment(lib, "shell32.lib")
 #pragma comment(lib, "ole32.lib")
@@ -168,19 +169,9 @@ void copy_items(std::vector<std::wstring> paths, std::wstring folder, bool move,
     }
 }
 
-bool set_clipboard_file(const std::wstring& path, bool cut) noexcept {
-    if (path.empty()) return false;
-    PIDLIST_ABSOLUTE pidl = nullptr;
-    if (FAILED(SHParseDisplayName(path.c_str(), nullptr, &pidl, 0, nullptr)) || pidl == nullptr) {
-        return false;
-    }
-    PCIDLIST_ABSOLUTE list[] = {pidl};
-    CComPtr<IShellItemArray> items;
+bool set_clipboard_files(const std::vector<std::wstring>& paths, bool cut) noexcept {
     CComPtr<IDataObject> data;
-    HRESULT hr = SHCreateShellItemArrayFromIDLists(1, list, &items);
-    if (SUCCEEDED(hr)) hr = items->BindToHandler(nullptr, BHID_DataObject, IID_PPV_ARGS(&data));
-    CoTaskMemFree(pidl);
-    if (FAILED(hr) || !data) return false;
+    if (FAILED(make_data_object(paths, &data)) || !data) return false;
     set_drop_effect(data, CFSTR_PREFERREDDROPEFFECT, cut ? DROPEFFECT_MOVE : DROPEFFECT_COPY);
     if (FAILED(OleSetClipboard(data))) return false;
     // Render it now: the clipboard keeps working after this panel or foobar2000 is gone.

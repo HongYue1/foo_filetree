@@ -90,7 +90,12 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             return;
         }
         if (GetFocus() != wnd_) SetFocus(wnd_);
-        select_row(static_cast<std::size_t>(row));
+        // As Explorer: a right-click inside the selection keeps it, elsewhere selects one row.
+        if (tree_.is_selected(tree_.node_at_row(static_cast<std::size_t>(row)))) {
+            focus_row(static_cast<std::size_t>(row));
+        } else {
+            select_row(static_cast<std::size_t>(row));
+        }
     }
 
     const std::uint32_t node = tree_.node_at_row(static_cast<std::size_t>(row));
@@ -101,6 +106,23 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
     try {
         std::wstring path;
         tree_.build_path(node, path);
+        // Most items act on the whole selection (actions_for); single-item ones are greyed.
+        std::vector<std::uint32_t> nodes;
+        actions_for(node, nodes);
+        const bool several = nodes.size() > 1;
+        const UINT single_flags = several ? MF_GRAYED : 0u;
+        bool any_file = false;
+        bool any_folder = false;
+        bool any_drive = false;
+        bool any_root = false;
+        for (const std::uint32_t item : nodes) {
+            const model::Node& i = tree_.node(item);
+            (i.has(model::node_container) ? any_folder : any_file) = true;
+            any_root |= i.has(model::node_root);
+            if (i.has(model::node_root)) any_drive |= !i.has(model::node_favourite);
+        }
+        const UINT drive_flags = any_drive ? MF_GRAYED : 0u;
+        const UINT root_flags_all = any_root ? MF_GRAYED : 0u;
 
         HMENU menu = CreatePopupMenu();
         if (menu == nullptr) return;
@@ -113,9 +135,9 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             if (!layout.visible(item)) continue;
             using settings::MenuItem;
             if (item == MenuItem::undo && undo_.kind == UndoRecord::Kind::none) continue;
-            if (item == MenuItem::fb2k_menu && folder) continue;
+            if (item == MenuItem::fb2k_menu && !any_file) continue;
             if (item == MenuItem::favourite && !folder) continue;
-            if (item == MenuItem::save_playlist && !folder) continue;
+            if (item == MenuItem::save_playlist && !any_folder && !several) continue;
             if (item == MenuItem::open_with && folder) continue;
             if (item == MenuItem::paste && !actions::clipboard_has_files()) continue;
             const int group = settings::menu_group(item);
@@ -136,7 +158,7 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
                 AppendMenuW(menu, MF_STRING, id_save_playlist, L"Save as playlist...");
                 break;
             case MenuItem::open_with:
-                AppendMenuW(menu, MF_STRING, id_open_with, L"Open with...");
+                AppendMenuW(menu, MF_STRING | single_flags, id_open_with, L"Open with...");
                 break;
             case MenuItem::properties:
                 AppendMenuW(menu, MF_STRING, id_properties, L"Properties\tAlt+Enter");
@@ -149,30 +171,28 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
                 AppendMenuW(menu, MF_STRING, id_copy_path, L"Copy path\tCtrl+Shift+C");
                 break;
             case MenuItem::new_folder:
-                AppendMenuW(menu, MF_STRING, id_new_folder,
+                AppendMenuW(menu, MF_STRING | single_flags, id_new_folder,
                             folder ? L"New folder\tF7" : L"New folder here\tF7");
                 break;
             case MenuItem::cut:
-                AppendMenuW(menu, MF_STRING | (root && !n.has(model::node_favourite) ? MF_GRAYED : 0u),
-                            id_cut, L"Cut\tCtrl+X");
+                AppendMenuW(menu, MF_STRING | drive_flags, id_cut, L"Cut\tCtrl+X");
                 break;
             case MenuItem::copy:
-                AppendMenuW(menu, MF_STRING | (root && !n.has(model::node_favourite) ? MF_GRAYED : 0u),
-                            id_copy, L"Copy\tCtrl+C");
+                AppendMenuW(menu, MF_STRING | drive_flags, id_copy, L"Copy\tCtrl+C");
                 break;
             case MenuItem::paste:
                 AppendMenuW(menu, MF_STRING, id_paste, folder ? L"Paste\tCtrl+V" : L"Paste here\tCtrl+V");
                 break;
             case MenuItem::rename:
-                AppendMenuW(menu, MF_STRING | root_flags, id_rename, L"Rename\tF2");
+                AppendMenuW(menu, MF_STRING | root_flags | single_flags, id_rename, L"Rename\tF2");
                 break;
             case MenuItem::remove:
-                AppendMenuW(menu, MF_STRING | root_flags, id_delete, L"Delete\tDel");
+                AppendMenuW(menu, MF_STRING | root_flags_all, id_delete, L"Delete\tDel");
                 break;
             case MenuItem::refresh: AppendMenuW(menu, MF_STRING, id_refresh, L"Refresh\tF5"); break;
             case MenuItem::favourite: {
                 const bool listed = favourite_index(settings::current().favourites, path) >= 0;
-                AppendMenuW(menu, MF_STRING, id_favourite,
+                AppendMenuW(menu, MF_STRING | single_flags, id_favourite,
                             listed ? L"Remove from favourites" : L"Add to favourites");
                 break;
             }
@@ -187,13 +207,25 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             case MenuItem::fb2k_menu: {
                 HMENU fb2k = CreatePopupMenu();
                 AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(fb2k), L"foobar2000");
-                session.fb2k.prepare(fb2k, path);
+                std::vector<std::wstring> files; // the tracks among the items
+                for (const std::uint32_t entry : nodes) {
+                    if (tree_.node(entry).has(model::node_container)) continue;
+                    tree_.build_path(entry, files.emplace_back());
+                }
+                session.fb2k.prepare(fb2k, std::move(files));
                 break;
             }
             case MenuItem::explorer_menu: {
                 HMENU shell = CreatePopupMenu();
                 AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(shell), L"Explorer");
-                session.shell.prepare(shell, path, wnd_, GetKeyState(VK_SHIFT) < 0);
+                // The shell's menu covers several items of one folder; otherwise the clicked one.
+                std::vector<std::wstring> paths;
+                if (several && same_parent(nodes)) {
+                    paths_of(nodes, paths);
+                } else {
+                    paths.push_back(path);
+                }
+                session.shell.prepare(shell, std::move(paths), wnd_, GetKeyState(VK_SHIFT) < 0);
                 break;
             }
             }
@@ -375,122 +407,6 @@ void TreeView::undo() noexcept {
                 }));
         }
     } catch (...) {
-    }
-}
-
-void TreeView::open_in_explorer(std::uint32_t node) noexcept {
-    try {
-        std::wstring path;
-        tree_.build_path(node, path);
-        actions::open_in_explorer(std::move(path), tree_.node(node).has(model::node_container));
-    } catch (...) {
-    }
-}
-
-void TreeView::copy_path(std::uint32_t node) noexcept {
-    try {
-        tree_.build_path(node, path_);
-        if (!actions::copy_text(wnd_, path_)) MessageBeep(MB_ICONWARNING);
-    } catch (...) {
-    }
-}
-
-void TreeView::delete_node(std::uint32_t node, bool permanent) noexcept {
-    const model::Node& n = tree_.node(node);
-    if (n.has(model::node_root) || n.parent == model::no_node) {
-        MessageBeep(MB_ICONWARNING);
-        return;
-    }
-    try {
-        // Afterwards select what Explorer would: the next sibling, else the previous one, else
-        // the parent folder.
-        const std::uint32_t parent = n.parent;
-        const model::Node& p = tree_.node(parent);
-        std::wstring next;
-        if (node + 1 < p.first_child + p.child_count) {
-            next.assign(tree_.node(node + 1).name_view());
-        } else if (node > p.first_child) {
-            next.assign(tree_.node(node - 1).name_view());
-        }
-        std::wstring path;
-        tree_.build_path(node, path);
-        std::wstring name(n.name_view());
-        actions::delete_path(
-            std::move(path), permanent, wnd_,
-            guard([parent, next = std::move(next), name = std::move(name), permanent](
-                      TreeView& view, actions::ShellResult result) {
-                // If the delete was cancelled the item is still there: keep it selected.
-                if (!result.ran) return;
-                if (result.succeeded && !permanent) {
-                    UndoRecord record;
-                    record.kind = UndoRecord::Kind::recycle;
-                    record.folder = parent;
-                    view.tree_.build_path(parent, record.folder_path);
-                    record.name = name;
-                    view.undo_ = std::move(record);
-                }
-                view.reload_and_select(parent, name, next);
-            }));
-    } catch (...) {
-    }
-}
-
-void TreeView::reload_and_select(std::uint32_t folder, std::wstring name, std::wstring fallback,
-                                 bool rename) noexcept {
-    if (folder >= tree_.node_count()) return;
-    const model::Node& f = tree_.node(folder);
-    if (f.has(model::node_loaded) && !f.has(model::node_loading) &&
-        f.has(model::node_expanded) && tree_.row_of(folder)) {
-        // Open and listed: merge the change in place (no collapse, no scroll jump). A check
-        // already in flight may predate the change, so it is replaced.
-        try {
-            std::erase_if(pending_, [folder](const PendingListing& p) {
-                if (!p.check || p.node != folder) return false;
-                p.ticket.cancel();
-                return true;
-            });
-            pending_select_ = {folder, std::move(name), std::move(fallback), rename};
-            request_check(folder);
-            return;
-        } catch (...) {
-            pending_select_ = {};
-        }
-    }
-    const model::Tree::ReloadResult result = tree_.reload(folder);
-    // Listings for the forgotten children will be ignored; stop them early.
-    std::erase_if(pending_, [this](const PendingListing& p) {
-        if (p.check || tree_.node(p.node).has(model::node_loading)) return false;
-        p.ticket.cancel();
-        return true;
-    });
-    apply_splice(result.splice);
-    pending_select_ = {folder, std::move(name), std::move(fallback), rename};
-    if (result.needs_load) {
-        try {
-            request_listing(folder);
-        } catch (...) {
-            tree_.fail_load(folder);
-        }
-    }
-    if (const auto row = tree_.row_of(folder)) invalidate_row(*row);
-    // Not expanded: nothing to wait for. Still loading: on_listing finishes the job.
-    if (!tree_.node(folder).has(model::node_loading)) apply_pending_select(folder);
-}
-
-void TreeView::apply_pending_select(std::uint32_t folder) noexcept {
-    if (pending_select_.folder != folder) return;
-    PendingSelect select = std::move(pending_select_);
-    pending_select_ = {};
-    std::uint32_t target = model::no_node;
-    if (!select.name.empty()) target = tree_.find_child(folder, select.name);
-    if (target == model::no_node && !select.fallback.empty()) {
-        target = tree_.find_child(folder, select.fallback);
-    }
-    const bool rename = select.rename && target != model::no_node;
-    if (target == model::no_node) target = folder;
-    if (const auto row = tree_.row_of(target)) {
-        select_row(*row);
-        if (rename) begin_rename(target);
     }
 }
 

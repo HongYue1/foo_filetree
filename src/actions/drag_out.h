@@ -7,13 +7,14 @@
 #include <windows.h>
 
 #include <string>
+#include <vector>
 
 namespace filetree::actions {
 
-//! Runs the modal drag loop for `path` and returns when the item was dropped or the drag was
+//! Runs the modal drag loop for `paths` (one or several items) and returns when the item was dropped or the drag was
 //! cancelled. Offers copy, move and link with copy preferred: a drop into Explorer moves the
 //! user's files only with Shift held, as in Explorer.
-//! Returns false if no data object could be made for the path (nothing was dragged).
-bool drag_out(HWND source, const std::wstring& path) noexcept;
+//! Returns false if no data object could be made for the paths (nothing was dragged).
+bool drag_out(HWND source, const std::vector<std::wstring>& paths) noexcept;
 
 } // namespace filetree::actions

@@ -130,7 +130,11 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
         undo_.folder = merge.map(undo_.folder);
         filter_hidden_selection_ = merge.map(filter_hidden_selection_);
         restore_top_node_ = merge.map(restore_top_node_);
-        cut_node_ = merge.map(cut_node_);
+        if (!cut_nodes_.empty()) {
+            for (std::uint32_t& cut : cut_nodes_) cut = merge.map(cut);
+            std::erase(cut_nodes_, model::no_node);
+            std::sort(cut_nodes_.begin(), cut_nodes_.end());
+        }
         if (edit_ != nullptr) edit_node_ = merge.map(edit_node_);
 
         // Keep the selection and the first visible row on the same items. A selected item that

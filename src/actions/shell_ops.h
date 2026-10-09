@@ -8,6 +8,7 @@
 #include <functional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace filetree::actions {
 
@@ -26,14 +27,17 @@ void open_in_explorer(std::wstring path, bool is_folder) noexcept;
 bool copy_text(HWND owner, std::wstring_view text) noexcept;
 
 //! Deletes through the shell (its confirmation, progress and error UI; undo for the recycle
-//! bin). `permanent` skips the recycle bin, like Shift+Del in Explorer.
-void delete_path(std::wstring path, bool permanent, HWND owner, ShellDone done) noexcept;
+//! bin). `permanent` skips the recycle bin, like Shift+Del in Explorer. Several paths go in one
+//! operation (one confirmation with the count, one progress dialog).
+void delete_paths(std::vector<std::wstring> paths, bool permanent, HWND owner,
+                  ShellDone done) noexcept;
 
 //! Renames through the shell (undoable; the shell reports collisions and invalid names).
 void rename_path(std::wstring path, std::wstring new_name, HWND owner, ShellDone done) noexcept;
 
-//! The shell's Properties sheet for the path (modeless; Alt+Enter in Explorer).
-void show_properties(const std::wstring& path, HWND owner) noexcept;
+//! The shell's Properties sheet for the paths (modeless; Alt+Enter in Explorer). Several paths
+//! get the combined sheet (SHMultiFileProperties).
+void show_properties(const std::vector<std::wstring>& paths, HWND owner) noexcept;
 
 //! Windows' "Open with" chooser for a file; opens it with the chosen program.
 void open_with(const std::wstring& path, HWND owner) noexcept;

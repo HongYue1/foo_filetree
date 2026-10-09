@@ -198,9 +198,15 @@ private:
     void on_mouse_move(int x, int y) noexcept;
     void on_mouse_leave() noexcept;
     void on_dpi_changed() noexcept;
-    //! Sends a node to a playlist per `action` (Kind::send).
+    // Operations on items (tree_view_items.cpp) act on actions_for(node): the selection when
+    // `node` is selected or the focus row, else `node` alone.
+    void actions_for(std::uint32_t node, std::vector<std::uint32_t>& out) const;
+    void paths_of(const std::vector<std::uint32_t>& nodes, std::vector<std::wstring>& out) const;
+    //! All in one folder (one root alone counts too).
+    [[nodiscard]] bool same_parent(const std::vector<std::uint32_t>& nodes) const noexcept;
+    //! Sends to a playlist per `action` (Kind::send).
     void send_node(const actions::Action& action, std::uint32_t node) noexcept;
-    //! Drags a node out of the panel (playlists, playlist tabs, Explorer).
+    //! Drags out of the panel (playlists, playlist tabs, Explorer).
     void drag_node(std::uint32_t node) noexcept;
 
     // tree_view_nav.cpp
@@ -247,15 +253,16 @@ private:
     [[nodiscard]] std::uint32_t target_folder(std::uint32_t node) const noexcept;
     void new_folder(std::uint32_t node) noexcept;
     void put_on_clipboard(std::uint32_t node, bool cut) noexcept;
-    //! Shows `node` dimmed as cut (no_node: none) until the clipboard changes.
-    void set_cut(std::uint32_t node) noexcept;
+    //! Shows `nodes` dimmed as cut (empty: none) until the clipboard changes.
+    void set_cut(std::vector<std::uint32_t> nodes) noexcept;
+    [[nodiscard]] bool is_cut(std::uint32_t node) const noexcept;
     void on_clipboard_update() noexcept;
     void paste_into(std::uint32_t node) noexcept;
     void copy_into(std::uint32_t folder, std::vector<std::wstring> paths, bool move,
                    DWORD clipboard_sequence) noexcept;
     void check_if_open(std::uint32_t folder) noexcept;
     void show_properties(std::uint32_t node) noexcept;
-    void save_as_playlist(std::uint32_t folder) noexcept;
+    void save_as_playlist(std::uint32_t node) noexcept;
 
     // Now playing marker (tree_view_playing.cpp).
     void on_now_playing_changed() noexcept override;
@@ -394,8 +401,8 @@ private:
     std::size_t playing_count_{0};
     bool playing_exact_{false}; //!< playing_nodes_ are the file itself (not a folder holding it)
 
-    // Cut item, dimmed while it is what the clipboard holds.
-    std::uint32_t cut_node_{model::no_node};
+    // Cut items (sorted), dimmed while they are what the clipboard holds.
+    std::vector<std::uint32_t> cut_nodes_;
     DWORD cut_sequence_{};
     bool clipboard_listening_{false};
 

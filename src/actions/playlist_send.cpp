@@ -90,11 +90,57 @@ pfc::string8 to_location(std::wstring_view path) {
     return canonical;
 }
 
+//! Collects each item's locations in request order: direct items at once, non-recursive folders
+//! when their listings land (callbacks run on the main thread). Sends once all are in.
+struct Gather {
+    std::vector<std::vector<pfc::string8>> parts;
+    std::size_t remaining{0};
+    Delivery delivery;
+    HWND parent{};
+
+    void part_done() {
+        if (remaining == 0 || --remaining != 0) return;
+        std::vector<pfc::string8> locations;
+        for (auto& part : parts) {
+            for (auto& location : part) locations.push_back(std::move(location));
+        }
+        process(std::move(locations), std::move(delivery), parent);
+    }
+};
+
+void list_folder_files(std::shared_ptr<Gather> gather, std::size_t index, std::wstring folder) {
+    // Only this folder's own files: list them on a worker (playable only, display order),
+    // then hand the file paths to fb2k.
+    fs::EnumOptions options;
+    options.files = fs::FileMode::playable;
+    options.playable = fs::playable_extensions();
+    fs::enumeration().request(
+        folder, options, [gather, index, folder](fs::Listing& listing) {
+            try {
+                std::wstring path;
+                for (const auto& item : listing.items) {
+                    if (model::is_folder(item.attributes)) continue;
+                    path.assign(folder);
+                    if (!path.empty() && path.back() != L'\\') path.push_back(L'\\');
+                    path.append(listing.name(item));
+                    gather->parts[index].push_back(to_location(path));
+                }
+            } catch (const std::exception& error) {
+                FB2K_console_formatter() << FILETREE_NAME << ": " << error.what();
+            }
+            try {
+                gather->part_done();
+            } catch (const std::exception& error) {
+                FB2K_console_formatter() << FILETREE_NAME << ": " << error.what();
+            }
+        });
+}
+
 } // namespace
 
 void send(const SendRequest& request) noexcept {
     try {
-        if (request.action.kind != Kind::send || request.path.empty()) return;
+        if (request.action.kind != Kind::send || request.items.empty()) return;
 
         Delivery delivery{request.action, {}};
         if (request.ctrl) delivery.action.target = Target::active;
@@ -107,48 +153,35 @@ void send(const SendRequest& request) noexcept {
                           recursive_by_default());
         if (request.shift) recursive = !recursive;
 
-        if (!request.is_folder || recursive) {
-            std::vector<pfc::string8> locations;
-            locations.push_back(to_location(request.path));
-            process(std::move(locations), std::move(delivery), request.parent);
-            return;
+        auto gather = std::make_shared<Gather>();
+        gather->delivery = std::move(delivery);
+        gather->parent = request.parent;
+        gather->parts.resize(request.items.size());
+        // +1 holds the send back until every listing has been requested.
+        gather->remaining = request.items.size() + 1;
+        for (std::size_t i = 0; i < request.items.size(); ++i) {
+            const SendItem& item = request.items[i];
+            if (item.is_folder && !recursive) {
+                list_folder_files(gather, i, item.path);
+            } else {
+                gather->parts[i].push_back(to_location(item.path));
+                gather->part_done();
+            }
         }
-
-        // Only this folder's own files: list them on a worker (playable only, display order),
-        // then hand the file paths to fb2k.
-        fs::EnumOptions options;
-        options.files = fs::FileMode::playable;
-        options.playable = fs::playable_extensions();
-        const HWND parent = request.parent;
-        fs::enumeration().request(
-            request.path, options,
-            [folder = request.path, delivery = std::move(delivery), parent](fs::Listing& listing) {
-                try {
-                    std::vector<pfc::string8> locations;
-                    std::wstring path;
-                    for (const auto& item : listing.items) {
-                        if (model::is_folder(item.attributes)) continue;
-                        path.assign(folder);
-                        if (!path.empty() && path.back() != L'\\') path.push_back(L'\\');
-                        path.append(listing.name(item));
-                        locations.push_back(to_location(path));
-                    }
-                    process(std::move(locations), delivery, parent);
-                } catch (const std::exception& error) {
-                    FB2K_console_formatter() << FILETREE_NAME << ": " << error.what();
-                }
-            });
+        gather->part_done();
     } catch (const std::exception& error) {
         FB2K_console_formatter() << FILETREE_NAME << ": send failed: " << error.what();
     } catch (...) {
     }
 }
 
-void save_as_playlist(const std::wstring& folder, std::wstring file, HWND parent) noexcept {
+void save_as_playlist(const std::vector<std::wstring>& paths, std::wstring file,
+                      HWND parent) noexcept {
     try {
+        std::vector<pfc::string8> locations;
+        for (const std::wstring& path : paths) locations.push_back(to_location(path));
         pfc::list_t<const char*> urls;
-        const pfc::string8 location = to_location(folder);
-        urls.add_item(location.c_str());
+        for (const pfc::string8& location : locations) urls.add_item(location.c_str());
         const pfc::string8 target = pfc::stringcvt::string_utf8_from_wide(file.c_str()).get_ptr();
         auto notify = process_locations_notify::create([target](metadb_handle_list_cref items) {
             try {

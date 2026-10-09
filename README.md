@@ -1,127 +1,107 @@
-# Folder Tree (foo_filetree)
+<h1 align="center">Folder Tree (foo_filetree)</h1>
 
-A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
+<p align="center">
+  A fast folder tree panel for <a href="https://www.foobar2000.org/">foobar2000</a> v2, for
+  Default UI and Columns UI.
+</p>
+
+## Features
+
+- **Drives and favourite folders** as roots. Folders are read in the background, so a slow,
+  sleeping or offline drive never freezes foobar2000.
+- **Stays current.** Open folders update by themselves when files change on disk.
+- **Your clicks, your actions.** Single, double and middle click and Enter each have their own
+  action for folders and for files: play, add to the active playlist, send to a new playlist,
+  add to the playback queue, or nothing.
+- **Explorer-style selection** (Ctrl, Shift, Ctrl+A). Playlist commands, copy, cut, delete,
+  drag and the context menus act on all selected items.
+- **File operations**: rename, delete to the Recycle Bin with undo, new folder, copy / cut /
+  paste, drag and drop to and from Explorer.
+- **Context menu** with foobar2000's track menu and the full Explorer menu. Reorder its items
+  or hide the ones you don't use.
+- **Address bar** with Back, Forward, Up and typed paths, and a **filter box** that narrows the
+  open folders as you type.
+- **Now playing**: the playing track is marked, and the tree can follow it.
+- **Your look**: icons, tree lines, sorting (natural order, by name, date, size or type),
+  tooltips, row height, hover highlight, shaded rows, a status bar with counts and sizes, and
+  transparency. Colours, font and dark mode follow your Default UI or Columns UI settings.
+- **Screen readers** can read and navigate the tree.
+- **Light on resources**: nothing runs while nothing changes.
 
 ## Install
 
-Preferences > Components > Install..., pick `foo_filetree.fb2k-component`, restart foobar2000.
-The package holds a 32-bit and a 64-bit DLL; foobar2000 for ARM uses the 64-bit one. Then add
-the panel: Default UI layout editing > Utility > Folder Tree, or Columns UI Layout > Panels >
-Folder Tree.
+Requires foobar2000 v2 on Windows, 32-bit or 64-bit (the package contains both).
 
-## Mouse and keys
+1. Download `foo_filetree.fb2k-component` from the
+   [latest release](https://github.com/HongYue1/foo_filetree/releases/latest).
+2. Double-click it, or in foobar2000 open **Preferences > Components > Install...**, and restart.
+3. Add the panel: in Default UI, enable **View > Layout > Edit layout**, then right-click >
+   **Replace UI Element... > Utility > Folder Tree**. In Columns UI, **Preferences > Display >
+   Columns UI > Layout**, then add **Panels > Folder Tree**.
 
-| Input | Action |
+Settings are in **Preferences > Tools > Folder Tree**. Changes preview live and are kept when you
+press OK or Apply.
+
+## Keyboard and mouse
+
+| Key / mouse | Action |
 | --- | --- |
-| Click | Select (one item) |
-| Ctrl+click / Ctrl+Space | Add the item to the selection or take it out |
-| Shift+click / Shift+arrows, Home, End, Page Up / Down | Select a range (Ctrl+Shift+click adds it) |
-| Ctrl+arrows | Move the focus without changing the selection |
-| Ctrl+A | Select every visible row |
-| Double click / Enter | Folder: expand or collapse. File: play it in the "Folder Tree" playlist |
-| Middle click | Add to the active playlist |
-| Shift + Enter / middle click | Flip "include subfolders" for that action |
-| Ctrl + Enter / middle click | Send to the active playlist instead |
-| Arrows, Home, End, + / - | Move, expand, collapse |
-| Page Up / Page Down | Parent folder / next folder after the parent |
-| F2 | Rename (Enter saves, Esc or clicking away cancels) |
+| Arrows, Home, End | Move; Right / Left also open and close folders |
+| + / - | Open / close the folder |
+| Page Up / Page Down | Go to the parent folder / the next folder after it |
+| Letters | Jump to the next item starting with them (same letter again: next match) |
+| Enter, double click | Run the action set for it (default: open a folder, play a file) |
+| Middle click | Run the middle-click action (default: add to the active playlist) |
+| Shift + Enter / middle click | Same, but flip "include subfolders" |
+| Ctrl + Enter / middle click | Same, but send to the active playlist |
+| Ctrl+click, Ctrl+Space | Add to or take out of the selection |
+| Shift+click, Shift+arrows | Select a range |
+| Ctrl+arrows | Move without changing the selection |
+| Ctrl+A | Select all visible items |
+| F2 | Rename |
 | Del / Shift+Del | Delete to the Recycle Bin / delete permanently |
-| F5 | Refresh: every open folder is checked again; changes appear in place |
-| F7 | New folder (inside the selected folder, or next to the selected file), then rename it |
-| Ctrl+C / Ctrl+X / Ctrl+V | Copy / cut the selected items / paste files into the focused folder (as in Explorer) |
-| Ctrl+Shift+C | Copy the full paths (one per line) |
-| Alt+Enter | Properties (the Explorer properties dialog) |
-| Ctrl+Z | Undo the last rename or delete (a delete of several items is one undo) |
-| Right click, Apps key, Shift+F10 | Context menu |
+| Ctrl+Z | Undo the last rename or delete |
+| F7 | New folder |
+| Ctrl+C / Ctrl+X / Ctrl+V | Copy / cut / paste files |
+| Ctrl+Shift+C | Copy the full paths |
+| Alt+Enter | Properties |
+| F5 | Refresh the open folders |
+| Ctrl+L | Type a path in the address bar (environment variables like `%USERPROFILE%` work) |
+| Ctrl+F | Filter box (Esc clears it) |
+| Alt+Left / Alt+Right / Alt+Up, mouse side buttons | Back / Forward / Up |
+| Shift+right-click | Context menu with Explorer's extra commands (Copy as path, Open in Terminal, ...) |
 
-- With several items selected, Enter, Play, the playlist commands, Add to playback queue, Save as
-  playlist, Copy, Cut, Copy path, Delete, Properties, dragging out and the foobar2000 submenu act
-  on all of them (one playlist operation; one delete confirmation). The Explorer submenu covers
-  them when they are in one folder, else only the clicked item. Rename, New folder, Open with and
-  favourites stay single-item. Right-clicking inside the selection keeps it; pressing on a
-  selected item and dragging drags them all.
-- Drop files from Explorer onto a folder to copy them there, hold Shift to move. Hovering over a
-  closed folder opens it; near the top or bottom edge the tree scrolls. Dragging out of the panel
-  copies too, unless Shift is held.
-- The playing track is marked with a play triangle (its icon, or after the name without icons);
-  while its folder is closed, the closed folder holding it gets a dimmer one (Display tab: "Mark the playing track").
-  "Follow the playing track" moves the selection to every new track as it starts.
-- Context menu extras: Open with (files), Properties, Save as playlist (folders: all their tracks,
-  recursively, into an .m3u8 / .fpl / .m3u file).
-- Main menu **View > Folder Tree**: Show now playing, Refresh, Collapse all, New folder. They act
-  on the panel focused last and can be given keyboard shortcuts in Preferences > Keyboard Shortcuts.
-- Type letters to jump to the next visible row whose name starts with them; press the same letter
-  again to step through matches. A pause of one second starts a new search.
+**View > Folder Tree** in the main menu has Show now playing, Refresh, Collapse all and New
+folder. Give them shortcuts in **Preferences > Keyboard Shortcuts**.
 
-## Address bar
+## Good to know
 
-Shows the selected item's path; click a part to go there. Click the empty part or press Ctrl+L
-to type a path (environment variables like %USERPROFILE% work), Enter goes there, Esc cancels.
-Back, Forward and Up are also Alt+Left, Alt+Right, Alt+Up and the mouse side buttons. Places you
-stay on for a moment are remembered; quick arrow-key moves are not. Hide it on the General tab.
-
-## Filter box
-
-On the right of the address bar, or floating over the tree (General tab; Ctrl+F opens it). Typing narrows the open folders to names containing the
-text, or matching it with * and ? (`*.flac`). Folders above a match stay, a matching folder keeps
-its contents. Esc clears it; Enter or Down goes back to the tree. It filters what is open, it does
-not search the disk.
-
-## Context menu
-
-- **Play**, **Add to active playlist**, **Send to new playlist**
-- **Open in Explorer** (files: **Show in folder**), **Copy path**
-- **Rename**, **Delete**, **Refresh**
-- **foobar2000 >** (files only): foobar2000's usual track menu
-- **Explorer >**: the Windows right-click menu (Open with, Send to, Properties, ...)
-
-**Tip:** hold **Shift** while right-clicking to get Explorer's extra commands in
-**Explorer >** (for example "Copy as path" or "Open in Terminal"), just as in Explorer itself.
-
-## Undoing a delete or rename
-
-Press **Ctrl+Z** in the panel (or use **Undo ...** in the context menu) to undo the last rename
-or delete made in Folder Tree. One step only. A deleted item comes back from the Recycle Bin;
-Shift+Del deletes permanently and cannot be undone. The same changes can also be undone with
-Ctrl+Z in an Explorer window, or restored from the Recycle Bin by hand.
-
-Open folders update by themselves when files change on disk (General > Update open folders...);
-removable and optical drives are not watched, so they do not block Safely Remove: press F5 there.
-
-## Preferences
-
-Settings live under Preferences > Tools > Folder Tree. Changes preview live in open panels and are
-kept only when you press OK or Apply.
-
-Each panel remembers its own open folders, selection and scroll position (stored with the
-foobar2000 layout). General > On startup chooses between restoring that, starting with all
-folders closed, or opening a fixed folder.
-
-The View tab has the tooltips (off, full path, or only cut-off names shown in place), the hover
-highlight, shading every other row, a transparent background (the address bar, tree and status bar
-show what is behind the panel, for layouts with a background image; with a plain host
-container it looks the same as off) and the status bar. The status bar shows how many items are
-selected with their size, or what the focused folder holds (folders, files, size of the files);
-with "Show performance counters" on, resting the mouse on it shows the panel's counters (rows,
-nodes, memory, watched folders, listings in flight).
-
-Favourites: right-click a folder > Add to favourites and it becomes a root (shown by its name)
-in every panel, before or after the drives. Manage the list on the Favourites tab. Folders that are
-favourites get a star (Display > Star favourite folders). Display > Show icons adds folder, file
-and drive icons drawn from the Windows icon font, in the theme's colours.
-
-
-## Accessibility
-
-The tree answers screen readers through Microsoft Active Accessibility: it is an outline whose
-items have their name, level, selected / expanded state and position, and focus and selection
-changes are announced. Narrator reaches it through Windows' UI Automation bridge; NVDA and JAWS
-read it directly. The address bar and filter box are standard edit controls.
+- **Drag and drop**: drag items to a playlist, a playlist tab or Explorer. Drop files on a folder
+  to copy them there; hold Shift to move. Holding a drag over a closed folder opens it.
+- **Favourites**: right-click a folder > **Add to favourites**. Favourites are shared by all
+  Folder Tree panels; order them on the Favourites tab.
+- **Filter box** filters what is open; it doesn't search the disk. `*` and `?` work (`*.flac`).
+- **Undo** is one step and covers renames and deletes made in the panel. Shift+Del can't be
+  undone.
+- **Removable and optical drives** aren't watched for changes, so Safely Remove keeps working.
+  Press F5 there after changes.
+- **Which files show**: playable files only by default. On the Filter tab, show all files or
+  only folders, list extra extensions (`cue; log`), or hide names by pattern (`@eaDir; *.tmp`).
+- **Each panel remembers** its open folders, selection and scroll position. On startup it can
+  restore them, start closed or open a fixed folder.
+- **Transparency** only shows something when your layout draws a background behind the panel.
+- **Status bar** (View tab): counts and sizes of the selection, or of the focused folder.
 
 ## Building
 
-Visual Studio 2026 with the C++ desktop workload and ATL, WTL 10 next to the project
-(`..\wtl`), the foobar2000 SDK 2026-09-17 with the Columns UI SDK in `..\SDK-2026-09-17`.
-`build.bat [Release|Debug] [x64|Win32]` builds; `test\build_tests.bat` runs the offline tests;
-`package.bat` builds both platforms into `dist\foo_filetree.fb2k-component` (PDBs in
-`dist\symbols`).
+Visual Studio 2026 with the C++ desktop workload and ATL, WTL 10 in `..\wtl`, and the foobar2000
+SDK 2026-09-17 with the Columns UI SDK in `..\SDK-2026-09-17`.
+
+- `build.bat [Release|Debug] [x64|Win32]` builds the DLL.
+- `test\build_tests.bat` builds and runs the tests.
+- `package.bat` builds both platforms into `dist\foo_filetree.fb2k-component` (PDBs in
+  `dist\symbols`).
+
+## License
+
+[MIT](LICENSE)

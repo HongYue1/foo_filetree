@@ -52,7 +52,7 @@ struct Node {
     [[nodiscard]] std::wstring_view name_view() const noexcept { return {name, name_length}; }
 };
 
-// PLAN.md budget: <= 64 bytes per node plus the name.
+// Budget: <= 64 bytes per node plus the name.
 static_assert(sizeof(Node) <= 64, "Node exceeds the per-node memory budget");
 
 //! The name as shown: a drive root "C:\\" as "C:", a favourite root by its last component.

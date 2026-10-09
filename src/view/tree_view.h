@@ -4,7 +4,7 @@
 // a window and forward its messages here; colours and the font come in through set_colours() and
 // set_font().
 //
-// Performance rules (PLAN.md): paint draws only rows that intersect the invalid rectangle into one
+// Performance rules (AGENTS.md): paint draws only rows that intersect the invalid rectangle into one
 // cached DIB; no allocation in paint, scroll or hover; no timers; disk work only through
 // fs::enumeration() on workers. Rows are addressed by index into model::Tree::rows().
 

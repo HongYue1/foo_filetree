@@ -188,6 +188,20 @@ BEGIN
     LTEXT           "Separators are added between groups automatically. Undo only appears when there is something to undo.",IDC_STATIC,12,191,226,16
 END
 
+IDD_TAB_FOLDERS DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Hidden folders",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LTEXT           "Folders never listed (drives and favourites always are). Variables like %WINDIR% work, and ? stands for any drive letter.",IDC_STATIC,12,21,281,16
+    LISTBOX         IDC_HIDDEN_LIST,12,41,216,112,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Add...",IDC_HIDDEN_ADD,233,41,60,14
+    PUSHBUTTON      "Remove",IDC_HIDDEN_REMOVE,233,57,60,14
+    PUSHBUTTON      "Restore defaults",IDC_HIDDEN_DEFAULTS,233,77,60,14
+    LTEXT           "Right-click a folder in the tree and pick Hide this folder to add it.",IDC_STATIC,12,157,281,8
+END
+
 IDD_TAB_FAVOURITES DIALOGEX 0, 0, 300, 222
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
 FONT 8, "Microsoft Sans Serif", 400, 0, 0x0

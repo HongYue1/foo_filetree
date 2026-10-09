@@ -24,15 +24,25 @@ struct FilterRules {
     ExtensionSet always_show; //!< shown even when only playable files are listed
     ExtensionSet never_show;  //!< never shown, whatever the file mode
     std::vector<std::wstring> hide_patterns; //!< upper-cased globs
+    //! Folders hidden by full path: environment variables expanded, upper-cased globs
+    //! ("C:\WINDOWS", "?:\$RECYCLE.BIN").
+    std::vector<std::wstring> hide_paths;
 
     //! Replaces the patterns from a user list ("@eaDir; *.tmp | Thumbs.db"; also ',' and new
     //! lines). Blank entries are dropped.
     void set_hide_patterns(std::wstring_view list);
 
+    //! Replaces the hidden folders from user entries ("%WINDIR%", "?:\$Recycle.Bin"). An entry
+    //! whose variable is not set is dropped. Main thread (reads the environment).
+    void set_hide_paths(const std::vector<std::wstring>& paths);
+
     [[nodiscard]] bool hidden_by_pattern(std::wstring_view name) const noexcept;
+    //! `upper_path` is a full folder path already upper-cased, without a trailing backslash.
+    [[nodiscard]] bool hidden_by_path(std::wstring_view upper_path) const noexcept;
 
     [[nodiscard]] bool empty() const noexcept {
-        return always_show.empty() && never_show.empty() && hide_patterns.empty();
+        return always_show.empty() && never_show.empty() && hide_patterns.empty() &&
+               hide_paths.empty();
     }
 };
 

@@ -88,6 +88,16 @@ Listing enumerate_folder(std::wstring_view folder, const EnumOptions& options,
         return listing;
     }
 
+    // Folders hidden by path: "<FOLDER>\" upper-cased once, each name appended in place.
+    const model::FilterRules* rules = options.rules.get();
+    std::wstring upper_path;
+    std::size_t prefix = 0;
+    if (rules != nullptr && !rules->hide_paths.empty()) {
+        upper_path.resize(folder.size() + 1 + MAX_PATH);
+        prefix = model::to_upper(folder, upper_path.data(), folder.size());
+        if (prefix == 0 || upper_path[prefix - 1] != L'\\') upper_path[prefix++] = L'\\';
+    }
+
     listing.names.reserve(4096);
     do {
         if (cancel.load(std::memory_order_relaxed)) {
@@ -97,6 +107,11 @@ Listing enumerate_folder(std::wstring_view folder, const EnumOptions& options,
         if (is_dot_entry(data.cFileName) || !keep(data, options)) continue;
 
         const std::size_t name_length = wcsnlen(data.cFileName, MAX_PATH);
+        if (prefix != 0 && (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+            const std::size_t length = model::to_upper({data.cFileName, name_length},
+                                                       upper_path.data() + prefix, MAX_PATH);
+            if (rules->hidden_by_path({upper_path.data(), prefix + length})) continue;
+        }
         Listing::Item item;
         item.name_offset = static_cast<std::uint32_t>(listing.names.size());
         item.name_length = static_cast<std::uint32_t>(name_length);

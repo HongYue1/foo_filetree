@@ -1,7 +1,7 @@
 #pragma once
 
-// The list-box editors on the Preferences page: the context menu layout (Menu tab) and the
-// favourites (Favourites tab). Each edits a copy the page reads back in from_controls(); the
+// The list-box editors on the Preferences page: the context menu layout (Menu tab), the
+// favourites (Favourites tab) and the hidden folders (Folders tab). Each edits a copy the page reads back in from_controls(); the
 // mutators return true when something changed, so the page can mark itself changed.
 
 #include <windows.h>
@@ -32,9 +32,18 @@ private:
     const HWND& page_;
 };
 
-class FavouritesEditor {
+//! Controls of one path list. `up` / `down` 0: the list has no order (no move buttons).
+struct PathListIds {
+    int list{};
+    int remove{};
+    int up{};
+    int down{};
+};
+
+//! A list of folders: the favourites (ordered), the hidden folders.
+class PathListEditor {
 public:
-    explicit FavouritesEditor(const HWND& page) noexcept : page_(page) {}
+    PathListEditor(const HWND& page, PathListIds ids) noexcept : page_(page), ids_(ids) {}
 
     std::vector<std::wstring> paths;
 
@@ -43,11 +52,14 @@ public:
     void on_select() noexcept;
     //! Asks for a folder and appends it (a repeat is dropped).
     bool add();
+    //! Appends those of `extra` that are not listed yet.
+    bool merge(const std::vector<std::wstring>& extra);
     bool remove();
     bool move(bool up);
 
 private:
     const HWND& page_;
+    PathListIds ids_;
 };
 
 //! Fills a list box with `items`, sets the horizontal scroll extent to the widest and selects

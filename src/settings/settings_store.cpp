@@ -50,6 +50,8 @@ constexpr GUID guid_zebra = {0xddfc1742, 0x6710, 0x41d8, {0xba, 0xf8, 0x7f, 0x9a
 constexpr GUID guid_show_status_bar = {0xc6839425, 0x8ba9, 0x4642, {0xbc, 0x2d, 0x23, 0xd0, 0x01, 0x81, 0x9b, 0x5a}};
 constexpr GUID guid_status_counters = {0xfaa522ce, 0xe123, 0x4ebb, {0x9b, 0xc2, 0xb0, 0xd1, 0x17, 0xbe, 0x63, 0xe8}};
 constexpr GUID guid_transparent = {0xbe4faf12, 0x9724, 0x40f9, {0x85, 0x9d, 0xa3, 0x52, 0x48, 0x62, 0x9c, 0x24}};
+// Hidden folders.
+constexpr GUID guid_hidden_folders = {0x94af8dbf, 0xe2c8, 0x4114, {0x9f, 0xbf, 0x75, 0x89, 0x6e, 0xbd, 0xbb, 0xe2}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
 using cfg_int = cfg_var_modern::cfg_int;
@@ -78,6 +80,9 @@ cfg_string cfg_always_show(guid_always_show, "");
 cfg_string cfg_never_show(guid_never_show, "");
 cfg_string cfg_hide_patterns(guid_hide_patterns, "");
 cfg_string cfg_menu(guid_menu, "");
+cfg_string cfg_hidden_folders(guid_hidden_folders,
+                              pfc::stringcvt::string_utf8_from_wide(
+                                  join_paths(defaults.hidden_folders).c_str()).get_ptr());
 cfg_bool cfg_show_address_bar(guid_show_address_bar, defaults.show_address_bar);
 cfg_bool cfg_separate_favourites(guid_separate_favourites, defaults.separate_favourites);
 cfg_int cfg_favourites_gap(guid_favourites_gap, defaults.favourites_gap);
@@ -141,6 +146,7 @@ Settings load() {
     s.always_show = wide(cfg_always_show.get());
     s.never_show = wide(cfg_never_show.get());
     s.hide_patterns = wide(cfg_hide_patterns.get());
+    s.hidden_folders = split_paths(wide(cfg_hidden_folders.get()));
     s.menu = MenuLayout::decode(wide(cfg_menu.get()));
     s.show_address_bar = cfg_show_address_bar.get();
     s.show_icons = cfg_show_icons.get();
@@ -185,6 +191,7 @@ void save(const Settings& s) {
     cfg_always_show.set(utf8(s.always_show));
     cfg_never_show.set(utf8(s.never_show));
     cfg_hide_patterns.set(utf8(s.hide_patterns));
+    cfg_hidden_folders.set(utf8(join_paths(s.hidden_folders)));
     cfg_menu.set(utf8(s.menu.encode()));
     cfg_show_address_bar.set(s.show_address_bar);
     cfg_show_icons.set(s.show_icons);
@@ -212,6 +219,7 @@ std::shared_ptr<const model::FilterRules> build_rules(const Settings& s) {
     rules->always_show.add_mask(s.always_show);
     rules->never_show.add_mask(s.never_show);
     rules->set_hide_patterns(s.hide_patterns);
+    rules->set_hide_paths(s.hidden_folders);
     if (rules->empty()) return nullptr;
     return rules;
 }

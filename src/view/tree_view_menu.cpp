@@ -35,14 +35,15 @@ enum MenuId : UINT {
     id_save_playlist,
     id_open_with,
     id_properties,
+    id_hide_folder,
     // Empty-area menu.
     id_refresh_all,
     id_collapse_all,
     id_preferences,
 };
 
-//! Index of `path` in the favourites list (case-insensitive, as NTFS), or -1.
-int favourite_index(const std::vector<std::wstring>& list, std::wstring_view path) {
+//! Index of `path` in a path list (favourites, hidden folders) (case-insensitive, as NTFS), or -1.
+int path_index(const std::vector<std::wstring>& list, std::wstring_view path) {
     const std::wstring clean = settings::clean_path(path);
     for (std::size_t i = 0; i < list.size(); ++i) {
         if (CompareStringOrdinal(list[i].c_str(), static_cast<int>(list[i].size()), clean.c_str(),
@@ -137,6 +138,7 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             if (item == MenuItem::undo && undo_.kind == UndoRecord::Kind::none) continue;
             if (item == MenuItem::fb2k_menu && !any_file) continue;
             if (item == MenuItem::favourite && !folder) continue;
+            if (item == MenuItem::hide_folder && (!folder || root)) continue;
             if (item == MenuItem::save_playlist && !any_folder && !several) continue;
             if (item == MenuItem::open_with && folder) continue;
             if (item == MenuItem::paste && !actions::clipboard_has_files()) continue;
@@ -191,11 +193,14 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
                 break;
             case MenuItem::refresh: AppendMenuW(menu, MF_STRING, id_refresh, L"Refresh\tF5"); break;
             case MenuItem::favourite: {
-                const bool listed = favourite_index(settings::current().favourites, path) >= 0;
+                const bool listed = path_index(settings::current().favourites, path) >= 0;
                 AppendMenuW(menu, MF_STRING | single_flags, id_favourite,
                             listed ? L"Remove from favourites" : L"Add to favourites");
                 break;
             }
+            case MenuItem::hide_folder:
+                AppendMenuW(menu, MF_STRING | single_flags, id_hide_folder, L"Hide this folder");
+                break;
             case MenuItem::undo: {
                 const bool rename = undo_.kind == UndoRecord::Kind::rename;
                 std::wstring label =
@@ -340,6 +345,7 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
     case id_refresh: refresh_open_folders(); break;
     case id_undo: undo(); break;
     case id_favourite: toggle_favourite(node); break;
+    case id_hide_folder: hide_folder(node); break;
     case id_new_folder: new_folder(node); break;
     case id_paste: paste_into(node); break;
     case id_cut: put_on_clipboard(node, true); break;
@@ -353,7 +359,7 @@ void TreeView::toggle_favourite(std::uint32_t node) noexcept {
         std::wstring path;
         tree_.build_path(node, path);
         settings::Settings next = settings::stored();
-        if (const int index = favourite_index(next.favourites, path); index >= 0) {
+        if (const int index = path_index(next.favourites, path); index >= 0) {
             next.favourites.erase(next.favourites.begin() + index);
         } else {
             next.favourites.push_back(settings::clean_path(path));
@@ -361,6 +367,20 @@ void TreeView::toggle_favourite(std::uint32_t node) noexcept {
         // Every panel rebuilds its roots (relist_all keeps what is open and selected). `node`
         // is not valid afterwards.
         settings::apply(std::move(next));
+    } catch (...) {
+    }
+}
+
+void TreeView::hide_folder(std::uint32_t node) noexcept {
+    try {
+        if (tree_.node(node).has(model::node_root)) return; // roots are never hidden
+        std::wstring path;
+        tree_.build_path(node, path);
+        settings::Settings next = settings::stored();
+        if (path_index(next.hidden_folders, path) < 0) {
+            next.hidden_folders.push_back(settings::clean_path(path));
+        }
+        settings::apply(std::move(next)); // every panel relists; `node` is gone afterwards
     } catch (...) {
     }
 }

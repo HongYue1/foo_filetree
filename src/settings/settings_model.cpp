@@ -18,7 +18,7 @@ namespace {
 constexpr std::array<MenuItem, menu_item_count> default_order = {
     MenuItem::play,          MenuItem::add_active, MenuItem::new_playlist, MenuItem::queue,
     MenuItem::save_playlist, MenuItem::open_explorer, MenuItem::open_with, MenuItem::properties,
-    MenuItem::copy_path,     MenuItem::favourite, MenuItem::new_folder,
+    MenuItem::copy_path,     MenuItem::favourite, MenuItem::hide_folder, MenuItem::new_folder,
     MenuItem::cut,        MenuItem::copy,       MenuItem::paste,        MenuItem::rename,
     MenuItem::remove,     MenuItem::refresh,    MenuItem::undo,         MenuItem::fb2k_menu,
     MenuItem::explorer_menu,
@@ -44,7 +44,8 @@ int menu_group(MenuItem item) noexcept {
     case MenuItem::open_with:
     case MenuItem::properties:
     case MenuItem::copy_path:
-    case MenuItem::favourite: return 1;
+    case MenuItem::favourite:
+    case MenuItem::hide_folder: return 1;
     case MenuItem::new_folder:
     case MenuItem::cut:
     case MenuItem::copy:
@@ -73,6 +74,7 @@ const wchar_t* menu_item_label(MenuItem item) noexcept {
     case MenuItem::fb2k_menu: return L"foobar2000 submenu (files)";
     case MenuItem::explorer_menu: return L"Explorer submenu";
     case MenuItem::favourite: return L"Add to / Remove from favourites";
+    case MenuItem::hide_folder: return L"Hide this folder";
     case MenuItem::new_folder: return L"New folder";
     case MenuItem::cut: return L"Cut";
     case MenuItem::queue: return L"Add to playback queue";
@@ -162,6 +164,7 @@ void Settings::sanitize() noexcept {
     favourites_place = clamp_enum(favourites_place, FavouritesPlace::after);
     tooltips = clamp_enum(tooltips, Tooltips::path);
     favourites = split_paths(join_paths(favourites));
+    hidden_folders = split_paths(join_paths(hidden_folders));
 }
 
 std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
@@ -196,10 +199,16 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
     if (a.sort.field != b.sort.field || a.sort.folders_first != b.sort.folders_first ||
         a.sort.reverse != b.sort.reverse || a.show_hidden != b.show_hidden ||
         a.show_system != b.show_system || a.files != b.files || a.always_show != b.always_show ||
-        a.never_show != b.never_show || a.hide_patterns != b.hide_patterns) {
+        a.never_show != b.never_show || a.hide_patterns != b.hide_patterns ||
+        a.hidden_folders != b.hidden_folders) {
         out |= change_relist;
     }
     return out;
+}
+
+std::vector<std::wstring> default_hidden_folders() {
+    return {L"%WINDIR%",           L"%ProgramFiles%",   L"%ProgramFiles(x86)%",
+            L"%ProgramData%",      L"?:\\$Recycle.Bin", L"?:\\System Volume Information"};
 }
 
 std::wstring clean_path(std::wstring_view path) {

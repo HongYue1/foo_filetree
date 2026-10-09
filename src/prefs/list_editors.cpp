@@ -85,37 +85,44 @@ bool MenuEditor::toggle_shown() {
     return true;
 }
 
-// --- Favourites ---
+// --- Path lists ---
 
-void FavouritesEditor::show(int select) {
-    fill_list(find_control(page_, IDC_FAV_LIST), paths, select);
+void PathListEditor::show(int select) {
+    fill_list(find_control(page_, ids_.list), paths, select);
     on_select();
 }
 
-int FavouritesEditor::selection() const noexcept {
-    return list_selection(page_, IDC_FAV_LIST, paths.size());
+int PathListEditor::selection() const noexcept {
+    return list_selection(page_, ids_.list, paths.size());
 }
 
-void FavouritesEditor::on_select() noexcept {
+void PathListEditor::on_select() noexcept {
     const int index = selection();
-    enable(page_, IDC_FAV_REMOVE, index >= 0);
-    enable(page_, IDC_FAV_UP, index > 0);
-    enable(page_, IDC_FAV_DOWN, index >= 0 && index + 1 < static_cast<int>(paths.size()));
+    enable(page_, ids_.remove, index >= 0);
+    if (ids_.up == 0) return;
+    enable(page_, ids_.up, index > 0);
+    enable(page_, ids_.down, index >= 0 && index + 1 < static_cast<int>(paths.size()));
 }
 
-bool FavouritesEditor::add() {
+bool PathListEditor::add() {
     std::wstring path;
     if (!pick_folder(page_, path)) return false;
-    std::vector<std::wstring> next = paths;
-    next.push_back(path);
-    next = settings::split_paths(settings::join_paths(next)); // cleans, drops a repeat
-    if (next == paths) return false;
-    paths = std::move(next);
+    if (!merge({path})) return false;
     show(static_cast<int>(paths.size()) - 1);
     return true;
 }
 
-bool FavouritesEditor::remove() {
+bool PathListEditor::merge(const std::vector<std::wstring>& extra) {
+    std::vector<std::wstring> next = paths;
+    next.insert(next.end(), extra.begin(), extra.end());
+    next = settings::split_paths(settings::join_paths(next)); // cleans, drops repeats
+    if (next == paths) return false;
+    paths = std::move(next);
+    show(std::max(selection(), 0));
+    return true;
+}
+
+bool PathListEditor::remove() {
     const int index = selection();
     if (index < 0) return false;
     paths.erase(paths.begin() + index);
@@ -123,10 +130,12 @@ bool FavouritesEditor::remove() {
     return true;
 }
 
-bool FavouritesEditor::move(bool up) {
+bool PathListEditor::move(bool up) {
     const int index = selection();
     const int target = up ? index - 1 : index + 1;
-    if (index < 0 || target < 0 || target >= static_cast<int>(paths.size())) return false;
+    if (ids_.up == 0 || index < 0 || target < 0 || target >= static_cast<int>(paths.size())) {
+        return false;
+    }
     std::swap(paths[static_cast<std::size_t>(index)], paths[static_cast<std::size_t>(target)]);
     show(target);
     return true;

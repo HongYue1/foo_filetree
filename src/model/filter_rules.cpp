@@ -56,6 +56,51 @@ void FilterRules::set_hide_patterns(std::wstring_view list) {
     }
 }
 
+namespace {
+
+//! "%ProgramFiles%" in a 32-bit process names "Program Files (x86)"; a user listing it means the
+//! 64-bit folder, which ProgramW6432 names (set only on 64-bit Windows).
+std::wstring expand_path(std::wstring_view entry) {
+    std::wstring text(entry);
+    constexpr std::wstring_view program_files = L"%PROGRAMFILES%";
+    wchar_t native[MAX_PATH];
+    if (text.size() >= program_files.size() &&
+        CompareStringOrdinal(text.c_str(), static_cast<int>(program_files.size()),
+                             program_files.data(), static_cast<int>(program_files.size()),
+                             TRUE) == CSTR_EQUAL) {
+        const DWORD length = GetEnvironmentVariableW(L"ProgramW6432", native, MAX_PATH);
+        if (length > 0 && length < MAX_PATH) text.replace(0, program_files.size(), native, length);
+    }
+    if (text.find(L'%') == std::wstring::npos) return text;
+    wchar_t buffer[1024];
+    const DWORD length = ExpandEnvironmentStringsW(text.c_str(), buffer, 1024);
+    if (length == 0 || length > 1024) return {};
+    std::wstring out(buffer, length - 1); // length counts the terminator
+    if (out.find(L'%') != std::wstring::npos) return {}; // a variable that is not set
+    return out;
+}
+
+} // namespace
+
+void FilterRules::set_hide_paths(const std::vector<std::wstring>& paths) {
+    hide_paths.clear();
+    for (const std::wstring& entry : paths) {
+        std::wstring path = expand_path(entry);
+        while (path.size() > 1 && path.back() == L'\\') path.pop_back();
+        if (path.empty() || path.size() > 1000) continue;
+        wchar_t buffer[1024];
+        const std::size_t length = to_upper(path, buffer, std::size(buffer));
+        if (length > 0) hide_paths.emplace_back(buffer, length);
+    }
+}
+
+bool FilterRules::hidden_by_path(std::wstring_view upper_path) const noexcept {
+    for (const std::wstring& pattern : hide_paths) {
+        if (glob_match(pattern, upper_path)) return true;
+    }
+    return false;
+}
+
 bool FilterRules::hidden_by_pattern(std::wstring_view name) const noexcept {
     if (hide_patterns.empty()) return false;
     wchar_t buffer[260];

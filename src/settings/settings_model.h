@@ -33,6 +33,9 @@ enum class Tooltips : std::uint8_t { off, truncated, path };
 //! The path as a favourite: trimmed, no trailing backslash except on a drive ("C:\").
 [[nodiscard]] std::wstring clean_path(std::wstring_view path);
 
+//! Folders hidden out of the box: Windows, programs, and the per-drive system folders.
+[[nodiscard]] std::vector<std::wstring> default_hidden_folders();
+
 //! Context menu entries a user can show, hide and reorder. Append only (stored by number).
 enum class MenuItem : std::uint8_t {
     play,
@@ -55,8 +58,9 @@ enum class MenuItem : std::uint8_t {
     save_playlist,
     open_with,
     properties,
+    hide_folder, //!< adds the folder to the hidden folders
 };
-inline constexpr std::size_t menu_item_count = 20;
+inline constexpr std::size_t menu_item_count = 21;
 
 //! Items that share a group get no separator between them.
 [[nodiscard]] int menu_group(MenuItem item) noexcept;
@@ -123,6 +127,10 @@ struct Settings {
     std::wstring always_show;   //!< extension list, "cue; jpg"
     std::wstring never_show;    //!< extension list
     std::wstring hide_patterns; //!< glob list, "@eaDir; *.tmp"
+
+    // Folders
+    //! Never listed (roots excepted). May hold variables ("%WINDIR%") and wildcards ("?:\x").
+    std::vector<std::wstring> hidden_folders{default_hidden_folders()};
 
     // Menu
     MenuLayout menu{MenuLayout::defaults()};

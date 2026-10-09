@@ -52,6 +52,25 @@ void test_filter_rules() {
     CHECK(rules.hidden_by_pattern(L"a.tmp"));
     CHECK(!rules.hidden_by_pattern(L"a.flac"));
     CHECK(!rules.empty());
+
+    // Hidden folders: variables expanded, '?' any drive, a trailing backslash dropped, an unset
+    // variable drops its entry.
+    model::FilterRules paths;
+    paths.set_hide_paths({L"%WINDIR%", L"?:\\$Recycle.Bin\\", L"%FILETREE_NOT_SET%\\x"});
+    CHECK(paths.hide_paths.size() == 2);
+    CHECK(!paths.empty());
+    CHECK(paths.hidden_by_path(L"D:\\$RECYCLE.BIN"));
+    CHECK(!paths.hidden_by_path(L"D:\\$RECYCLE.BIN\\X"));
+    wchar_t windows[MAX_PATH];
+    const UINT length = GetWindowsDirectoryW(windows, MAX_PATH);
+    wchar_t upper[MAX_PATH];
+    const std::size_t upper_length = model::to_upper({windows, length}, upper, MAX_PATH);
+    CHECK(paths.hidden_by_path({upper, upper_length}));
+    CHECK(!paths.hidden_by_path(L"C:\\MUSIC"));
+    const auto defaults = settings::default_hidden_folders();
+    CHECK(settings::split_paths(settings::join_paths(defaults)) == defaults);
+    paths.set_hide_paths(defaults);
+    CHECK(paths.hide_paths.size() >= 5); // ProgramFiles(x86) is unset on 32-bit Windows
 }
 
 void test_panel_state() {
@@ -87,11 +106,12 @@ void test_settings_model() {
     // An older config without the last two items: they come back after their predecessors.
     const MenuLayout old = MenuLayout::decode(L"5,0,1,2,3,4,6,7,8");
     CHECK(old.order[0] == MenuItem::rename);
-    CHECK(old.order[18] == MenuItem::fb2k_menu && old.order[19] == MenuItem::explorer_menu);
+    CHECK(old.order[19] == MenuItem::fb2k_menu && old.order[20] == MenuItem::explorer_menu);
     CHECK(old.order[4] == MenuItem::queue && old.order[5] == MenuItem::save_playlist &&
           old.order[7] == MenuItem::open_with && old.order[8] == MenuItem::properties);
-    CHECK(old.order[11] == MenuItem::new_folder && old.order[12] == MenuItem::cut &&
-          old.order[13] == MenuItem::copy && old.order[14] == MenuItem::paste);
+    CHECK(old.order[11] == MenuItem::hide_folder && old.order[12] == MenuItem::new_folder &&
+          old.order[13] == MenuItem::cut && old.order[14] == MenuItem::copy &&
+          old.order[15] == MenuItem::paste);
     // A newer item goes to its default place (Favourites after Copy path), not to the end.
     CHECK(old.order[9] == MenuItem::copy_path && old.order[10] == MenuItem::favourite);
     CHECK(defaults.order[9] == MenuItem::favourite);
@@ -205,6 +225,18 @@ void test_enumerate_rules(const std::filesystem::path& base) {
     options.files = fs::FileMode::none;
     const auto folders = fs::enumerate_folder(base.wstring(), options, cancel);
     CHECK(folders.items.size() == 2); // always_show does not apply to "folders only"
+
+    // A folder hidden by its full path (any case); files of the same name stay.
+    auto by_path = std::make_shared<model::FilterRules>();
+    by_path->set_hide_paths({base.wstring() + L"\\album 2\\"});
+    options.rules = by_path;
+    const auto without = fs::enumerate_folder(base.wstring(), options, cancel);
+    names.clear();
+    for (const auto& item : without.items) names.emplace_back(without.name(item));
+    const std::vector<std::wstring> rest{L"Album 10", L"big"};
+    CHECK(names == rest);
+    std::wstring slash = base.wstring() + L"\\";
+    CHECK(fs::enumerate_folder(slash, options, cancel).items.size() == 2);
 }
 
 // The watcher posts to a window: a message-only one here, pumped by hand.

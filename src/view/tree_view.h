@@ -229,6 +229,7 @@ private:
     void copy_path(std::uint32_t node) noexcept;
     //! Adds the folder to the favourites, or removes it (Preferences > Favourites).
     void toggle_favourite(std::uint32_t node) noexcept;
+    void hide_folder(std::uint32_t node) noexcept; //!< adds it to the hidden folders
     void delete_node(std::uint32_t node, bool permanent) noexcept;
     // tree_view_refresh.cpp. Like Explorer's F5: every open folder is listed again in the
     // background and, where something changed, its children are merged in place (open folders

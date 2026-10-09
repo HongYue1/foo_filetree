@@ -26,12 +26,13 @@
 namespace filetree::prefs {
 namespace {
 
-constexpr int tab_count = 7;
-constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Display", L"View",      L"Filter",
-                                                 L"Actions", L"Menu",    L"Favourites"};
+constexpr int tab_count = 8;
+constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Display", L"View",
+                                                 L"Filter",  L"Folders", L"Actions",
+                                                 L"Menu",    L"Favourites"};
 constexpr int tab_dialogs[tab_count] = {IDD_TAB_GENERAL, IDD_TAB_DISPLAY, IDD_TAB_VIEW,
-                                        IDD_TAB_FILTER,  IDD_TAB_ACTIONS, IDD_TAB_MENU,
-                                        IDD_TAB_FAVOURITES};
+                                        IDD_TAB_FILTER,  IDD_TAB_FOLDERS, IDD_TAB_ACTIONS,
+                                        IDD_TAB_MENU,    IDD_TAB_FAVOURITES};
 
 //! Everything the page edits, so "changed?" is one comparison.
 struct PageState {
@@ -117,6 +118,10 @@ public:
         COMMAND_HANDLER_EX(IDC_FAV_REMOVE, BN_CLICKED, on_fav_remove)
         COMMAND_HANDLER_EX(IDC_FAV_UP, BN_CLICKED, on_fav_move)
         COMMAND_HANDLER_EX(IDC_FAV_DOWN, BN_CLICKED, on_fav_move)
+        COMMAND_HANDLER_EX(IDC_HIDDEN_LIST, LBN_SELCHANGE, on_hidden_select)
+        COMMAND_HANDLER_EX(IDC_HIDDEN_ADD, BN_CLICKED, on_hidden_add)
+        COMMAND_HANDLER_EX(IDC_HIDDEN_REMOVE, BN_CLICKED, on_hidden_remove)
+        COMMAND_HANDLER_EX(IDC_HIDDEN_DEFAULTS, BN_CLICKED, on_hidden_defaults)
         COMMAND_CODE_HANDLER_EX(EN_CHANGE, on_changed)
         COMMAND_CODE_HANDLER_EX(BN_CLICKED, on_changed)
         COMMAND_CODE_HANDLER_EX(CBN_SELCHANGE, on_changed)
@@ -318,6 +323,17 @@ private:
         if (favourites_.move(id == IDC_FAV_UP)) on_changed(0, id, nullptr);
     }
 
+    void on_hidden_select(UINT, int, CWindow) { hidden_.on_select(); }
+    void on_hidden_add(UINT, int id, CWindow) {
+        if (hidden_.add()) on_changed(0, id, nullptr);
+    }
+    void on_hidden_remove(UINT, int id, CWindow) {
+        if (hidden_.remove()) on_changed(0, id, nullptr);
+    }
+    void on_hidden_defaults(UINT, int id, CWindow) {
+        if (hidden_.merge(settings::default_hidden_folders())) on_changed(0, id, nullptr);
+    }
+
     void update_enabled() {
         const HWND page = m_hWnd;
         const bool lines = get_combo(page, IDC_LINES, 0) != 0;
@@ -391,6 +407,7 @@ private:
         s.hide_patterns = get_text(page, IDC_HIDE_PATTERNS);
         s.menu = menu_.layout;
         s.favourites = favourites_.paths;
+        s.hidden_folders = hidden_.paths;
         s.favourites_place =
             static_cast<settings::FavouritesPlace>(get_combo(page, IDC_FAV_PLACE, 0));
         s.separate_favourites = get_check(page, IDC_FAV_SEPARATE);
@@ -461,11 +478,13 @@ private:
         }
         menu_.layout = s.menu;
         favourites_.paths = s.favourites;
+        hidden_.paths = s.hidden_folders;
         set_combo(page, IDC_FAV_PLACE, static_cast<int>(s.favourites_place));
         set_check(page, IDC_FAV_SEPARATE, s.separate_favourites);
         set_int(page, IDC_FAV_GAP, s.favourites_gap);
         menu_.show(std::max(menu_.selection(), 0));
         favourites_.show(std::max(favourites_.selection(), 0));
+        hidden_.show(std::max(hidden_.selection(), 0));
         ::InvalidateRect(find_control(page, IDC_LINE_SWATCH), nullptr, FALSE);
         updating_ = false;
         update_enabled();
@@ -477,7 +496,8 @@ private:
     const preferences_page_callback::ptr callback_;
     std::array<HWND, tab_count> tabs_{};
     MenuEditor menu_{m_hWnd};
-    FavouritesEditor favourites_{m_hWnd};
+    PathListEditor favourites_{m_hWnd, {IDC_FAV_LIST, IDC_FAV_REMOVE, IDC_FAV_UP, IDC_FAV_DOWN}};
+    PathListEditor hidden_{m_hWnd, {IDC_HIDDEN_LIST, IDC_HIDDEN_REMOVE}};
     bool initialised_{false};
     bool updating_{false};
     // A member: it hooks this dialog and its controls for the lifetime of both.

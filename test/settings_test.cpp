@@ -129,6 +129,9 @@ void test_settings_model() {
     b = a;
     b.sort.reverse = true;
     CHECK(diff(a, b) == change_relist);
+    b = a;
+    b.follow_playing = true;
+    CHECK(diff(a, b) == change_repaint);
 
     Settings wild;
     wild.line_thickness = 99;

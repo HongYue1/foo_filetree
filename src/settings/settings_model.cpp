@@ -180,6 +180,7 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         out |= change_remeasure;
     }
     if (a.mark_favourites != b.mark_favourites || a.mark_playing != b.mark_playing ||
+        a.follow_playing != b.follow_playing ||
         a.separate_favourites != b.separate_favourites ||
         a.watch_changes != b.watch_changes) {
         out |= change_repaint;

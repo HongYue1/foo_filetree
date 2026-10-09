@@ -559,9 +559,14 @@ void TreeView::request_listing(std::uint32_t node) {
 
 void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
                           fs::Listing& listing) noexcept {
-    std::erase_if(pending_,
-                  [node](const PendingListing& p) { return p.node == node && !p.check; });
+    bool again = false;
+    std::erase_if(pending_, [node, &again](const PendingListing& p) {
+        if (p.node != node || p.check) return false;
+        again = again || p.again;
+        return true;
+    });
     if (generation != generation_ || wnd_ == nullptr || node >= tree_.node_count()) return;
+
 
     model::RowSplice splice;
     if (listing.error != ERROR_SUCCESS) {
@@ -595,6 +600,13 @@ void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
         }
     }
     apply_restore_top();
+    if (again) {
+        // A change was reported while this listing ran: check once more now it has landed.
+        try {
+            request_check(node);
+        } catch (...) {
+        }
+    }
 }
 
 bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result) noexcept {

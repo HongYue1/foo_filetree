@@ -40,9 +40,13 @@ void TreeView::retry_failed(std::uint32_t node) noexcept {
 }
 
 void TreeView::request_check(std::uint32_t node) {
-    if (std::any_of(pending_.begin(), pending_.end(),
-                    [node](const PendingListing& p) { return p.node == node; })) {
-        return; // a listing or check is already on its way
+    const auto in_flight = std::find_if(pending_.begin(), pending_.end(),
+                                        [node](const PendingListing& p) { return p.node == node; });
+    if (in_flight != pending_.end()) {
+        // Already on its way, but it may have read the folder before this change (a folder
+        // deleted while watched stays listed until its handle closes): go again afterwards.
+        in_flight->again = true;
+        return;
     }
     if (options_.files == fs::FileMode::playable && options_.playable == nullptr) {
         refresh_options();
@@ -59,10 +63,21 @@ void TreeView::request_check(std::uint32_t node) {
 
 void TreeView::on_check(std::uint32_t node, std::uint64_t generation,
                         fs::Listing& listing) noexcept {
-    std::erase_if(pending_, [node](const PendingListing& p) { return p.node == node && p.check; });
+    bool again = false;
+    std::erase_if(pending_, [node, &again](const PendingListing& p) {
+        if (p.node != node || !p.check) return false;
+        again = again || p.again;
+        return true;
+    });
     if (generation != generation_ || wnd_ == nullptr || node >= tree_.node_count()) return;
     merge_listing(node, listing);
     apply_pending_select(node); // after rename/delete (reload_and_select)
+    if (again) {
+        try {
+            request_check(node);
+        } catch (...) {
+        }
+    }
 }
 
 void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept {

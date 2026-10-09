@@ -269,6 +269,9 @@ private:
         std::uint32_t node;
         fs::EnumerationService::Ticket ticket;
         bool check{false}; //!< a refresh re-check of a loaded folder (on_check), not a load
+        //! Another change was reported while this was in flight: its result may predate it, so
+        //! check once more when it lands.
+        bool again{false};
     };
     std::vector<PendingListing> pending_;
     std::uint64_t generation_{1};

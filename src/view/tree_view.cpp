@@ -271,7 +271,8 @@ void TreeView::remeasure() noexcept {
     metrics_.icon_width = 0;
     const wchar_t* face = icon_font_face();
     if (face != nullptr && (show_icons_ || mark_favourites_ || mark_playing_)) {
-        metrics_.icon = std::min<int>(scale(16, dpi), tm.tmHeight);
+        metrics_.icon = std::min<int>(scale(settings::current().icon_size, dpi),
+                                      metrics_.row_height);
         LOGFONTW icon{};
         icon.lfHeight = -metrics_.icon;
         icon.lfCharSet = DEFAULT_CHARSET;
@@ -279,12 +280,11 @@ void TreeView::remeasure() noexcept {
         wcsncpy_s(icon.lfFaceName, face, _TRUNCATE);
         icon_font_ = CreateFontIndirectW(&icon);
         // Marks after a name (star, play) are smaller: they decorate text, they are not icons.
-        icon.lfHeight = -std::max<int>(scale(10, dpi), 1);
+        icon.lfHeight = -std::max<int>(scale(settings::current().mark_size, dpi), 1);
         mark_font_ = CreateFontIndirectW(&icon);
         if (icon_font_ == nullptr) metrics_.icon = 0;
     }
     if (show_icons_ && icon_font_ != nullptr) metrics_.icon_width = metrics_.icon + scale(4, dpi);
-    metrics_.icon_raise = scale(settings::current().icon_raise, dpi);
     measure_marks(tm);
     metrics_.group_gap = scale(settings::current().favourites_gap, dpi);
 }
@@ -295,27 +295,28 @@ void TreeView::measure_marks(const TEXTMETRICW& text) noexcept {
     HDC dc = GetDC(wnd_);
     if (dc == nullptr) return;
     const HGDIOBJ old = SelectObject(dc, font_ != nullptr ? font_ : GetStockObject(DEFAULT_GUI_FONT));
-    int cap = text.tmAscent - text.tmInternalLeading;
-    OUTLINETEXTMETRICW otm{};
-    otm.otmSize = sizeof(otm);
-    if (GetOutlineTextMetricsW(dc, sizeof(otm), &otm) != 0 && otm.otmsCapEmHeight > 0) {
-        cap = static_cast<int>(otm.otmsCapEmHeight);
+    const MAT2 identity{{0, 1}, {0, 0}, {0, 0}, {0, 1}};
+    // The capitals' ink, measured on "H" (font tables' cap height is often missing or off).
+    int cap_top = text.tmAscent - text.tmInternalLeading; // above the baseline
+    int cap_bottom = 0;
+    if (GLYPHMETRICS h{}; GetGlyphOutlineW(dc, L'H', GGO_METRICS, &h, 0, nullptr, &identity) !=
+                          GDI_ERROR) {
+        cap_top = h.gmptGlyphOrigin.y;
+        cap_bottom = h.gmptGlyphOrigin.y - static_cast<int>(h.gmBlackBoxY);
     }
     const int baseline = (metrics_.row_height - text.tmHeight) / 2 + text.tmAscent;
-    const int target = baseline - cap / 2; // the capitals' centre, from the row top
-    const int raise = scale(settings::current().mark_raise, metrics_.dpi);
+    const int target = baseline - (cap_top + cap_bottom) / 2; // from the row top
     const auto top_for = [&](wchar_t ch, HFONT font) {
         SelectObject(dc, font);
         TEXTMETRICW tm{};
         GetTextMetricsW(dc, &tm);
         GLYPHMETRICS gm{};
-        const MAT2 identity{{0, 1}, {0, 0}, {0, 0}, {0, 1}};
         int ink_centre = tm.tmAscent / 2; // above the baseline; a guess if the glyph is missing
         if (GetGlyphOutlineW(dc, ch, GGO_METRICS, &gm, 0, nullptr, &identity) != GDI_ERROR) {
             ink_centre = gm.gmptGlyphOrigin.y - static_cast<int>(gm.gmBlackBoxY) / 2;
         }
         // The cell top that puts the ink centre on the target.
-        return target - tm.tmAscent + ink_centre - raise;
+        return target - tm.tmAscent + ink_centre;
     };
     const bool icons = icon_font_ != nullptr && mark_font_ != nullptr;
     HFONT text_font = font_ != nullptr ? font_ : static_cast<HFONT>(GetStockObject(DEFAULT_GUI_FONT));

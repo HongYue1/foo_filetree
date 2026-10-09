@@ -98,8 +98,8 @@ struct Settings {
     bool show_icons{false};     //!< folder / file / drive glyphs from the system icon font
     bool mark_favourites{true}; //!< a star after folders that are in the favourites
     bool mark_playing{true};    //!< a play mark on the playing file, or its folder if closed
-    int icon_raise{0};          //!< DIP the file / folder icons are drawn higher, 0-6
-    int mark_raise{0};          //!< DIP the star / play marks are drawn higher, 0-6
+    int icon_size{16};          //!< file / folder icon size in DIP, 12-24
+    int mark_size{10};          //!< star / play mark size in DIP, 8-16
     model::SortOptions sort{};
 
     // Filter

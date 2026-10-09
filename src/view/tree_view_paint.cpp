@@ -336,8 +336,7 @@ void TreeView::paint_icon(HDC dc, const model::Node& node, const RECT& rect, COL
         if (!extension.empty() && playable_->contains(extension)) icon = glyph::audio;
     }
     const int left = content_left(node.depth);
-    RECT box{left, rect.top - metrics_.icon_raise, left + metrics_.icon,
-             rect.bottom - metrics_.icon_raise};
+    RECT box{left, rect.top, left + metrics_.icon, rect.bottom};
     SelectObject(dc, icon_font_);
     SetTextColor(dc, colour);
     DrawTextW(dc, &icon, 1, &box, DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX);

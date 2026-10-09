@@ -463,8 +463,8 @@ private:
         s.line_opacity = get_int(page, IDC_LINE_OPACITY, 10, 100, s.line_opacity);
         s.line_colour = parse_hex(get_text(page, IDC_LINE_HEX), s.line_colour);
         s.row_padding = get_int(page, IDC_ROW_PADDING, 0, 12, s.row_padding);
-        s.icon_raise = get_int(page, IDC_ICON_RAISE, 0, 6, s.icon_raise);
-        s.mark_raise = get_int(page, IDC_MARK_RAISE, 0, 6, s.mark_raise);
+        s.icon_size = get_int(page, IDC_ICON_SIZE, 12, 24, s.icon_size);
+        s.mark_size = get_int(page, IDC_MARK_SIZE, 8, 16, s.mark_size);
         s.show_icons = get_check(page, IDC_SHOW_ICONS);
         s.mark_favourites = get_check(page, IDC_MARK_FAVOURITES);
         s.mark_playing = get_check(page, IDC_MARK_PLAYING);
@@ -520,8 +520,8 @@ private:
         set_int(page, IDC_LINE_OPACITY, s.line_opacity);
         set_text(page, IDC_LINE_HEX, format_hex(s.line_colour));
         set_int(page, IDC_ROW_PADDING, s.row_padding);
-        set_int(page, IDC_ICON_RAISE, s.icon_raise);
-        set_int(page, IDC_MARK_RAISE, s.mark_raise);
+        set_int(page, IDC_ICON_SIZE, s.icon_size);
+        set_int(page, IDC_MARK_SIZE, s.mark_size);
         set_check(page, IDC_SHOW_ICONS, s.show_icons);
         set_check(page, IDC_MARK_FAVOURITES, s.mark_favourites);
         set_check(page, IDC_MARK_PLAYING, s.mark_playing);

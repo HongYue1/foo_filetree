@@ -115,9 +115,8 @@ private:
         int icon{};         //!< icon glyph box (square); 0 without an icon font
         int icon_width{};   //!< icon column before the text, gap included; 0 with icons off
         int group_gap{};    //!< space between the favourites and the drives
-        int icon_raise{};   //!< px the icons are drawn above the row centre (setting)
         int star_top{};     //!< row-relative top of the star mark's cell: ink centred on the
-        int play_top{};     //!< text's capital letters, then raised by the setting
+        int play_top{};     //!< text's capital letters (measure_marks)
     };
 
     // tree_view.cpp

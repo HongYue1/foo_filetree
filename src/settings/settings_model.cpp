@@ -145,8 +145,8 @@ void Settings::sanitize() noexcept {
     line_colour &= 0xffffff;
     extensions = clamp_enum(extensions, Extensions::non_playable);
     row_padding = std::clamp(row_padding, 0, 12);
-    icon_raise = std::clamp(icon_raise, 0, 6);
-    mark_raise = std::clamp(mark_raise, 0, 6);
+    icon_size = std::clamp(icon_size, 12, 24);
+    mark_size = std::clamp(mark_size, 8, 16);
     favourites_gap = std::clamp(favourites_gap, 0, 24);
     sort.field = clamp_enum(sort.field, model::SortField::type);
     files = clamp_enum(files, fs::FileMode::none);
@@ -168,7 +168,7 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         out |= change_repaint;
     }
     if (a.row_padding != b.row_padding || a.show_icons != b.show_icons ||
-        a.icon_raise != b.icon_raise || a.mark_raise != b.mark_raise ||
+        a.icon_size != b.icon_size || a.mark_size != b.mark_size ||
         a.favourites_gap != b.favourites_gap) {
         out |= change_remeasure;
     }

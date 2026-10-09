@@ -202,7 +202,7 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     int mark_count = 0;
     if (mark_favourites_ && node.has(model::node_container) && is_favourite(index)) {
         marks[mark_count] = icon_font ? glyph::star : glyph::star_fallback;
-        mark_fonts[mark_count] = icon_font ? icon_font_ : font_;
+        mark_fonts[mark_count] = icon_font && mark_font_ != nullptr ? mark_font_ : font_;
         mark_colours[mark_count++] = selected ? text : icon_colour_;
     }
     // With icons, the playing file's icon is the triangle (paint_icon); a closed folder holding

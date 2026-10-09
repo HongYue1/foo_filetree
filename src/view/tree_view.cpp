@@ -278,7 +278,7 @@ void TreeView::remeasure() noexcept {
         icon.lfQuality = CLEARTYPE_QUALITY;
         wcsncpy_s(icon.lfFaceName, face, _TRUNCATE);
         icon_font_ = CreateFontIndirectW(&icon);
-        // The play mark after a name is smaller: it decorates text, it is not an icon.
+        // Marks after a name (star, play) are smaller: they decorate text, they are not icons.
         icon.lfHeight = -std::max<int>(scale(10, dpi), 1);
         mark_font_ = CreateFontIndirectW(&icon);
         if (icon_font_ == nullptr) metrics_.icon = 0;

@@ -34,6 +34,7 @@ constexpr GUID guid_favourites = {0x25bdcd87, 0x51a1, 0x4a89, {0xb5, 0x48, 0x5d,
 constexpr GUID guid_favourites_place = {0xa9cb41bf, 0x0efa, 0x401c, {0xa1, 0x85, 0xab, 0xd9, 0x9c, 0x3a, 0xf3, 0xde}};
 constexpr GUID guid_show_icons = {0xf9d0a057, 0x6a52, 0x4cc9, {0xaa, 0x4f, 0x8b, 0x40, 0x85, 0x9e, 0x2c, 0x2b}};
 constexpr GUID guid_mark_favourites = {0xe3e51223, 0x74ff, 0x4e48, {0xb7, 0x7d, 0x03, 0x47, 0x9f, 0x5b, 0xe5, 0xd7}};
+constexpr GUID guid_mark_playing = {0x27744fb4, 0x9bd4, 0x4490, {0xbc, 0x37, 0x8d, 0x2b, 0xfb, 0x0c, 0x89, 0xa8}};
 constexpr GUID guid_separate_favourites = {0x9615dedb, 0x4915, 0x47e6, {0x96, 0x7c, 0x15, 0x4b, 0x69, 0xa9, 0x76, 0x8f}};
 constexpr GUID guid_favourites_gap = {0xa28695a1, 0xdcf4, 0x413f, {0xae, 0x80, 0xa0, 0x06, 0x01, 0xe2, 0x19, 0x5d}};
 constexpr GUID guid_watch_changes = {0x5051725b, 0xdb03, 0x4e50, {0x91, 0x3c, 0x96, 0xf7, 0xad, 0x84, 0x6d, 0x14}};
@@ -70,6 +71,7 @@ cfg_int cfg_favourites_gap(guid_favourites_gap, defaults.favourites_gap);
 cfg_bool cfg_watch_changes(guid_watch_changes, defaults.watch_changes);
 cfg_bool cfg_show_icons(guid_show_icons, defaults.show_icons);
 cfg_bool cfg_mark_favourites(guid_mark_favourites, defaults.mark_favourites);
+cfg_bool cfg_mark_playing(guid_mark_playing, defaults.mark_playing);
 cfg_int cfg_filter_box(guid_filter_box, static_cast<int>(defaults.filter_box));
 cfg_int cfg_startup(guid_startup, static_cast<int>(defaults.startup));
 cfg_string cfg_startup_folder(guid_startup_folder, "");
@@ -124,6 +126,7 @@ Settings load() {
     s.separate_favourites = cfg_separate_favourites.get();
     s.favourites_gap = static_cast<int>(cfg_favourites_gap.get());
     s.mark_favourites = cfg_mark_favourites.get();
+    s.mark_playing = cfg_mark_playing.get();
     s.filter_box = as_enum<FilterBox>(cfg_filter_box.get());
     s.startup = as_enum<Startup>(cfg_startup.get());
     s.startup_folder = wide(cfg_startup_folder.get());
@@ -158,6 +161,7 @@ void save(const Settings& s) {
     cfg_separate_favourites.set(s.separate_favourites);
     cfg_favourites_gap.set(s.favourites_gap);
     cfg_mark_favourites.set(s.mark_favourites);
+    cfg_mark_playing.set(s.mark_playing);
     cfg_filter_box.set(static_cast<int>(s.filter_box));
     cfg_startup.set(static_cast<int>(s.startup));
     cfg_startup_folder.set(utf8(s.startup_folder));

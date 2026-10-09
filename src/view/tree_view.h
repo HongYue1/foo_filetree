@@ -30,11 +30,14 @@
 #include "../settings/panel_state.h"
 #include "../settings/settings_store.h"
 #include "drop_target.h"
+#include "now_playing.h"
 #include "theme.h"
 
 namespace filetree::view {
 
-class TreeView final : private settings::Listener, private DropSink {
+class TreeView final : private settings::Listener,
+                       private DropSink,
+                       private now_playing::Listener {
 public:
     TreeView();
     ~TreeView();
@@ -86,6 +89,12 @@ public:
     //! The font the rows are drawn in, at the window's DPI. Owned by the view.
     [[nodiscard]] HFONT font() const noexcept { return font_; }
     [[nodiscard]] int dpi() const noexcept { return metrics_.dpi; }
+
+    // Main-menu commands (main_menu.cpp) go to the panel that had the focus last.
+    enum class Command : std::uint8_t { show_playing, refresh, collapse_all, new_folder };
+    //! The last focused panel, else any; null when no panel exists.
+    [[nodiscard]] static TreeView* active() noexcept;
+    void run_command(Command command) noexcept;
 
     //! Window styles the hosts must create the window with (beyond WS_CHILD etc.).
     //! WS_CLIPCHILDREN keeps paint off the inline rename editor.
@@ -224,6 +233,14 @@ private:
     void copy_into(std::uint32_t folder, std::vector<std::wstring> paths, bool move,
                    DWORD clipboard_sequence) noexcept;
     void check_if_open(std::uint32_t folder) noexcept;
+
+    // Now playing marker (tree_view_playing.cpp).
+    void on_now_playing_changed() noexcept override;
+    //! Finds the rows to mark: the playing file if visible, else its deepest visible folder
+    //! (under every root that holds it). Cheap; after every row change.
+    void resolve_playing() noexcept;
+    //! 0: no mark, 1: holds the playing file, 2: is the playing file.
+    [[nodiscard]] int playing_mark(std::uint32_t index) const noexcept;
     void set_drop_row(std::ptrdiff_t row) noexcept;
     DWORD drag_over(IDataObject* data, DWORD keys, POINT point, DWORD allowed,
                     bool enter) noexcept override;
@@ -345,6 +362,12 @@ private:
         bool rename{false}; //!< start renaming the named item (New folder)
     };
     PendingSelect pending_select_;
+
+    // Now playing marker.
+    bool mark_playing_{true};
+    std::array<std::uint32_t, 4> playing_nodes_{};
+    std::size_t playing_count_{0};
+    bool playing_exact_{false}; //!< playing_nodes_ are the file itself (not a folder holding it)
 
     // Cut item, dimmed while it is what the clipboard holds.
     std::uint32_t cut_node_{model::no_node};

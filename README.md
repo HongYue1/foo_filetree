@@ -25,6 +25,10 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 - Drop files from Explorer onto a folder to copy them there, hold Shift to move. Hovering over a
   closed folder opens it; near the top or bottom edge the tree scrolls. Dragging out of the panel
   copies too, unless Shift is held.
+- The playing track gets a speaker mark after its name; while its folder is closed, the closed
+  folder holding it gets a dimmer one (Display tab: "Mark the playing track").
+- Main menu **View > Folder Tree**: Show now playing, Refresh, Collapse all, New folder. They act
+  on the panel focused last and can be given keyboard shortcuts in Preferences > Keyboard Shortcuts.
 - Type letters to jump to the next visible row whose name starts with them; press the same letter
   again to step through matches. A pause of one second starts a new search.
 

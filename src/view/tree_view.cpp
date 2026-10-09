@@ -21,6 +21,24 @@
 namespace filetree::view {
 namespace {
 
+// Live views for the main-menu commands, and the one focused last.
+std::vector<TreeView*> g_views;
+TreeView* g_active_view = nullptr;
+
+void register_view(TreeView* view) {
+    try {
+        g_views.push_back(view);
+    } catch (...) {
+    }
+}
+
+void unregister_view(TreeView* view) noexcept {
+    std::erase(g_views, view);
+    if (g_active_view == view) g_active_view = nullptr;
+}
+
+void set_active_view(TreeView* view) noexcept { g_active_view = view; }
+
 UINT window_dpi(HWND wnd) noexcept { return dpi::of_window(wnd); }
 int system_dpi() noexcept { return dpi::system(); }
 int scale(int dips, int dpi) noexcept { return MulDiv(dips, dpi, 96); }
@@ -28,6 +46,11 @@ int scale(int dips, int dpi) noexcept { return MulDiv(dips, dpi, 96); }
 } // namespace
 
 TreeView::TreeView() = default;
+
+TreeView* TreeView::active() noexcept {
+    if (g_active_view != nullptr) return g_active_view;
+    return g_views.empty() ? nullptr : g_views.front();
+}
 
 TreeView::~TreeView() { detach(); }
 
@@ -40,6 +63,8 @@ void TreeView::attach(HWND wnd) noexcept {
     remeasure();
     HRESULT drop_hr = S_OK;
     drop_target_ = DropTarget::attach(wnd, *this, drop_hr);
+    register_view(this);
+    now_playing::subscribe(this);
     if (drop_target_ == nullptr) {
         FB2K_console_formatter() << "Folder Tree: dropping onto the panel is unavailable "
                                     "(RegisterDragDrop "
@@ -64,6 +89,9 @@ void TreeView::detach() noexcept {
     pending_.clear();
     stop_watching();
     set_cut(model::no_node);
+    now_playing::unsubscribe(this);
+    unregister_view(this);
+    playing_count_ = 0;
     if (drop_target_ != nullptr) {
         drop_target_->detach();
         drop_target_ = nullptr;
@@ -124,6 +152,7 @@ void TreeView::populate_roots() {
     filter_hidden_selection_ = model::no_node;
     restore_top_node_ = model::no_node;
     if (tree_.filtered()) tree_.rebuild_rows();
+    resolve_playing();
     notify_selection();
 }
 
@@ -233,7 +262,7 @@ void TreeView::remeasure() noexcept {
     metrics_.icon = 0;
     metrics_.icon_width = 0;
     const wchar_t* face = icon_font_face();
-    if (face != nullptr && (show_icons_ || mark_favourites_)) {
+    if (face != nullptr && (show_icons_ || mark_favourites_ || mark_playing_)) {
         metrics_.icon = std::min<int>(scale(16, dpi), tm.tmHeight);
         LOGFONTW icon{};
         icon.lfHeight = -metrics_.icon;
@@ -468,6 +497,7 @@ void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
     if (splice.full) {
         apply_full_splice();
         follow_rename();
+        resolve_playing();
         return;
     }
     bool moved_to_parent = false;
@@ -502,6 +532,7 @@ void TreeView::apply_splice(const model::RowSplice& splice) noexcept {
         invalidate_from(splice.row > 0 ? splice.row - 1 : 0);
     }
     follow_rename(); // a listing landing elsewhere must not end a rename
+    resolve_playing();
 
     // Like Explorer: when the expanded folder is the selected one, scroll so its new children
     // show, without pushing the folder itself off the top.
@@ -690,6 +721,7 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
     case WM_SETFOCUS:
     case WM_KILLFOCUS:
         focused_ = msg == WM_SETFOCUS;
+        if (focused_) set_active_view(this);
         if (selected_row_ >= 0) invalidate_row(static_cast<std::size_t>(selected_row_));
         return true;
     case WM_TIMER:

@@ -150,6 +150,7 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
         update_scrollbar();
         InvalidateRect(wnd_, nullptr, FALSE);
         follow_rename(); // a change in the folder (often a watch notification) keeps the editor
+        resolve_playing();
         const std::uint32_t selected_now =
             selected_row_ >= 0 ? tree_.node_at_row(static_cast<std::size_t>(selected_row_))
                                : model::no_node;

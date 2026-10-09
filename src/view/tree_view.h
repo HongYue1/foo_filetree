@@ -329,6 +329,9 @@ private:
     std::ptrdiff_t selected_row_{-1};
     std::ptrdiff_t hover_row_{-1};
     bool focused_{false};
+    //! The last selection change came from the keyboard: show the focus frame (as Windows hides
+    //! focus rectangles until the keyboard is used).
+    bool keyboard_cue_{false};
     bool tracking_mouse_{false};
     int wheel_remainder_{};
     std::wstring typeahead_;  //!< characters typed within typeahead_reset_ms of each other
@@ -422,6 +425,8 @@ private:
         std::wstring folder_path;
         std::wstring name;     //!< rename: current name; recycle: the deleted item's name
         std::wstring old_name; //!< rename: the name to go back to
+        //! recycle: every deleted item's full path (one delete of several items is one undo)
+        std::vector<std::wstring> paths;
     };
     UndoRecord undo_;
 

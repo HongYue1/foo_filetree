@@ -189,14 +189,19 @@ bool pick_playlist_file(HWND owner, const std::wstring& folder, const std::wstri
     return true;
 }
 
-void restore_recycled(std::wstring path, ShellDone done) noexcept {
+void restore_recycled(std::vector<std::wstring> paths, ShellDone done) noexcept {
     try {
-        fs::shell_worker().submit([path = std::move(path), done = std::move(done)]() mutable {
+        fs::shell_worker().submit([paths = std::move(paths), done = std::move(done)]() mutable {
             ShellResult result;
-            try {
-                result.succeeded = restore_from_recycle_bin(path);
-                result.ran = result.succeeded;
-            } catch (...) {
+            result.succeeded = !paths.empty();
+            for (const std::wstring& path : paths) {
+                bool restored = false;
+                try {
+                    restored = restore_from_recycle_bin(path);
+                } catch (...) {
+                }
+                result.ran |= restored;
+                result.succeeded &= restored;
             }
             finish(done, result);
         });

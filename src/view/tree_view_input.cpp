@@ -60,6 +60,7 @@ bool TreeView::on_key(WPARAM key) noexcept {
     case VK_END: move_to(rows - 1, shift, ctrl); return true;
     case VK_SPACE: // Ctrl+Space toggles the focus row; plain Space is type-ahead (on_char)
         if (!ctrl || alt) return false;
+        keyboard_cue_ = true;
         toggle_row(current);
         return true;
     case 'A':
@@ -193,6 +194,10 @@ bool TreeView::on_char(wchar_t ch, DWORD time) noexcept {
 
 void TreeView::on_button_down(int x, int y, bool double_click) noexcept {
     if (wnd_ != nullptr && GetFocus() != wnd_) SetFocus(wnd_);
+    if (keyboard_cue_) { // the mouse took over: no focus frame
+        keyboard_cue_ = false;
+        if (selected_row_ >= 0) invalidate_row(static_cast<std::size_t>(selected_row_));
+    }
     const std::ptrdiff_t row = row_at(y);
     if (row < 0) return;
     const std::uint32_t node = tree_.node_at_row(static_cast<std::size_t>(row));

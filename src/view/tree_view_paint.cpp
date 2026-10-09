@@ -159,11 +159,13 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         if (is_cut(index)) text = dim_text_; // cut, as Explorer ghosts it
     }
     fill(dc, rect, background);
-    // The focus row of a multi-selection (or an unselected focus row after Ctrl+Space) gets a
-    // frame, so the keyboard position stays visible.
-    if (focus && focused_ && (!selected || tree_.selection_hint() > 1)) {
-        SetDCBrushColor(dc, selected ? colours_.selection_text : colours_.selection_background);
-        FrameRect(dc, &rect, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+    // While the keyboard drives a multi-selection (or after Ctrl+Space unselected the focus
+    // row), the focus row gets a soft inset frame so the keyboard position stays visible.
+    if (focus && focused_ && keyboard_cue_ && (!selected || tree_.selection_hint() > 1)) {
+        SetDCBrushColor(dc, selected ? blend(background, text, 0.45)
+                                     : blend(background, colours_.text, 0.35));
+        RECT frame{rect.left + 1, rect.top + 1, rect.right - 1, rect.bottom - 1};
+        FrameRect(dc, &frame, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
     }
 
     const bool expandable = node.has(model::node_container) &&

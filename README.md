@@ -24,7 +24,7 @@ A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 | Ctrl+C / Ctrl+X / Ctrl+V | Copy / cut the selected items / paste files into the focused folder (as in Explorer) |
 | Ctrl+Shift+C | Copy the full paths (one per line) |
 | Alt+Enter | Properties (the Explorer properties dialog) |
-| Ctrl+Z | Undo the last rename or delete |
+| Ctrl+Z | Undo the last rename or delete (a delete of several items is one undo) |
 | Right click, Apps key, Shift+F10 | Context menu |
 
 - With several items selected, Enter, Play, the playlist commands, Add to playback queue, Save as

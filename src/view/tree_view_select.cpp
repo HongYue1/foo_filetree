@@ -78,6 +78,7 @@ void TreeView::extend_to(std::size_t row, bool add) noexcept {
 }
 
 void TreeView::move_to(std::size_t row, bool shift, bool ctrl) noexcept {
+    keyboard_cue_ = true;
     if (shift) {
         extend_to(row, ctrl);
     } else if (ctrl) {

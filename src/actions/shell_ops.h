@@ -49,6 +49,7 @@ bool pick_playlist_file(HWND owner, const std::wstring& folder, const std::wstri
 
 //! Puts back the most recently recycled item that was deleted from `path` (Undo delete).
 //! See recycle_bin.h.
-void restore_recycled(std::wstring path, ShellDone done) noexcept;
+//! Several paths: each is restored; succeeded only if all were, ran if any was.
+void restore_recycled(std::vector<std::wstring> paths, ShellDone done) noexcept;
 
 } // namespace filetree::actions

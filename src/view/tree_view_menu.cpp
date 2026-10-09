@@ -198,8 +198,10 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             }
             case MenuItem::undo: {
                 const bool rename = undo_.kind == UndoRecord::Kind::rename;
-                std::wstring label = rename ? L"Undo rename of \"" + undo_.old_name + L"\""
-                                            : L"Undo delete of \"" + undo_.name + L"\"";
+                std::wstring label =
+                    rename                   ? L"Undo rename of \"" + undo_.old_name + L"\""
+                    : undo_.paths.size() > 1 ? L"Undo delete of " + std::to_wstring(undo_.paths.size()) + L" items"
+                                             : L"Undo delete of \"" + undo_.name + L"\"";
                 label += L"\tCtrl+Z";
                 AppendMenuW(menu, MF_STRING, id_undo, label.c_str());
                 break;
@@ -393,17 +395,30 @@ void TreeView::undo() noexcept {
                     if (result.ran) view.reload_and_select(folder, record.old_name, record.name);
                 }));
         } else {
+            std::vector<std::wstring> paths = record.paths;
+            if (paths.empty()) paths.push_back(path);
+            const std::size_t count = paths.size();
             actions::restore_recycled(
-                path, guard([folder, record, path](TreeView& view, actions::ShellResult result) {
-                    if (result.succeeded) {
+                std::move(paths),
+                guard([folder, record, path, count](TreeView& view, actions::ShellResult result) {
+                    if (result.ran) {
+                        // Several items may come from other folders too: re-check every open one.
+                        if (count > 1) view.refresh_open_folders();
                         view.reload_and_select(folder, record.name, {});
-                        return;
                     }
+                    if (result.succeeded) return;
                     MessageBeep(MB_ICONWARNING);
-                    FB2K_console_formatter()
-                        << "Folder Tree: could not restore "
-                        << pfc::stringcvt::string_utf8_from_wide(path.c_str()).get_ptr()
-                        << " from the Recycle Bin (gone, or something exists there now).";
+                    if (count > 1) {
+                        FB2K_console_formatter()
+                            << "Folder Tree: some of the " << count
+                            << " deleted items could not be restored from the Recycle Bin "
+                               "(gone, or something exists there now).";
+                    } else {
+                        FB2K_console_formatter()
+                            << "Folder Tree: could not restore "
+                            << pfc::stringcvt::string_utf8_from_wide(path.c_str()).get_ptr()
+                            << " from the Recycle Bin (gone, or something exists there now).";
+                    }
                 }));
         }
     } catch (...) {

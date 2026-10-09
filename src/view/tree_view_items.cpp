@@ -262,20 +262,27 @@ void TreeView::delete_node(std::uint32_t node, bool permanent) noexcept {
         }
         std::vector<std::wstring> paths;
         paths_of(nodes, paths);
-        // Undo covers one recycled item (the Recycle Bin lookup is by original path).
+        // Undo restores every recycled item (the Recycle Bin lookup is by original path) and
+        // selects the focus item again.
         std::wstring name = nodes.size() == 1 ? std::wstring(tree_.node(node).name_view()) : L"";
+        std::wstring focus_name(tree_.node(node).name_view());
+        std::vector<std::wstring> undo_paths = paths;
         actions::delete_paths(
             std::move(paths), permanent, wnd_,
             guard([parent, others = std::move(others), next = std::move(next),
-                   name = std::move(name), permanent](TreeView& view, actions::ShellResult result) {
+                   name = std::move(name), focus_name = std::move(focus_name),
+                   undo_paths = std::move(undo_paths),
+                   permanent](TreeView& view, actions::ShellResult result) {
                 // If the delete was cancelled the items are still there: keep the selection.
                 if (!result.ran) return;
-                if (result.succeeded && !permanent && !name.empty()) {
+                // Cancelled part-way: some items went; undo restores those (the rest are skipped).
+                if (!permanent) {
                     UndoRecord record;
                     record.kind = UndoRecord::Kind::recycle;
                     record.folder = parent;
                     view.tree_.build_path(parent, record.folder_path);
-                    record.name = name;
+                    record.name = focus_name;
+                    record.paths = undo_paths;
                     view.undo_ = std::move(record);
                 }
                 for (const std::uint32_t folder : others) view.check_if_open(folder);

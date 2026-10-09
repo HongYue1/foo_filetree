@@ -18,8 +18,23 @@ void TreeView::refresh_options() noexcept {
     options_.rules = settings::filter_rules();
     lines_ = s.lines;
     extensions_ = s.extensions;
+    show_icons_ = s.show_icons;
+    mark_favourites_ = s.mark_favourites;
     try {
-        if (s.files == fs::FileMode::playable || s.extensions == settings::Extensions::non_playable) {
+        favourite_paths_.clear();
+        favourite_leaves_.clear();
+        for (std::wstring path : s.favourites) {
+            while (path.size() > 1 && path.back() == L'\\') path.pop_back();
+            CharUpperBuffW(path.data(), static_cast<DWORD>(path.size()));
+            const std::size_t slash = path.find_last_of(L'\\');
+            favourite_leaves_.insert(slash == std::wstring::npos ? path : path.substr(slash + 1));
+            favourite_paths_.insert(std::move(path));
+        }
+    } catch (...) {
+    }
+    try {
+        if (s.files == fs::FileMode::playable || s.extensions == settings::Extensions::non_playable ||
+            s.show_icons) {
             playable_ = fs::playable_extensions();
         }
     } catch (...) {

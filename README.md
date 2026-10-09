@@ -67,5 +67,7 @@ foobar2000 layout). General > On startup chooses between restoring that, startin
 folders closed, or opening a fixed folder.
 
 Favourites: right-click a folder > Add to favourites and it becomes a root (shown by its name)
-in every panel, before or after the drives. Manage the list on the Favourites tab.
+in every panel, before or after the drives. Manage the list on the Favourites tab. Folders that are
+favourites get a star (Display > Star favourite folders). Display > Show icons adds folder, file
+and drive icons drawn from the Windows icon font, in the theme's colours.
 

@@ -152,7 +152,8 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         a.line_opacity != b.line_opacity || a.extensions != b.extensions) {
         out |= change_repaint;
     }
-    if (a.row_padding != b.row_padding) out |= change_remeasure;
+    if (a.row_padding != b.row_padding || a.show_icons != b.show_icons) out |= change_remeasure;
+    if (a.mark_favourites != b.mark_favourites) out |= change_repaint;
     if (a.show_address_bar != b.show_address_bar || a.filter_box != b.filter_box) {
         out |= change_layout;
     }

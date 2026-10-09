@@ -99,6 +99,8 @@ private:
         int text_gap{4};    //!< between the expander column and the text
         int text_ascent{};
         int line_width{1};  //!< tree line thickness in pixels
+        int icon{};         //!< icon glyph box (square); 0 without an icon font
+        int icon_width{};   //!< icon column before the text, gap included; 0 with icons off
     };
 
     // tree_view.cpp
@@ -127,6 +129,11 @@ private:
     [[nodiscard]] std::ptrdiff_t row_at(int y) const noexcept;
     [[nodiscard]] int expander_left(std::uint16_t depth) const noexcept;
     [[nodiscard]] int text_left(std::uint16_t depth) const noexcept;
+    //! Where the icon column starts (the text when icons are off).
+    [[nodiscard]] int content_left(std::uint16_t depth) const noexcept;
+    //! In the favourites list (a favourite root, or the same folder elsewhere in the tree).
+    [[nodiscard]] bool is_favourite(std::uint32_t index) noexcept;
+    void paint_icon(HDC dc, const model::Node& node, const RECT& rect, COLORREF colour) noexcept;
 
     void select_row(std::size_t row) noexcept;
     void toggle(std::uint32_t node) noexcept;
@@ -215,6 +222,7 @@ private:
     LOGFONTW base_font_{};
     bool has_base_font_{false};
     HFONT font_{};
+    HFONT icon_font_{}; //!< icons and the favourite star; null without an icon font
     Metrics metrics_{};
 
     // Back buffer: one DIB, grown on WM_SIZE, reused by every paint.
@@ -253,6 +261,13 @@ private:
     // Display options from the settings (refresh_options).
     settings::TreeLines lines_{settings::TreeLines::none};
     settings::Extensions extensions_{settings::Extensions::always};
+    bool show_icons_{false};
+    bool mark_favourites_{false};
+    COLORREF icon_colour_{};
+    // Favourites as upper-cased full paths, and their last components for a cheap first test.
+    std::unordered_set<std::wstring> favourite_paths_;
+    std::unordered_set<std::wstring> favourite_leaves_;
+    std::wstring favourite_scratch_; //!< reused by is_favourite
     std::shared_ptr<const model::ExtensionSet> playable_; //!< for Extensions::non_playable
 
     // Restore after relist_all(): upper-cased paths still to expand, and the path to select.

@@ -149,6 +149,7 @@
     <ClCompile Include="src\actions\drag_out.cpp" />
     <ClCompile Include="src\view\tree_view_nav.cpp" />
     <ClCompile Include="src\view\tree_view_refresh.cpp" />
+    <ClCompile Include="src\view\icon_font.cpp" />
     <ClCompile Include="src\view\address_bar.cpp" />
     <ClCompile Include="src\view\panel.cpp" />
     <ClCompile Include="src\view\filter_box.cpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="src\fs\fb2k_glue.h" />
     <ClInclude Include="src\view\theme.h" />
     <ClInclude Include="src\view\tree_view.h" />
+    <ClInclude Include="src\view\icon_font.h" />
     <ClInclude Include="src\hosts\host_shared.h" />
     <ClInclude Include="src\actions\action.h" />
     <ClInclude Include="src\actions\action_settings.h" />

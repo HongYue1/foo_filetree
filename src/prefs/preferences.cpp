@@ -462,6 +462,8 @@ private:
         s.line_opacity = get_int(page, IDC_LINE_OPACITY, 10, 100, s.line_opacity);
         s.line_colour = parse_hex(get_text(page, IDC_LINE_HEX), s.line_colour);
         s.row_padding = get_int(page, IDC_ROW_PADDING, 0, 12, s.row_padding);
+        s.show_icons = get_check(page, IDC_SHOW_ICONS);
+        s.mark_favourites = get_check(page, IDC_MARK_FAVOURITES);
         s.extensions = static_cast<settings::Extensions>(get_combo(page, IDC_EXTENSIONS, 0));
         s.sort.field = static_cast<model::SortField>(get_combo(page, IDC_SORT_FIELD, 0));
         s.sort.folders_first = get_check(page, IDC_FOLDERS_FIRST);
@@ -511,6 +513,8 @@ private:
         set_int(page, IDC_LINE_OPACITY, s.line_opacity);
         set_text(page, IDC_LINE_HEX, format_hex(s.line_colour));
         set_int(page, IDC_ROW_PADDING, s.row_padding);
+        set_check(page, IDC_SHOW_ICONS, s.show_icons);
+        set_check(page, IDC_MARK_FAVOURITES, s.mark_favourites);
         set_combo(page, IDC_EXTENSIONS, static_cast<int>(s.extensions));
         set_combo(page, IDC_SORT_FIELD, static_cast<int>(s.sort.field));
         set_check(page, IDC_FOLDERS_FIRST, s.sort.folders_first);

@@ -12,6 +12,7 @@
 #include "../fs/drives.h"
 #include "../fs/fb2k_glue.h"
 #include "../platform/dpi.h"
+#include "icon_font.h"
 
 #ifndef WM_DPICHANGED_AFTERPARENT
 #define WM_DPICHANGED_AFTERPARENT 0x02E3
@@ -57,6 +58,10 @@ void TreeView::detach() noexcept {
     ++generation_;
     alive_.reset();
     release_buffer();
+    if (icon_font_ != nullptr) {
+        DeleteObject(icon_font_);
+        icon_font_ = nullptr;
+    }
     if (font_ != nullptr) {
         DeleteObject(font_);
         font_ = nullptr;
@@ -147,6 +152,7 @@ void TreeView::set_colours(const ViewColours& colours) noexcept {
                               colours.dark ? 0.30 : 0.18);
     dim_text_ = blend(colours.text, colours.background, 0.45);
     expander_colour_ = blend(colours.text, colours.background, 0.35);
+    icon_colour_ = blend(colours.text, colours.background, 0.2);
     const settings::Settings& s = settings::current();
     line_colour_ = s.line_custom_colour
                        ? s.line_colour
@@ -193,6 +199,26 @@ void TreeView::remeasure() noexcept {
     metrics_.expander = std::max(scale(8, dpi) | 1, 5); // odd, so the glyph has a centre pixel
     metrics_.text_gap = scale(2, dpi);
     metrics_.text_ascent = tm.tmAscent;
+
+    // Icon glyphs: 16 px at 100% (Explorer's small icons), never taller than the text.
+    if (icon_font_ != nullptr) {
+        DeleteObject(icon_font_);
+        icon_font_ = nullptr;
+    }
+    metrics_.icon = 0;
+    metrics_.icon_width = 0;
+    const wchar_t* face = icon_font_face();
+    if (face != nullptr && (show_icons_ || mark_favourites_)) {
+        metrics_.icon = std::min<int>(scale(16, dpi), tm.tmHeight);
+        LOGFONTW icon{};
+        icon.lfHeight = -metrics_.icon;
+        icon.lfCharSet = DEFAULT_CHARSET;
+        icon.lfQuality = CLEARTYPE_QUALITY;
+        wcsncpy_s(icon.lfFaceName, face, _TRUNCATE);
+        icon_font_ = CreateFontIndirectW(&icon);
+        if (icon_font_ == nullptr) metrics_.icon = 0;
+    }
+    if (show_icons_ && icon_font_ != nullptr) metrics_.icon_width = metrics_.icon + scale(4, dpi);
 }
 
 // --- Geometry -------------------------------------------------------------------------------
@@ -211,8 +237,12 @@ int TreeView::expander_left(std::uint16_t depth) const noexcept {
     return scale(4, metrics_.dpi) + depth * metrics_.indent;
 }
 
-int TreeView::text_left(std::uint16_t depth) const noexcept {
+int TreeView::content_left(std::uint16_t depth) const noexcept {
     return expander_left(depth) + metrics_.indent + metrics_.text_gap;
+}
+
+int TreeView::text_left(std::uint16_t depth) const noexcept {
+    return content_left(depth) + metrics_.icon_width;
 }
 
 std::ptrdiff_t TreeView::row_at(int y) const noexcept {

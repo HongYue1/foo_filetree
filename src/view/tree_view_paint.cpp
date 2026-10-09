@@ -4,6 +4,8 @@
 
 #include "tree_view.h"
 
+#include "icon_font.h"
+
 #include <algorithm>
 
 namespace filetree::view {
@@ -141,6 +143,8 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
         draw_expander(dc, cx, cy, metrics_.expander, open, colour);
     }
 
+    if (metrics_.icon_width > 0) paint_icon(dc, node, rect, selected ? text : icon_colour_);
+
     std::wstring_view name = model::display_name(node);
     if (extensions_ != settings::Extensions::always && !node.has(model::node_container)) {
         const std::wstring_view extension = model::extension_of(name);
@@ -154,6 +158,32 @@ void TreeView::paint_row(HDC dc, std::size_t row, const RECT& rect) noexcept {
     if (text_rect.left >= text_rect.right) return;
     SetTextColor(dc, text);
     constexpr UINT format = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_END_ELLIPSIS;
+
+    // Favourite star after the name; a long name gives up room for it.
+    if (mark_favourites_ && node.has(model::node_container) && is_favourite(index)) {
+        const bool icon_font = icon_font_ != nullptr;
+        const wchar_t star = icon_font ? glyph::star : glyph::star_fallback;
+        const int gap = MulDiv(4, metrics_.dpi, 96);
+        SIZE extent{};
+        GetTextExtentPoint32W(dc, name.data(), static_cast<int>(name.size()), &extent);
+        if (icon_font) SelectObject(dc, icon_font_);
+        SIZE star_size{};
+        GetTextExtentPoint32W(dc, &star, 1, &star_size);
+        if (icon_font) SelectObject(dc, font_);
+        const int star_left = std::min<int>(text_rect.left + extent.cx + gap,
+                                            text_rect.right - star_size.cx);
+        RECT name_rect = text_rect;
+        name_rect.right = std::max<int>(star_left - gap, name_rect.left);
+        DrawTextW(dc, name.data(), static_cast<int>(name.size()), &name_rect, format);
+        if (star_left > text_rect.left) {
+            RECT star_rect{star_left, rect.top, text_rect.right, rect.bottom};
+            SetTextColor(dc, selected ? text : icon_colour_);
+            if (icon_font) SelectObject(dc, icon_font_);
+            DrawTextW(dc, &star, 1, &star_rect, DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
+            if (icon_font) SelectObject(dc, font_);
+        }
+        return;
+    }
     DrawTextW(dc, name.data(), static_cast<int>(name.size()), &text_rect, format);
 
     if (node.has(model::node_load_failed)) {
@@ -205,7 +235,7 @@ void TreeView::paint_lines(HDC dc, std::uint32_t index, const RECT& rect, bool e
         const int x = column(static_cast<std::uint16_t>(node.depth - 1));
         bar(x, rect.top, x + w, has_next_sibling(index) ? rect.bottom : mid + w);
         const int end = expandable ? column(node.depth) + half - glyph_half
-                                   : text_left(node.depth) - metrics_.text_gap;
+                                   : content_left(node.depth) - metrics_.text_gap;
         bar(x, mid, end, mid + w);
         // Ancestors that still have siblings below continue their line through this row.
         std::uint32_t walk = node.parent;
@@ -221,6 +251,49 @@ void TreeView::paint_lines(HDC dc, std::uint32_t index, const RECT& rect, bool e
     if (open_with_children && node.child_count > 0) {
         const int x = column(node.depth);
         bar(x, mid + half + glyph_half, x + w, rect.bottom);
+    }
+}
+
+void TreeView::paint_icon(HDC dc, const model::Node& node, const RECT& rect,
+                          COLORREF colour) noexcept {
+    wchar_t icon = glyph::document;
+    if (node.has(model::node_root) && !node.has(model::node_favourite)) {
+        icon = glyph::drive;
+    } else if (node.has(model::node_container)) {
+        const bool open = node.has(model::node_expanded) && node.has(model::node_loaded) &&
+                          node.child_count > 0;
+        icon = open ? glyph::folder_open : glyph::folder;
+    } else if (playable_ != nullptr) {
+        const std::wstring_view extension = model::extension_of(node.name_view());
+        if (!extension.empty() && playable_->contains(extension)) icon = glyph::audio;
+    }
+    const int left = content_left(node.depth);
+    RECT box{left, rect.top, left + metrics_.icon, rect.bottom};
+    SelectObject(dc, icon_font_);
+    SetTextColor(dc, colour);
+    DrawTextW(dc, &icon, 1, &box, DT_SINGLELINE | DT_VCENTER | DT_CENTER | DT_NOPREFIX);
+    SelectObject(dc, font_);
+}
+
+bool TreeView::is_favourite(std::uint32_t index) noexcept {
+    const model::Node& node = tree_.node(index);
+    if (node.has(model::node_favourite)) return true;
+    if (favourite_paths_.empty()) return false;
+    try {
+        // The last component first: building the full path is only needed on a name match.
+        std::wstring_view name = node.name_view();
+        while (name.size() > 1 && name.back() == L'\\') name.remove_suffix(1);
+        favourite_scratch_.assign(name);
+        CharUpperBuffW(favourite_scratch_.data(), static_cast<DWORD>(favourite_scratch_.size()));
+        if (favourite_leaves_.find(favourite_scratch_) == favourite_leaves_.end()) return false;
+        tree_.build_path(index, favourite_scratch_);
+        while (favourite_scratch_.size() > 1 && favourite_scratch_.back() == L'\\') {
+            favourite_scratch_.pop_back();
+        }
+        CharUpperBuffW(favourite_scratch_.data(), static_cast<DWORD>(favourite_scratch_.size()));
+        return favourite_paths_.find(favourite_scratch_) != favourite_paths_.end();
+    } catch (...) {
+        return false;
     }
 }
 

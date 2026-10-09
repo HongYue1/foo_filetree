@@ -87,6 +87,8 @@ struct Settings {
     int line_opacity{35};   //!< percent of the text colour over the background, 10-100
     Extensions extensions{Extensions::always};
     int row_padding{3};     //!< DIP above and below the text, 0-12
+    bool show_icons{false};     //!< folder / file / drive glyphs from the system icon font
+    bool mark_favourites{true}; //!< a star after folders that are in the favourites
     model::SortOptions sort{};
 
     // Filter

@@ -2,6 +2,13 @@
 
 A fast folder tree panel for foobar2000 v2. Works in Default UI and Columns UI.
 
+## Install
+
+Preferences > Components > Install..., pick `foo_filetree.fb2k-component`, restart foobar2000.
+The package holds a 32-bit and a 64-bit DLL; foobar2000 for ARM uses the 64-bit one. Then add
+the panel: Default UI layout editing > Utility > Folder Tree, or Columns UI Layout > Panels >
+Folder Tree.
+
 ## Mouse and keys
 
 | Input | Action |
@@ -90,8 +97,29 @@ Each panel remembers its own open folders, selection and scroll position (stored
 foobar2000 layout). General > On startup chooses between restoring that, starting with all
 folders closed, or opening a fixed folder.
 
+The View tab has the tooltips (off, full path, or only cut-off names shown in place), the hover
+highlight, shading every other row and the status bar. The status bar shows how many items are
+selected with their size, or what the focused folder holds (folders, files, size of the files);
+rest the mouse on it for the panel's counters (rows, nodes, memory, watched folders, listings in
+flight).
+
 Favourites: right-click a folder > Add to favourites and it becomes a root (shown by its name)
 in every panel, before or after the drives. Manage the list on the Favourites tab. Folders that are
 favourites get a star (Display > Star favourite folders). Display > Show icons adds folder, file
 and drive icons drawn from the Windows icon font, in the theme's colours.
 
+
+## Accessibility
+
+The tree answers screen readers through Microsoft Active Accessibility: it is an outline whose
+items have their name, level, selected / expanded state and position, and focus and selection
+changes are announced. Narrator reaches it through Windows' UI Automation bridge; NVDA and JAWS
+read it directly. The address bar and filter box are standard edit controls.
+
+## Building
+
+Visual Studio 2026 with the C++ desktop workload and ATL, WTL 10 next to the project
+(`..\wtl`), the foobar2000 SDK 2026-09-17 with the Columns UI SDK in `..\SDK-2026-09-17`.
+`build.bat [Release|Debug] [x64|Win32]` builds; `test\build_tests.bat` runs the offline tests;
+`package.bat` builds both platforms into `dist\foo_filetree.fb2k-component` (PDBs in
+`dist\symbols`).

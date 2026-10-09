@@ -45,8 +45,8 @@
     <!-- The SDK libs expose the /MT flavour as a separate configuration. build.bat builds them. -->
     <SdkLibConfiguration Condition="'$(Configuration)'=='Release'">Release-Static</SdkLibConfiguration>
     <SdkLibConfiguration Condition="'$(Configuration)'=='Debug'">Debug</SdkLibConfiguration>
-    <!-- The SDK projects have no OutDir override for x64, so output lands in $(Platform)\$(Configuration).
-         The Win32 flavour is unverified and is checked at M8. -->
+    <!-- The SDK projects have no OutDir override for x64, so output lands in $(Platform)\$(Configuration);
+         Win32 output lands in $(Configuration) (verified at M8d). -->
     <SdkLibSubDir Condition="'$(Platform)'=='x64'">x64\$(SdkLibConfiguration)</SdkLibSubDir>
     <SdkLibSubDir Condition="'$(Platform)'=='Win32'">$(SdkLibConfiguration)</SdkLibSubDir>
     <!-- The Columns UI SDK project has no Release-Static configuration: our copy sets

@@ -48,7 +48,7 @@ public:
         return done == count ? S_OK : S_FALSE;
     }
     HRESULT STDMETHODCALLTYPE Skip(ULONG count) noexcept override {
-        at_ = std::min(ids_.size(), at_ + count);
+        at_ = std::min<std::size_t>(ids_.size(), at_ + count);
         return at_ < ids_.size() ? S_OK : S_FALSE;
     }
     HRESULT STDMETHODCALLTYPE Reset() noexcept override {

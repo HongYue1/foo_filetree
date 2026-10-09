@@ -14,6 +14,7 @@
 #include "../settings/settings_store.h"
 #include "address_bar.h"
 #include "filter_box.h"
+#include "status_bar.h"
 #include "theme.h"
 #include "tree_view.h"
 
@@ -71,12 +72,18 @@ private:
     void place_filter() noexcept;
     void open_filter() noexcept;
     void close_floating_filter() noexcept;
+    //! After every tree paint: the status bar follows the selection and listings.
+    void update_status() noexcept;
 
     HWND host_{};
     HWND tree_wnd_{};
     TreeView tree_;
     AddressBar address_;
     FilterBox filter_;
+    StatusBar status_;
+    bool show_status_{false};
+    model::Summary status_summary_{}; //!< what status_ shows, to skip unchanged paints
+    bool status_valid_{false};
     HostHooks hooks_;
     bool show_address_{true};
     settings::FilterBox filter_mode_{settings::FilterBox::bar};

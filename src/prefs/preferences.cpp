@@ -379,6 +379,7 @@ private:
         s.tooltips = static_cast<settings::Tooltips>(get_combo(page, IDC_TOOLTIPS, 1));
         s.hover_highlight = get_check(page, IDC_HOVER_HIGHLIGHT);
         s.zebra = get_check(page, IDC_ZEBRA);
+        s.show_status_bar = get_check(page, IDC_SHOW_STATUS_BAR);
 
         s.files = static_cast<fs::FileMode>(get_combo(page, IDC_FILES, 1));
         s.show_hidden = get_check(page, IDC_SHOW_HIDDEN);
@@ -440,6 +441,7 @@ private:
         set_combo(page, IDC_TOOLTIPS, static_cast<int>(s.tooltips));
         set_check(page, IDC_HOVER_HIGHLIGHT, s.hover_highlight);
         set_check(page, IDC_ZEBRA, s.zebra);
+        set_check(page, IDC_SHOW_STATUS_BAR, s.show_status_bar);
 
         set_combo(page, IDC_FILES, static_cast<int>(s.files));
         set_check(page, IDC_SHOW_HIDDEN, s.show_hidden);

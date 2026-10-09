@@ -137,3 +137,11 @@ Steps:
 - [x] tree_view.cpp split (was ~800 lines): layout/scrolling moved to view/tree_view_layout.cpp; every source file is now under 600 lines.
 - [x] M7d user test: Selecting all OK. Fixes (built, awaiting retest): focus frame was a hard dark line: now a soft inset frame (blend), shown only while the keyboard drives the selection (keyboard_cue_, cleared by a mouse press), as Windows hides focus rectangles. Undo of a multi-delete: UndoRecord::paths, restore_recycled(vector), "Undo delete of N items", undo kept even when the delete was cancelled part-way (restores what went). Copy/move/paste still have no panel undo (never had).
 - [~] M7d3: README keys table + multi-select paragraph done; awaiting user test of M7d1+M7d2; then M8 (PLAN.md)
+
+## Current task: M8 - polish (user: "finish everything in the plan"; then remind the user what to test, starting from M7d)
+
+Order: M8a tooltips/hover/zebra, M8b status bar, M8c accessibility, M8d x86 build, M8e packaging +
+README + release notes. Fonts tab: see M8f.
+
+- [x] M8a (`554bdd3`, awaiting user test): Preferences > View tab (prefs/list_editors.* split out of preferences.cpp): Tooltips off / full path / only cut-off names (in place over the row; view/row_tooltip.*, tree_view_tooltip.cpp), hover highlight on/off, zebra rows.
+- [x] M8b (awaiting user test): optional status bar (View tab "Show a status bar below the tree", default off, change_layout). model/status_text.* (Summary of the selection when several rows are selected, else the focus row: folder contents, file size, listing / failed / not listed; format_size Explorer-like; tests). view/status_bar.* owns its font (DPI-scaled like the filter box), dimmed text over the background with a hairline; Panel lays it out at the bottom and refreshes it after every tree WM_PAINT (Summary compared, no repaint when unchanged). Tooltip on it = performance counters (rows, nodes, memory, watched folders, listings in flight). Total duration dropped (needs decoding or the library per file; not a stat-only job). An earlier attempt at this step was lost with a sandbox reset (never pushed); redone from scratch.

@@ -45,6 +45,7 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
     hooks_ = std::move(hooks);
     show_address_ = settings::current().show_address_bar;
     filter_mode_ = settings::current().filter_box;
+    show_status_ = settings::current().show_status_bar;
     settings::subscribe(this);
 
     static const ATOM atom = [] {
@@ -90,6 +91,7 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
                                      close_floating_filter();
                                  }
                              }});
+    status_.create(host, [this] { return tree_.counters_text(); });
     // WM_CREATE attaches the tree (it needs the window).
     tree_wnd_ = CreateWindowExW(0, tree_class, L"",
                                 WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_CLIPSIBLINGS |
@@ -112,9 +114,11 @@ void Panel::detach() noexcept {
     }
     tree_.set_selection_listener(nullptr);
     filter_.destroy();
+    status_.destroy();
     address_.destroy();
     history_.clear();
     history_at_ = 0;
+    status_valid_ = false;
     host_ = nullptr;
 }
 
@@ -130,12 +134,14 @@ void Panel::set_colours(const ViewColours& colours) noexcept {
     tree_.set_colours(colours);
     address_.set_colours(colours);
     filter_.set_colours(colours);
+    status_.set_colours(colours);
 }
 
 void Panel::set_font(const LOGFONTW& font) noexcept {
     tree_.set_font(font);
     address_.set_font(font);
     filter_.set_font(font);
+    status_.set_font(font);
     layout();
 }
 
@@ -151,10 +157,19 @@ void Panel::layout() noexcept {
         SetWindowPos(address_.wnd(), nullptr, 0, 0, client.right, bar,
                      SWP_NOZORDER | SWP_NOACTIVATE | (bar > 0 ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
     }
-    if (tree_wnd_ != nullptr) {
-        SetWindowPos(tree_wnd_, nullptr, 0, bar, client.right, std::max<int>(client.bottom - bar, 0),
-                     SWP_NOZORDER | SWP_NOACTIVATE);
+    const int status = show_status_ && status_.wnd() != nullptr
+                           ? std::min<int>(status_.height(), std::max<int>(client.bottom - bar, 0))
+                           : 0;
+    if (status_.wnd() != nullptr) {
+        SetWindowPos(status_.wnd(), nullptr, 0, client.bottom - status, client.right, status,
+                     SWP_NOZORDER | SWP_NOACTIVATE |
+                         (status > 0 ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
     }
+    if (tree_wnd_ != nullptr) {
+        SetWindowPos(tree_wnd_, nullptr, 0, bar, client.right,
+                     std::max<int>(client.bottom - bar - status, 0), SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+    if (status > 0) update_status();
     place_filter();
 }
 
@@ -194,6 +209,18 @@ void Panel::place_filter() noexcept {
                  filter_.height(), SWP_NOACTIVATE | SWP_SHOWWINDOW);
 }
 
+void Panel::update_status() noexcept {
+    if (!show_status_ || status_.wnd() == nullptr) return;
+    const model::Summary summary = tree_.status_summary();
+    if (summary == status_summary_ && status_valid_) return;
+    status_summary_ = summary;
+    status_valid_ = true;
+    try {
+        status_.set_text(model::format_summary(summary));
+    } catch (...) {
+    }
+}
+
 void Panel::open_filter() noexcept {
     if (filter_mode_ == settings::FilterBox::off) return;
     if (filter_mode_ == settings::FilterBox::floating && !floating_open_) {
@@ -212,6 +239,7 @@ void Panel::close_floating_filter() noexcept {
 void Panel::on_settings_changed(std::uint32_t changes) noexcept {
     if ((changes & settings::change_layout) == 0) return;
     show_address_ = settings::current().show_address_bar;
+    show_status_ = settings::current().show_status_bar;
     const settings::FilterBox mode = settings::current().filter_box;
     if (mode != filter_mode_) {
         filter_.clear();
@@ -323,6 +351,7 @@ bool Panel::handle_message(HWND, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result
     case WM_DPICHANGED_AFTERPARENT:
         address_.refresh_dpi();
         filter_.refresh_dpi();
+        status_.refresh_dpi();
         layout();
         return true;
     case WM_SETTINGCHANGE:
@@ -369,7 +398,10 @@ LRESULT Panel::on_tree_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcep
         tree_.handle_message(wnd, msg, wp, lp, result);
         return result;
     default:
-        if (tree_.handle_message(wnd, msg, wp, lp, result)) return result;
+        if (tree_.handle_message(wnd, msg, wp, lp, result)) {
+            if (msg == WM_PAINT) update_status();
+            return result;
+        }
         break;
     }
     return DefWindowProcW(wnd, msg, wp, lp);

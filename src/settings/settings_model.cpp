@@ -187,7 +187,8 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         a.hover_highlight != b.hover_highlight || a.zebra != b.zebra) {
         out |= change_repaint;
     }
-    if (a.show_address_bar != b.show_address_bar || a.filter_box != b.filter_box) {
+    if (a.show_address_bar != b.show_address_bar || a.filter_box != b.filter_box ||
+        a.show_status_bar != b.show_status_bar) {
         out |= change_layout;
     }
     if (a.sort.field != b.sort.field || a.sort.folders_first != b.sort.folders_first ||

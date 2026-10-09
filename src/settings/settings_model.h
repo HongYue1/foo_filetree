@@ -112,6 +112,7 @@ struct Settings {
     Tooltips tooltips{Tooltips::truncated};
     bool hover_highlight{true}; //!< the row under the mouse is tinted
     bool zebra{false};          //!< every other row slightly tinted
+    bool show_status_bar{false}; //!< footer: counts and sizes of the selection or folder
 
     // Filter
     bool show_hidden{false};

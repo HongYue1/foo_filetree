@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "check.h"
+#include "../src/model/status_text.h"
 #include "../src/model/tree.h"
 
 using namespace filetree;
@@ -101,4 +102,55 @@ void test_selection() {
     CHECK(tree.count_selected_rows() == 1 && tree.is_selected(d) && !tree.is_selected(flac));
     tree.clear();
     CHECK(tree.selection_hint() == 0 && tree.anchor() == model::no_node);
+}
+
+// Status bar text (model/status_text.cpp).
+void test_status() {
+    using model::Summary;
+    using model::format_size;
+    CHECK(format_size(0) == L"0 bytes");
+    CHECK(format_size(1) == L"1 byte");
+    CHECK(format_size(1023) == L"1023 bytes");
+    CHECK(format_size(1024) == L"1.00 KB");
+    CHECK(format_size(1536) == L"1.50 KB");
+    CHECK(format_size(10 * 1024 + 1000) == L"10.9 KB");
+    CHECK(format_size(1000 * 1024) == L"0.97 MB");
+    CHECK(format_size(5ull * 1024 * 1024 * 1024) == L"5.00 GB");
+
+    model::Tree tree;
+    const auto c = tree.add_root(L"C:\\");
+    Summary s = model::summarize(tree, c);
+    CHECK(s.kind == Summary::Kind::not_listed);
+    tree.expand(c);
+    CHECK(model::summarize(tree, c).kind == Summary::Kind::listing);
+    std::vector<model::ChildRecord> records{
+        {L"Music", FILE_ATTRIBUTE_DIRECTORY, 0, 0},
+        {L"a.mp3", FILE_ATTRIBUTE_ARCHIVE, 1000, 0},
+        {L"b.mp3", FILE_ATTRIBUTE_ARCHIVE, 2048, 0},
+    };
+    tree.apply_children(c, records);
+    s = model::summarize(tree, c);
+    CHECK(s.kind == Summary::Kind::folder && s.folders == 1 && s.files == 2 && s.bytes == 3048);
+    CHECK(model::format_summary(s) == L"1 folder, 2 files \x00b7 2.97 KB");
+    const auto a = tree.find_child(c, L"a.mp3");
+    s = model::summarize(tree, a);
+    CHECK(s.kind == Summary::Kind::file && model::format_summary(s) == L"1000 bytes");
+    // One selected row describes the focus; several sum the selection.
+    tree.set_selected(a, true);
+    CHECK(model::summarize(tree, a).kind == Summary::Kind::file);
+    tree.set_selected(tree.find_child(c, L"Music"), true);
+    tree.set_selected(tree.find_child(c, L"b.mp3"), true);
+    s = model::summarize(tree, a);
+    CHECK(s.kind == Summary::Kind::items && s.files == 2 && s.folders == 1 && s.bytes == 3048);
+    CHECK(model::format_summary(s) ==
+          L"3 items selected \x00b7 2 files, 1 folder \x00b7 2.97 KB");
+    const auto music = tree.find_child(c, L"Music");
+    tree.set_selected(music, false);
+    tree.set_selected(a, false);
+    // A stale hint (two entries, one still flagged) falls back to the focus.
+    CHECK(model::summarize(tree, music).kind == Summary::Kind::not_listed);
+    tree.expand(music);
+    tree.apply_children(music, {});
+    CHECK(model::format_summary(model::summarize(tree, music)) == L"Empty folder");
+    CHECK(model::format_summary(model::summarize(tree, model::no_node)).empty());
 }

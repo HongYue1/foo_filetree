@@ -6,6 +6,8 @@
 
 #include "tree_view.h"
 
+#include "../model/status_text.h"
+
 #include <algorithm>
 
 namespace filetree::view {
@@ -177,6 +179,23 @@ void TreeView::apply_restore_top() noexcept {
         }
     }
     if (restore_expand_.empty() && restore_select_.empty()) restore_top_node_ = model::no_node;
+}
+
+model::Summary TreeView::status_summary() const noexcept {
+    const std::uint32_t focus =
+        selected_row_ >= 0 && static_cast<std::size_t>(selected_row_) < tree_.row_count()
+            ? tree_.node_at_row(static_cast<std::size_t>(selected_row_))
+            : model::no_node;
+    return model::summarize(tree_, focus);
+}
+
+std::wstring TreeView::counters_text() const {
+    std::wstring out = L"Rows: " + std::to_wstring(tree_.row_count());
+    out += L"\nNodes: " + std::to_wstring(tree_.node_count());
+    out += L"\nMemory: " + model::format_size(tree_.memory_bytes());
+    out += L"\nWatched folders: " + std::to_wstring(watched_.size());
+    out += L"\nListings in flight: " + std::to_wstring(pending_.size());
+    return out;
 }
 
 } // namespace filetree::view

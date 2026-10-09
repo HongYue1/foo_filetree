@@ -115,6 +115,11 @@ BEGIN
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,75,286,1
     CONTROL         "Highlight the row under the mouse",IDC_HOVER_HIGHLIGHT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,82,281,10
     CONTROL         "Shade every other row",IDC_ZEBRA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,96,281,10
+
+    LTEXT           "Status bar",IDC_STATIC,7,114,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,124,286,1
+    CONTROL         "Show a status bar below the tree",IDC_SHOW_STATUS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,131,281,10
+    LTEXT           "Counts and sizes of the selected items, or of the focused folder's contents. Rest the mouse on it for the panel's performance counters.",IDC_STATIC,24,144,269,16
 END
 
 IDD_TAB_FILTER DIALOGEX 0, 0, 300, 222

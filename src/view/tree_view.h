@@ -26,6 +26,7 @@
 #include "../fs/enumerate.h"
 #include "../fs/enumeration_service.h"
 #include "../fs/watcher.h"
+#include "../model/status_text.h"
 #include "../model/tree.h"
 #include "../settings/panel_state.h"
 #include "../settings/settings_store.h"
@@ -90,6 +91,10 @@ public:
     //! The font the rows are drawn in, at the window's DPI. Owned by the view.
     [[nodiscard]] HFONT font() const noexcept { return font_; }
     [[nodiscard]] int dpi() const noexcept { return metrics_.dpi; }
+    //! What the status bar shows: the selection, else the focus row.
+    [[nodiscard]] model::Summary status_summary() const noexcept;
+    //! Rows, nodes, memory, watches and listings in flight (the status bar's tooltip).
+    [[nodiscard]] std::wstring counters_text() const;
 
     // Main-menu commands (main_menu.cpp) go to the panel that had the focus last.
     enum class Command : std::uint8_t { show_playing, refresh, collapse_all, new_folder };

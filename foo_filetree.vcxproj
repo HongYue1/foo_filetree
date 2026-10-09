@@ -122,6 +122,8 @@
     <ClCompile Include="src\model\name_pool.cpp" />
     <ClCompile Include="src\model\tree.cpp" />
     <ClCompile Include="src\model\tree_selection.cpp" />
+    <ClCompile Include="src\model\status_text.cpp" />
+    <ClCompile Include="src\view\status_bar.cpp" />
     <ClCompile Include="src\platform\worker_pool.cpp" />
     <ClCompile Include="src\fs\enumerate.cpp" />
     <ClCompile Include="src\fs\enumeration_service.cpp" />

@@ -32,6 +32,7 @@ void test_enumerate_rules(const std::filesystem::path& base);
 void test_watcher(const std::filesystem::path& base);
 // selection_test.cpp
 void test_selection();
+void test_status();
 
 namespace {
 
@@ -548,6 +549,7 @@ int main() {
     test_tree_merge();
     test_tree_filter();
     test_selection();
+    test_status();
     test_tree_large();
     test_search_pattern();
     const auto base = make_fixture();

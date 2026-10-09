@@ -128,6 +128,7 @@
     <ClCompile Include="src\fs\drives.cpp" />
     <ClCompile Include="src\fs\fb2k_glue.cpp" />
     <ClCompile Include="src\view\tree_view.cpp" />
+    <ClCompile Include="src\view\tree_view_layout.cpp" />
     <ClCompile Include="src\view\tree_view_paint.cpp" />
     <ClCompile Include="src\view\tree_view_input.cpp" />
     <ClCompile Include="src\view\tree_view_select.cpp" />

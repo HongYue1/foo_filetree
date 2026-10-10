@@ -32,30 +32,105 @@ IDD_TAB_GENERAL DIALOGEX 0, 0, 300, 222
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
 FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
 BEGIN
-    LTEXT           "Playlists",IDC_STATIC,7,4,286,8
+    LTEXT           "Panel",IDC_STATIC,7,4,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
-    LTEXT           "Temporary playlist:",IDC_STATIC,12,23,70,8
-    EDITTEXT        IDC_TEMP_PLAYLIST,85,21,120,12,ES_AUTOHSCROLL
-    LTEXT           "Filled by Play and by the default double click on a file.",IDC_STATIC,85,36,208,8
-    CONTROL         "Include subfolders when sending a folder (hold Shift for the opposite)",IDC_RECURSIVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,50,281,10
+    CONTROL         "Show the address bar (Ctrl+L types a path)",IDC_SHOW_ADDRESS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,21,281,10
+    LTEXT           "Filter box (Ctrl+F):",IDC_STATIC,12,37,70,8
+    COMBOBOX        IDC_FILTER_BOX,85,35,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "On startup:",IDC_STATIC,12,53,70,8
+    COMBOBOX        IDC_STARTUP,85,51,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    EDITTEXT        IDC_STARTUP_FOLDER,85,67,180,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_STARTUP_BROWSE,268,66,25,14
+    CONTROL         "Update open folders when files change on disk",IDC_WATCH_CHANGES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,84,281,10
+    LTEXT           "Tooltips:",IDC_STATIC,12,100,70,8
+    COMBOBOX        IDC_TOOLTIPS,85,98,140,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "When the mouse rests on a row. A cut-off name is shown in place.",IDC_STATIC,85,113,208,8
+    CONTROL         "Show a status bar with counts and sizes below the tree",IDC_SHOW_STATUS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,127,281,10
+    CONTROL         "Show performance counters when the mouse rests on it",IDC_STATUS_COUNTERS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,24,141,269,10
 
-    LTEXT           "Panel",IDC_STATIC,7,72,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,82,286,1
-    CONTROL         "Show the address bar (Ctrl+L types a path)",IDC_SHOW_ADDRESS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,89,281,10
-    LTEXT           "Filter box (Ctrl+F):",IDC_STATIC,12,105,70,8
-    COMBOBOX        IDC_FILTER_BOX,85,103,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "On startup:",IDC_STATIC,12,121,70,8
-    COMBOBOX        IDC_STARTUP,85,119,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    EDITTEXT        IDC_STARTUP_FOLDER,85,135,180,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_STARTUP_BROWSE,268,134,25,14
-    CONTROL         "Update open folders when files change on disk",IDC_WATCH_CHANGES,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,152,281,10
-
-    LTEXT           "Drives",IDC_STATIC,7,170,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,180,286,1
-    CONTROL         "Show drives as roots (turn off to see only your favourites):",IDC_DRIVES_LABEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,186,281,10
+    LTEXT           "Playlists",IDC_STATIC,7,160,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,170,286,1
+    LTEXT           "Temporary playlist:",IDC_STATIC,12,179,70,8
+    EDITTEXT        IDC_TEMP_PLAYLIST,85,177,120,12,ES_AUTOHSCROLL
+    LTEXT           "Filled by Play and by the default double click on a file.",IDC_STATIC,85,192,208,8
+    CONTROL         "Include subfolders when sending a folder (hold Shift for the opposite)",IDC_RECURSIVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,205,281,10
 END
 
-IDD_TAB_DISPLAY DIALOGEX 0, 0, 300, 222
+IDD_TAB_ROOTS DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Favourites (right-click a folder in the tree to add or remove it)",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LISTBOX         IDC_FAV_LIST,12,21,226,66,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Add...",IDC_FAV_ADD,243,21,50,14
+    PUSHBUTTON      "Remove",IDC_FAV_REMOVE,243,37,50,14
+    PUSHBUTTON      "Move up",IDC_FAV_UP,243,57,50,14
+    PUSHBUTTON      "Move down",IDC_FAV_DOWN,243,73,50,14
+    CONTROL         "Also show the music folders from Preferences > Media Library",IDC_LIBRARY_ROOTS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,92,281,10
+    LTEXT           "Show them:",IDC_STATIC,12,108,70,8
+    COMBOBOX        IDC_FAV_PLACE,85,106,100,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Space:",IDC_STATIC,195,108,26,8
+    EDITTEXT        IDC_FAV_GAP,222,106,24,12,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "px (0-24)",IDC_STATIC,249,108,44,8
+    CONTROL         "Draw a line between the favourites and the drives",IDC_FAV_SEPARATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,122,208,10
+
+    LTEXT           "Drives",IDC_STATIC,7,140,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,150,286,1
+    CONTROL         "Show drives as roots (turn off to see only your favourites):",IDC_DRIVES_LABEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,157,281,10
+END
+
+IDD_TAB_FILES DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Files",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LTEXT           "Show files:",IDC_STATIC,12,23,70,8
+    COMBOBOX        IDC_FILES,85,21,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Show hidden files",IDC_SHOW_HIDDEN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,37,100,10
+    CONTROL         "Show system files",IDC_SHOW_SYSTEM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,190,37,103,10
+    LTEXT           "Sort by:",IDC_STATIC,12,53,70,8
+    COMBOBOX        IDC_SORT_FIELD,85,51,80,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Folders first",IDC_FOLDERS_FIRST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,171,52,57,10
+    CONTROL         "Reverse order",IDC_SORT_REVERSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,231,52,62,10
+
+    LTEXT           "Exceptions",IDC_STATIC,7,70,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,80,286,1
+    LTEXT           "Always show:",IDC_STATIC,12,89,70,8
+    EDITTEXT        IDC_ALWAYS_SHOW,85,87,208,12,ES_AUTOHSCROLL
+    LTEXT           "Extensions listed even when only playable files are shown, for example: cue; log",IDC_STATIC,85,102,208,16
+    LTEXT           "Never show:",IDC_STATIC,12,123,70,8
+    EDITTEXT        IDC_NEVER_SHOW,85,121,208,12,ES_AUTOHSCROLL
+    LTEXT           "Extensions that are never listed.",IDC_STATIC,85,136,208,8
+
+    LTEXT           "Hide by name",IDC_STATIC,7,152,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,162,286,1
+    LTEXT           "Patterns:",IDC_STATIC,12,171,70,8
+    EDITTEXT        IDC_HIDE_PATTERNS,85,169,208,12,ES_AUTOHSCROLL
+    LTEXT           "Hides files and folders whose whole name matches. * stands for any characters, ? for one. Separate patterns with semicolons, for example: *.tmp; Thumbs.db; @eaDir",IDC_STATIC,85,184,208,24
+END
+
+IDD_TAB_FOLDERS DIALOGEX 0, 0, 300, 222
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
+BEGIN
+    LTEXT           "Hidden folders",IDC_STATIC,7,4,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
+    LTEXT           "Folders never listed (drives and favourites always are). Variables like %WINDIR% work, and ? stands for any drive letter.",IDC_STATIC,12,21,281,16
+    LISTBOX         IDC_HIDDEN_LIST,12,41,216,112,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Add...",IDC_HIDDEN_ADD,233,41,60,14
+    PUSHBUTTON      "Remove",IDC_HIDDEN_REMOVE,233,57,60,14
+    PUSHBUTTON      "Restore defaults",IDC_HIDDEN_DEFAULTS,233,77,60,14
+    LTEXT           "Right-click a folder in the tree and pick Hide this folder to add it.",IDC_STATIC,12,157,281,8
+
+    LTEXT           "Empty folders",IDC_STATIC,7,175,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,185,286,1
+    CONTROL         "Hide folders with no playable files in them (checked in the background)",IDC_HIDE_EMPTY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,192,281,10
+    LTEXT           "A folder shows up while it is checked, and stays if the check takes too long.",IDC_STATIC,24,205,269,8
+END
+
+IDD_TAB_LOOK DIALOGEX 0, 0, 300, 222
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
 FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
 BEGIN
@@ -92,63 +167,9 @@ BEGIN
     LTEXT           "px",IDC_STATIC,279,158,14,8
     CONTROL         "Mark the playing track",IDC_MARK_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,171,92,10
     CONTROL         "Follow the playing track",IDC_FOLLOW_PLAYING,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,180,171,113,10
-
-    LTEXT           "Sorting",IDC_STATIC,7,188,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,198,286,1
-    LTEXT           "Sort by:",IDC_STATIC,12,207,70,8
-    COMBOBOX        IDC_SORT_FIELD,85,205,80,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Folders first",IDC_FOLDERS_FIRST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,171,206,57,10
-    CONTROL         "Reverse order",IDC_SORT_REVERSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,231,206,62,10
-END
-
-IDD_TAB_VIEW DIALOGEX 0, 0, 300, 222
-STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
-FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
-BEGIN
-    LTEXT           "Tooltips",IDC_STATIC,7,4,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
-    LTEXT           "Show:",IDC_STATIC,12,23,70,8
-    COMBOBOX        IDC_TOOLTIPS,85,21,140,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "When the mouse rests on a row. A cut-off name is shown in place, over the row.",IDC_STATIC,85,37,208,16
-
-    LTEXT           "Rows",IDC_STATIC,7,65,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,75,286,1
-    CONTROL         "Highlight the row under the mouse",IDC_HOVER_HIGHLIGHT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,82,281,10
-    CONTROL         "Shade every other row",IDC_ZEBRA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,96,281,10
-    CONTROL         "Transparent background (show what is behind the panel)",IDC_TRANSPARENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,110,281,10
-
-    LTEXT           "Status bar",IDC_STATIC,7,128,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,138,286,1
-    CONTROL         "Show a status bar below the tree",IDC_SHOW_STATUS_BAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,145,281,10
-    LTEXT           "Counts and sizes of the selected items, or of the focused folder's contents.",IDC_STATIC,24,158,269,8
-    CONTROL         "Show performance counters when the mouse rests on it",IDC_STATUS_COUNTERS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,24,171,269,10
-END
-
-IDD_TAB_FILTER DIALOGEX 0, 0, 300, 222
-STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
-FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
-BEGIN
-    LTEXT           "Files",IDC_STATIC,7,4,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
-    LTEXT           "Show files:",IDC_STATIC,12,23,70,8
-    COMBOBOX        IDC_FILES,85,21,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Show hidden files and folders",IDC_SHOW_HIDDEN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,39,208,10
-    CONTROL         "Show system files and folders",IDC_SHOW_SYSTEM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,53,208,10
-
-    LTEXT           "Exceptions",IDC_STATIC,7,75,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,85,286,1
-    LTEXT           "Always show:",IDC_STATIC,12,94,70,8
-    EDITTEXT        IDC_ALWAYS_SHOW,85,92,208,12,ES_AUTOHSCROLL
-    LTEXT           "Extensions listed even when only playable files are shown, for example: cue; log",IDC_STATIC,85,107,208,16
-    LTEXT           "Never show:",IDC_STATIC,12,128,70,8
-    EDITTEXT        IDC_NEVER_SHOW,85,126,208,12,ES_AUTOHSCROLL
-    LTEXT           "Extensions that are never listed.",IDC_STATIC,85,141,208,8
-
-    LTEXT           "Hide by name",IDC_STATIC,7,161,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,171,286,1
-    LTEXT           "Patterns:",IDC_STATIC,12,180,70,8
-    EDITTEXT        IDC_HIDE_PATTERNS,85,178,208,12,ES_AUTOHSCROLL
-    LTEXT           "Hides files and folders whose whole name matches. * stands for any characters, ? for one. Separate patterns with semicolons, for example: *.tmp; Thumbs.db; @eaDir",IDC_STATIC,85,193,208,24
+    CONTROL         "Highlight on hover",IDC_HOVER_HIGHLIGHT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,185,92,10
+    CONTROL         "Shade every other row",IDC_ZEBRA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,180,185,113,10
+    CONTROL         "Transparent background (show what is behind the panel)",IDC_TRANSPARENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,199,208,10
 END
 
 IDD_TAB_ACTIONS DIALOGEX 0, 0, 300, 222
@@ -186,46 +207,5 @@ BEGIN
     PUSHBUTTON      "Move down",IDC_MENU_DOWN,243,48,50,14
     CONTROL         "Show this item in the menu",IDC_MENU_SHOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,177,226,10
     LTEXT           "Separators are added between groups automatically. Undo only appears when there is something to undo.",IDC_STATIC,12,191,226,16
-END
-
-IDD_TAB_FOLDERS DIALOGEX 0, 0, 300, 222
-STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
-FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
-BEGIN
-    LTEXT           "Hidden folders",IDC_STATIC,7,4,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
-    LTEXT           "Folders never listed (drives and favourites always are). Variables like %WINDIR% work, and ? stands for any drive letter.",IDC_STATIC,12,21,281,16
-    LISTBOX         IDC_HIDDEN_LIST,12,41,216,112,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
-    PUSHBUTTON      "Add...",IDC_HIDDEN_ADD,233,41,60,14
-    PUSHBUTTON      "Remove",IDC_HIDDEN_REMOVE,233,57,60,14
-    PUSHBUTTON      "Restore defaults",IDC_HIDDEN_DEFAULTS,233,77,60,14
-    LTEXT           "Right-click a folder in the tree and pick Hide this folder to add it.",IDC_STATIC,12,157,281,8
-
-    LTEXT           "Empty folders",IDC_STATIC,7,175,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,185,286,1
-    CONTROL         "Hide folders with no playable files in them (checked in the background)",IDC_HIDE_EMPTY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,192,281,10
-    LTEXT           "A folder shows up while it is checked, and stays if the check takes too long.",IDC_STATIC,24,205,269,8
-END
-
-IDD_TAB_FAVOURITES DIALOGEX 0, 0, 300, 222
-STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
-FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
-BEGIN
-    LTEXT           "Favourites",IDC_STATIC,7,4,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
-    LTEXT           "Folders shown as roots in every Folder Tree panel, in this order:",IDC_STATIC,12,21,281,8
-    LISTBOX         IDC_FAV_LIST,12,32,226,104,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
-    PUSHBUTTON      "Add...",IDC_FAV_ADD,243,32,50,14
-    PUSHBUTTON      "Remove",IDC_FAV_REMOVE,243,48,50,14
-    PUSHBUTTON      "Move up",IDC_FAV_UP,243,68,50,14
-    PUSHBUTTON      "Move down",IDC_FAV_DOWN,243,84,50,14
-    CONTROL         "Also show the music folders from Preferences > Media Library",IDC_LIBRARY_ROOTS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,141,281,10
-    LTEXT           "Show them:",IDC_STATIC,12,158,70,8
-    COMBOBOX        IDC_FAV_PLACE,85,156,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Space between:",IDC_STATIC,12,174,70,8
-    EDITTEXT        IDC_FAV_GAP,85,172,28,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "px between the favourites and the drives (0-24)",IDC_STATIC,117,174,176,8
-    CONTROL         "Draw a line between them",IDC_FAV_SEPARATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,189,208,10
-    LTEXT           "Right-click a folder in the tree to add it or remove it.",IDC_STATIC,12,206,281,8
 END
 

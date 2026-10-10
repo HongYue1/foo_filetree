@@ -26,13 +26,13 @@
 namespace filetree::prefs {
 namespace {
 
-constexpr int tab_count = 8;
-constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Display", L"View",
-                                                 L"Filter",  L"Folders", L"Actions",
-                                                 L"Menu",    L"Favourites"};
-constexpr int tab_dialogs[tab_count] = {IDD_TAB_GENERAL, IDD_TAB_DISPLAY, IDD_TAB_VIEW,
-                                        IDD_TAB_FILTER,  IDD_TAB_FOLDERS, IDD_TAB_ACTIONS,
-                                        IDD_TAB_MENU,    IDD_TAB_FAVOURITES};
+constexpr int tab_count = 7;
+constexpr const wchar_t* tab_names[tab_count] = {L"General", L"Roots",         L"Files", L"Folders",
+                                                 L"Look",    L"Mouse && keys", L"Menu"};
+constexpr int tab_dialogs[tab_count] = {IDD_TAB_GENERAL, IDD_TAB_ROOTS,   IDD_TAB_FILES,
+                                        IDD_TAB_FOLDERS, IDD_TAB_LOOK,    IDD_TAB_ACTIONS,
+                                        IDD_TAB_MENU};
+constexpr int roots_tab = 1; //!< holds the drive check boxes
 
 //! Everything the page edits, so "changed?" is one comparison.
 struct PageState {
@@ -189,7 +189,7 @@ private:
                                                   &PreferencesPage::tab_proc, 0);
             tabs_[static_cast<std::size_t>(i)] = tab;
             if (tab == nullptr) continue;
-            if (i == 0) create_drive_checks(tab); // before the dark hooks, so they theme them
+            if (i == roots_tab) create_drive_checks(tab); // before the dark hooks, so they theme them
             ::SetWindowPos(tab, GetDlgItem(IDC_PAGE_HOST), host.left, host.top,
                            host.right - host.left, host.bottom - host.top, SWP_NOACTIVATE);
             dark_.AddDialogWithControls(tab);
@@ -198,30 +198,36 @@ private:
         show_tab(0);
     }
 
-    //! One check box per present drive, four per row under the "Drives" label. GetDriveTypeW
-    //! reads no media, so this is safe here.
+    //! One check box per present drive under the "Drives" label: four per row with the drive
+    //! type, seven per row with just the letter when there are more than twelve drives (so all
+    //! 26 fit). GetDriveTypeW reads no media, so this is safe here.
     void create_drive_checks(HWND tab) {
         RECT label{};
         ::GetWindowRect(::GetDlgItem(tab, IDC_DRIVES_LABEL), &label);
         ::MapWindowPoints(nullptr, tab, reinterpret_cast<POINT*>(&label), 2);
-        RECT unit{0, 0, 70, 14}; // column width and row pitch in DU
+        const DWORD drives = GetLogicalDrives();
+        int count = 0;
+        for (int letter = 0; letter < 26; ++letter) count += (drives >> letter) & 1;
+        const bool compact = count > 12;
+        const int columns = compact ? 7 : 4;
+        RECT unit{0, 0, compact ? 40 : 70, compact ? 12 : 14}; // column width, row pitch (DU)
         ::MapDialogRect(tab, &unit);
-        RECT box{0, 0, 66, 10};
+        RECT box{0, 0, compact ? 36 : 66, 10};
         ::MapDialogRect(tab, &box);
         const auto font = static_cast<WPARAM>(::SendMessageW(tab, WM_GETFONT, 0, 0));
-        const DWORD drives = GetLogicalDrives();
         int slot = 0;
         for (int letter = 0; letter < 26; ++letter) {
             if ((drives & (1u << letter)) == 0) continue;
             const wchar_t root[] = {static_cast<wchar_t>(L'A' + letter), L':', L'\\', L'\0'};
             std::wstring text{root[0], L':'};
-            if (const wchar_t* type = drive_type_name(GetDriveTypeW(root)); *type != L'\0') {
+            if (const wchar_t* type = drive_type_name(GetDriveTypeW(root));
+                !compact && *type != L'\0') {
                 text += L" (";
                 text += type;
                 text += L")";
             }
-            const int x = label.left + (slot % 4) * unit.right;
-            const int y = label.bottom + MulDiv(unit.bottom, 1, 2) + (slot / 4) * unit.bottom;
+            const int x = label.left + (slot % columns) * unit.right;
+            const int y = label.bottom + MulDiv(unit.bottom, 1, 2) + (slot / columns) * unit.bottom;
             const HWND check = ::CreateWindowExW(
                 0, L"BUTTON", text.c_str(), WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_AUTOCHECKBOX,
                 x, y, box.right, box.bottom, tab,

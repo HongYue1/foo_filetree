@@ -4,16 +4,14 @@
 // #define only. IDC_STATIC (-1) comes from winres.h.
 
 #define IDD_PREFERENCES 101
-// The tabs, consecutive and in tab order.
+// The tabs, in tab order.
 #define IDD_TAB_GENERAL 102
-#define IDD_TAB_DISPLAY 103
-#define IDD_TAB_FILTER 104
-#define IDD_TAB_ACTIONS 105
-#define IDD_TAB_MENU 106
-#define IDD_TAB_FAVOURITES 107
-#define IDD_TAB_VIEW 108
-#define IDD_TAB_COMMANDS 109
-#define IDD_TAB_FOLDERS 110
+#define IDD_TAB_ROOTS 103
+#define IDD_TAB_FILES 104
+#define IDD_TAB_FOLDERS 105
+#define IDD_TAB_LOOK 106
+#define IDD_TAB_ACTIONS 107
+#define IDD_TAB_MENU 108
 
 #define IDC_TABS 1000
 #define IDC_PAGE_HOST 1001

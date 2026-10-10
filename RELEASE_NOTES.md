@@ -1,5 +1,10 @@
 # Release notes
 
+## 1.1.1
+
+- The Roots tab lists favourite files below the favourite folders, so they can be reordered,
+  removed and added to the drop-down there.
+
 ## 1.1.0
 
 - Favourite files: right-click any file (music, video, a PDF booklet, artwork) > Add to

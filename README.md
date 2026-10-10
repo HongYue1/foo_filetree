@@ -90,10 +90,11 @@ folder. Give them shortcuts in **Preferences > Keyboard Shortcuts**.
 - **Drag and drop**: drag items to a playlist, a playlist tab or Explorer. Drop files on a folder
   to copy them there; hold Shift to move. Holding a drag over a closed folder opens it.
 - **Favourites**: right-click a folder > **Add to favourites**. Favourites are shared by all
-  Folder Tree panels; order them on the Roots tab. Right-click a file (any type: music, video,
-  a PDF booklet, artwork) > **Add to favourites** and it shows under **Favourite files**. Files
-  that are missing (deleted, or on a drive that isn't there) are left out until they're back.
-  Select several items to add or remove them all at once.
+  Folder Tree panels; order or remove them on the Roots tab, where favourite files are listed
+  below the folders. Right-click a file (any type: music, video, a PDF booklet, artwork) >
+  **Add to favourites** and it shows under **Favourite files**. Files that are missing
+  (deleted, or on a drive that isn't there) are left out until they're back. Select several
+  items to add or remove them all at once.
 - **Favourites drop-down**: right-click a favourite > **Add to favourites drop-down**. A button
   with a down arrow appears next to Up in the address bar; pick an entry to jump to it. You can
   also tick or untick it for the selected favourite on the Roots tab.

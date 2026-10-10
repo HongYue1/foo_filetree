@@ -88,20 +88,41 @@ bool MenuEditor::toggle_shown() {
 // --- Path lists ---
 
 void PathListEditor::show(int select) {
-    fill_list(find_control(page_, ids_.list), paths, select);
+    if (!grouped()) {
+        fill_list(find_control(page_, ids_.list), paths, select);
+    } else {
+        std::vector<std::wstring> items = paths;
+        items.emplace_back(files_heading_);
+        items.insert(items.end(), files.begin(), files.end());
+        fill_list(find_control(page_, ids_.list), items, select);
+    }
     on_select();
 }
 
 int PathListEditor::selection() const noexcept {
-    return list_selection(page_, ids_.list, paths.size());
+    return list_selection(page_, ids_.list, rows());
+}
+
+PathListEditor::Spot PathListEditor::spot(int row) noexcept {
+    if (row < 0) return {};
+    if (row < static_cast<int>(paths.size())) return {&paths, row};
+    const int file = row - static_cast<int>(paths.size()) - 1;
+    if (!grouped() || file < 0 || file >= static_cast<int>(files.size())) return {};
+    return {&files, file};
+}
+
+const std::wstring* PathListEditor::selected_path() const noexcept {
+    const Spot at = const_cast<PathListEditor*>(this)->spot(selection());
+    return at.list != nullptr ? &(*at.list)[static_cast<std::size_t>(at.index)] : nullptr;
 }
 
 void PathListEditor::on_select() noexcept {
-    const int index = selection();
-    enable(page_, ids_.remove, index >= 0);
+    const Spot at = spot(selection());
+    enable(page_, ids_.remove, at.list != nullptr);
     if (ids_.up == 0) return;
-    enable(page_, ids_.up, index > 0);
-    enable(page_, ids_.down, index >= 0 && index + 1 < static_cast<int>(paths.size()));
+    enable(page_, ids_.up, at.list != nullptr && at.index > 0);
+    enable(page_, ids_.down,
+           at.list != nullptr && at.index + 1 < static_cast<int>(at.list->size()));
 }
 
 bool PathListEditor::add() {
@@ -130,21 +151,23 @@ bool PathListEditor::replace(std::vector<std::wstring> next) {
 }
 
 bool PathListEditor::remove() {
-    const int index = selection();
-    if (index < 0) return false;
-    paths.erase(paths.begin() + index);
-    show(index);
+    const int row = selection();
+    const Spot at = spot(row);
+    if (at.list == nullptr) return false;
+    at.list->erase(at.list->begin() + at.index);
+    // The last file gone: the heading goes too, so step back onto the folders.
+    show(grouped() || at.list == &paths ? row : static_cast<int>(paths.size()) - 1);
     return true;
 }
 
 bool PathListEditor::move(bool up) {
-    const int index = selection();
-    const int target = up ? index - 1 : index + 1;
-    if (ids_.up == 0 || index < 0 || target < 0 || target >= static_cast<int>(paths.size())) {
-        return false;
-    }
-    std::swap(paths[static_cast<std::size_t>(index)], paths[static_cast<std::size_t>(target)]);
-    show(target);
+    const Spot at = spot(selection());
+    if (ids_.up == 0 || at.list == nullptr) return false;
+    const int target = up ? at.index - 1 : at.index + 1;
+    if (target < 0 || target >= static_cast<int>(at.list->size())) return false;
+    std::swap((*at.list)[static_cast<std::size_t>(at.index)],
+              (*at.list)[static_cast<std::size_t>(target)]);
+    show(row_of(at.list, target));
     return true;
 }
 

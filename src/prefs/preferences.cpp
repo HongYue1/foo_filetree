@@ -305,6 +305,11 @@ private:
                 editor.show(std::max(editor.selection(), 0));
             };
             follow(favourites_, known_.favourites, now.favourites);
+            if (now.favourite_files != known_.favourite_files &&
+                favourites_.files == known_.favourite_files) {
+                favourites_.files = now.favourite_files;
+                favourites_.show(std::max(favourites_.selection(), 0));
+            }
             follow(hidden_, known_.hidden_folders, now.hidden_folders);
             if (now.quick_favourites != known_.quick_favourites && quick_ == known_.quick_favourites) {
                 quick_ = now.quick_favourites;
@@ -366,30 +371,30 @@ private:
     }
     //! Index of the selected favourite in quick_, or -1.
     [[nodiscard]] int quick_index() const {
-        const int at = favourites_.selection();
-        if (at < 0 || at >= static_cast<int>(favourites_.paths.size())) return -1;
+        const std::wstring* path = favourites_.selected_path();
+        if (path == nullptr) return -1;
         for (std::size_t i = 0; i < quick_.size(); ++i) {
-            if (settings::same_path(quick_[i], favourites_.paths[at])) return static_cast<int>(i);
+            if (settings::same_path(quick_[i], *path)) return static_cast<int>(i);
         }
         return -1;
     }
     //! The drop-down check box follows the selected favourite.
     void show_quick() noexcept {
         try {
-            enable(m_hWnd, IDC_FAV_QUICK, favourites_.selection() >= 0);
+            enable(m_hWnd, IDC_FAV_QUICK, favourites_.selected_path() != nullptr);
             set_check(m_hWnd, IDC_FAV_QUICK, quick_index() >= 0);
         } catch (...) {
         }
     }
     void on_fav_quick(UINT, int id, CWindow) {
-        const int at = favourites_.selection();
-        if (updating_ || at < 0 || at >= static_cast<int>(favourites_.paths.size())) return;
+        const std::wstring* path = favourites_.selected_path();
+        if (updating_ || path == nullptr) return;
         const int index = quick_index();
         if (get_check(m_hWnd, IDC_FAV_QUICK) == (index >= 0)) return;
         if (index >= 0) {
             quick_.erase(quick_.begin() + index);
         } else {
-            quick_.push_back(favourites_.paths[at]);
+            quick_.push_back(*path);
         }
         on_changed(0, id, nullptr);
     }
@@ -484,6 +489,7 @@ private:
         s.hide_patterns = get_text(page, IDC_HIDE_PATTERNS);
         s.menu = menu_.layout;
         s.favourites = favourites_.paths;
+        s.favourite_files = favourites_.files;
         s.quick_favourites = quick_; // sanitize drops the ones no longer favourites
         s.library_roots = get_check(page, IDC_LIBRARY_ROOTS);
         s.hidden_folders = hidden_.paths;
@@ -562,6 +568,7 @@ private:
         }
         menu_.layout = s.menu;
         favourites_.paths = s.favourites;
+        favourites_.files = s.favourite_files;
         set_check(page, IDC_LIBRARY_ROOTS, s.library_roots);
         hidden_.paths = s.hidden_folders;
         set_check(page, IDC_HIDE_EMPTY, s.hide_empty);
@@ -584,7 +591,8 @@ private:
     const preferences_page_callback::ptr callback_;
     std::array<HWND, tab_count> tabs_{};
     MenuEditor menu_{m_hWnd};
-    PathListEditor favourites_{m_hWnd, {IDC_FAV_LIST, IDC_FAV_REMOVE, IDC_FAV_UP, IDC_FAV_DOWN}};
+    PathListEditor favourites_{m_hWnd, {IDC_FAV_LIST, IDC_FAV_REMOVE, IDC_FAV_UP, IDC_FAV_DOWN},
+                               L"\x2014 Favourite files \x2014"};
     PathListEditor hidden_{m_hWnd, {IDC_HIDDEN_LIST, IDC_HIDDEN_REMOVE}};
     bool initialised_{false};
     bool updating_{false};

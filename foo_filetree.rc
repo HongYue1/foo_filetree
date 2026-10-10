@@ -60,7 +60,7 @@ IDD_TAB_ROOTS DIALOGEX 0, 0, 300, 222
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
 FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
 BEGIN
-    LTEXT           "Favourite folders (right-click a folder or file in the tree to add it)",IDC_STATIC,7,4,286,8
+    LTEXT           "Favourites (right-click a folder or file in the tree to add it)",IDC_STATIC,7,4,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
     LISTBOX         IDC_FAV_LIST,12,21,226,52,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_HSCROLL | WS_TABSTOP
     PUSHBUTTON      "Add...",IDC_FAV_ADD,243,21,50,14

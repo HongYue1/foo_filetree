@@ -14,8 +14,10 @@
 
 ## Features
 
-- **Drives and favourite folders** as roots. Folders are read in the background, so a slow,
-  sleeping or offline drive never freezes foobar2000.
+- **Drives, favourite folders and your Media Library folders** as roots. Folders are read in
+  the background, so a slow, sleeping or offline drive never freezes foobar2000.
+- **Less clutter**: hide system folders (Windows, Program Files and the like are hidden by
+  default) and folders with no playable files in them.
 - **Stays current.** Open folders update by themselves when files change on disk.
 - **Your clicks, your actions.** Single, double and middle click and Enter each have their own
   action for folders and for files: play, add to the active playlist, send to a new playlist,
@@ -86,18 +88,26 @@ folder. Give them shortcuts in **Preferences > Keyboard Shortcuts**.
 - **Drag and drop**: drag items to a playlist, a playlist tab or Explorer. Drop files on a folder
   to copy them there; hold Shift to move. Holding a drag over a closed folder opens it.
 - **Favourites**: right-click a folder > **Add to favourites**. Favourites are shared by all
-  Folder Tree panels; order them on the Favourites tab.
+  Folder Tree panels; order them on the Roots tab.
 - **Filter box** filters what is open; it doesn't search the disk. `*` and `?` work (`*.flac`).
 - **Undo** is one step and covers renames and deletes made in the panel. Shift+Del can't be
   undone.
 - **Removable and optical drives** aren't watched for changes, so Safely Remove keeps working.
   Press F5 there after changes.
-- **Which files show**: playable files only by default. On the Filter tab, show all files or
+- **Which files show**: playable files only by default. On the Files tab, show all files or
   only folders, list extra extensions (`cue; log`), or hide names by pattern (`@eaDir; *.tmp`).
 - **Each panel remembers** its open folders, selection and scroll position. On startup it can
   restore them, start closed or open a fixed folder.
 - **Transparency** only shows something when your layout draws a background behind the panel.
-- **Status bar** (View tab): counts and sizes of the selection, or of the focused folder.
+- **Status bar** (General tab): counts and sizes of the selection, or of the focused folder.
+- **Media Library folders**: tick "Also show the music folders" on the Roots tab. foobar2000
+  has no way to ask for that list, so Folder Tree works it out from the library's tracks: a
+  folder with no tracks in it yet doesn't show. The folders from last time show at once on
+  startup.
+- **Hidden folders** (Folders tab): right-click a folder > **Hide this folder**, or edit the
+  list. `%WINDIR%` style variables work, and `?:\` stands for any drive.
+- **Empty folders** (Folders tab): when hidden, folders are checked in the background, so one
+  can show up for a moment before it goes away. A folder too big to check quickly stays.
 
 ## Building
 

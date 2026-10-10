@@ -15,13 +15,20 @@ Layers, bottom up; everything below `view/` is tested offline (`test/`).
 
 - `platform/` Win32 and fb2k wrappers (DPI, strings, threads, perf counters)
 - `fs/` enumeration workers (`FindFirstFileExW` large fetch), change watching
-  (`ReadDirectoryChangesW`, open folders only, debounced), playable-type filter
+  (`ReadDirectoryChangesW`, open folders only, debounced), playable-type filter, empty-folder
+  probes (`probe.cpp`, budgeted), Media Library folders (`library_folders.cpp`: derived from
+  the tracks on a worker, last roots kept in a `cfg_var` so they show at once on startup)
 - `model/` node pool, flat visible-row list, natural sort, filter rules, selection, status text
 - `view/` the own virtualised tree control (not `SysTreeView32`): GDI double-buffered paint of
   visible rows only, input, rename, drag and drop, address bar, filter box, status bar, MSAA
 - `actions/` playlist sends (`process_locations_async`), shell menus and file operations
 - `settings/`, `prefs/` global `cfg_var` settings and the Preferences tabs; `hosts/` the CUI
   panel and DUI element (per-panel state: open folders, selection, scroll)
+
+Preferences tabs (one dialog each, 300 x 222 DU, `tab_dialogs` in `prefs/preferences.cpp`):
+General, Roots (drive check boxes are created at run time under `IDC_DRIVES_LABEL`), Files,
+Folders, Look, Mouse & keys, Menu. Controls are found across all tabs (`find_control`), so
+moving one between tabs is an rc-only change. Run `dialog_check` after any layout edit.
 
 Budget: idle = no timers, no repaints; no disk I/O on the main thread; paint < 1 ms; no
 allocations while scrolling; folders listed only when opened.

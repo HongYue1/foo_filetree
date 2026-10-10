@@ -194,6 +194,8 @@ private:
     void expand(std::uint32_t node) noexcept;
     void collapse(std::uint32_t node) noexcept;
     void request_listing(std::uint32_t node);
+    //! The listing options for `node` ("Favourite files" looks up its files instead).
+    [[nodiscard]] fs::EnumOptions options_for(std::uint32_t node) const;
     //! Favourite files changed: "Favourite files" merges the new list (settings change_pinned).
     void update_pinned() noexcept;
     //! While relist_all rebuilds the tree, WM_PAINT leaves the old picture until the open
@@ -203,8 +205,6 @@ private:
     static constexpr UINT_PTR timer_hold_paint = 0x53;
     static constexpr UINT hold_paint_ms = 400;
     bool holding_paint_{false};
-    //! The listing options for `node` ("Favourite files" looks up its files instead).
-    [[nodiscard]] fs::EnumOptions options_for(std::uint32_t node) const;
     void on_listing(std::uint32_t node, std::uint64_t generation, fs::Listing& listing) noexcept;
     void apply_splice(const model::RowSplice& splice) noexcept;
     void apply_full_splice() noexcept;
@@ -244,8 +244,13 @@ private:
     void open_in_explorer(std::uint32_t node) noexcept;
     void copy_path(std::uint32_t node) noexcept;
     //! Adds the folder to the favourites, or removes it (Preferences > Favourites).
+    //! Adds the selection (or `node`) to the favourites, folders and files each to their list;
+    //! when all of it is in there already, removes it.
     void toggle_favourite(std::uint32_t node) noexcept;
-    void hide_folder(std::uint32_t node) noexcept; //!< adds it to the hidden folders
+    //! -1: nothing in `nodes` can be a favourite; 0: some are not yet; 1: all are.
+    [[nodiscard]] int favourite_state(const std::vector<std::uint32_t>& nodes) const;
+    //! Adds the selected folders (not roots, not files) to the hidden folders.
+    void hide_folder(std::uint32_t node) noexcept;
     void delete_node(std::uint32_t node, bool permanent) noexcept;
     // tree_view_refresh.cpp. Like Explorer's F5: every open folder is listed again in the
     // background and, where something changed, its children are merged in place (open folders

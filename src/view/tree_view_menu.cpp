@@ -7,6 +7,8 @@
 
 #include <windowsx.h>
 
+#include <algorithm>
+
 #include "../actions/file_ops.h"
 #include "../actions/fb2k_menu.h"
 #include "../actions/shell_menu.h"
@@ -125,6 +127,11 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             if (i.has(model::node_root)) any_drive |= !i.has(model::node_favourite);
         }
         const UINT drive_flags = any_drive ? MF_GRAYED : 0u;
+        const int fav_state = favourite_state(nodes);
+        const bool any_hideable = std::any_of(nodes.begin(), nodes.end(), [&](std::uint32_t n) {
+            const model::Node& i = tree_.node(n);
+            return i.has(model::node_container) && !i.has(model::node_root);
+        });
         const UINT root_flags_all = any_root ? MF_GRAYED : 0u;
 
         HMENU menu = CreatePopupMenu();
@@ -139,7 +146,8 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             using settings::MenuItem;
             if (item == MenuItem::undo && undo_.kind == UndoRecord::Kind::none) continue;
             if (item == MenuItem::fb2k_menu && !any_file) continue;
-            if (item == MenuItem::hide_folder && (!folder || root)) continue;
+            if (item == MenuItem::favourite && fav_state < 0) continue;
+            if (item == MenuItem::hide_folder && !any_hideable) continue;
             if (item == MenuItem::save_playlist && !any_folder && !several) continue;
             if (item == MenuItem::open_with && folder) continue;
             if (item == MenuItem::paste && !actions::clipboard_has_files()) continue;
@@ -200,15 +208,13 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
                 break;
             case MenuItem::refresh: AppendMenuW(menu, MF_STRING, id_refresh, L"Refresh\tF5"); break;
             case MenuItem::favourite: {
-                const settings::Settings& s = settings::current();
-                const bool listed =
-                    path_index(folder ? s.favourites : s.favourite_files, path) >= 0;
-                AppendMenuW(menu, MF_STRING | single_flags, id_favourite,
-                            listed ? L"Remove from favourites" : L"Add to favourites");
+                AppendMenuW(menu, MF_STRING, id_favourite,
+                            fav_state == 1 ? L"Remove from favourites" : L"Add to favourites");
                 break;
             }
             case MenuItem::hide_folder:
-                AppendMenuW(menu, MF_STRING | single_flags, id_hide_folder, L"Hide this folder");
+                AppendMenuW(menu, MF_STRING, id_hide_folder,
+                            several ? L"Hide these folders" : L"Hide this folder");
                 break;
             case MenuItem::undo: {
                 const bool rename = undo_.kind == UndoRecord::Kind::rename;
@@ -363,22 +369,46 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
     }
 }
 
+int TreeView::favourite_state(const std::vector<std::uint32_t>& nodes) const {
+    const settings::Settings& s = settings::current();
+    int state = -1;
+    std::wstring path;
+    for (const std::uint32_t n : nodes) {
+        const model::Node& item = tree_.node(n);
+        if (item.has(model::node_virtual)) continue;
+        tree_.build_path(n, path);
+        const bool listed =
+            path_index(item.has(model::node_container) ? s.favourites : s.favourite_files,
+                       path) >= 0;
+        if (!listed) return 0;
+        state = 1;
+    }
+    return state;
+}
+
 void TreeView::toggle_favourite(std::uint32_t node) noexcept {
-    if (tree_.node(node).has(model::node_virtual)) return;
     try {
-        std::wstring path;
-        tree_.build_path(node, path);
+        std::vector<std::uint32_t> nodes;
+        actions_for(node, nodes);
+        const int state = favourite_state(nodes);
+        if (state < 0) return;
         settings::Settings next = settings::stored();
-        std::vector<std::wstring>& list = tree_.node(node).has(model::node_container)
-                                              ? next.favourites
-                                              : next.favourite_files;
-        if (const int index = path_index(list, path); index >= 0) {
-            list.erase(list.begin() + index);
-        } else {
-            list.push_back(settings::clean_path(path));
+        std::wstring path;
+        for (const std::uint32_t n : nodes) {
+            const model::Node& item = tree_.node(n);
+            if (item.has(model::node_virtual)) continue;
+            tree_.build_path(n, path);
+            std::vector<std::wstring>& list =
+                item.has(model::node_container) ? next.favourites : next.favourite_files;
+            const int index = path_index(list, path);
+            if (state == 1 && index >= 0) {
+                list.erase(list.begin() + index);
+            } else if (state == 0 && index < 0) {
+                list.push_back(settings::clean_path(path));
+            }
         }
-        // Every panel rebuilds its roots (relist_all keeps what is open and selected). `node`
-        // is not valid afterwards.
+        // Every panel updates its roots (relist_all keeps what is open, selected and the
+        // scroll position). `node` is not valid afterwards.
         settings::apply(std::move(next));
     } catch (...) {
     }
@@ -386,14 +416,22 @@ void TreeView::toggle_favourite(std::uint32_t node) noexcept {
 
 void TreeView::hide_folder(std::uint32_t node) noexcept {
     try {
-        if (tree_.node(node).has(model::node_root)) return; // roots are never hidden
-        std::wstring path;
-        tree_.build_path(node, path);
+        std::vector<std::uint32_t> nodes;
+        actions_for(node, nodes);
         settings::Settings next = settings::stored();
-        if (path_index(next.hidden_folders, path) < 0) {
-            next.hidden_folders.push_back(settings::clean_path(path));
+        std::wstring path;
+        bool added = false;
+        for (const std::uint32_t n : nodes) {
+            const model::Node& item = tree_.node(n);
+            // Roots are never hidden; files have their own rules (Files tab).
+            if (!item.has(model::node_container) || item.has(model::node_root)) continue;
+            tree_.build_path(n, path);
+            if (path_index(next.hidden_folders, path) < 0) {
+                next.hidden_folders.push_back(settings::clean_path(path));
+                added = true;
+            }
         }
-        settings::apply(std::move(next)); // every panel relists; `node` is gone afterwards
+        if (added) settings::apply(std::move(next)); // every panel relists; `node` is gone
     } catch (...) {
     }
 }

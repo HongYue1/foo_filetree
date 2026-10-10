@@ -71,7 +71,9 @@ const wchar_t* drive_type_name(UINT type) noexcept {
     }
 }
 
-class PreferencesPage : public CDialogImpl<PreferencesPage>, public preferences_page_instance {
+class PreferencesPage : public CDialogImpl<PreferencesPage>,
+                        public preferences_page_instance,
+                        private settings::Listener {
 public:
     explicit PreferencesPage(preferences_page_callback::ptr callback) : callback_(callback) {}
 
@@ -155,6 +157,8 @@ private:
             }
         }
         to_controls(stored_state());
+        known_ = settings::stored();
+        settings::subscribe(this);
         initialised_ = true;
         return FALSE;
     }
@@ -280,7 +284,28 @@ private:
     }
 
     //! Leaving without Apply (Cancel, another page) drops the preview.
+    //! A panel changed the favourites or hidden folders (context menu) while the page is open:
+    //! show it, unless that list has edits of its own here.
+    void on_settings_changed(std::uint32_t) noexcept override {
+        if (!initialised_) return;
+        try {
+            const settings::Settings& now = settings::stored();
+            const auto follow = [](PathListEditor& editor, const std::vector<std::wstring>& before,
+                                   const std::vector<std::wstring>& after) {
+                if (after == before || editor.paths != before) return;
+                editor.paths = after;
+                editor.show(std::max(editor.selection(), 0));
+            };
+            follow(favourites_, known_.favourites, now.favourites);
+            follow(hidden_, known_.hidden_folders, now.hidden_folders);
+            known_ = now;
+            callback_->on_state_changed();
+        } catch (...) {
+        }
+    }
+
     void on_destroy() {
+        settings::unsubscribe(this);
         KillTimer(preview_timer);
         settings::end_preview();
         SetMsgHandled(FALSE);
@@ -331,7 +356,7 @@ private:
         if (hidden_.remove()) on_changed(0, id, nullptr);
     }
     void on_hidden_defaults(UINT, int id, CWindow) {
-        if (hidden_.merge(settings::default_hidden_folders())) on_changed(0, id, nullptr);
+        if (hidden_.replace(settings::default_hidden_folders())) on_changed(0, id, nullptr);
     }
 
     void update_enabled() {
@@ -508,6 +533,7 @@ private:
     PathListEditor hidden_{m_hWnd, {IDC_HIDDEN_LIST, IDC_HIDDEN_REMOVE}};
     bool initialised_{false};
     bool updating_{false};
+    settings::Settings known_; //!< stored settings as last seen, to follow outside changes
     // A member: it hooks this dialog and its controls for the lifetime of both.
     fb2k::CDarkModeHooks dark_;
 };

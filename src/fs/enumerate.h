@@ -65,6 +65,9 @@ struct Listing {
     DWORD error{ERROR_SUCCESS}; //!< Win32 error; ERROR_SUCCESS for a listing (even an empty one)
     bool cancelled{false};
     bool probed{false}; //!< a probe listing: empty folders are already left out
+    //! Folders left out because the cache knew them as empty: the probe must still look at
+    //! them (one may have got music since).
+    std::uint32_t skipped_empty{0};
 
     [[nodiscard]] std::wstring_view name(const Item& item) const noexcept {
         return {names.data() + item.name_offset, item.name_length};

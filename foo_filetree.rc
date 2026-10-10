@@ -52,7 +52,7 @@ BEGIN
 
     LTEXT           "Drives",IDC_STATIC,7,170,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,180,286,1
-    CONTROL         "Show these drives as roots in every Folder Tree panel:",IDC_DRIVES_LABEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,186,281,10
+    CONTROL         "Show drives as roots (turn off to see only your favourites):",IDC_DRIVES_LABEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,186,281,10
 END
 
 IDD_TAB_DISPLAY DIALOGEX 0, 0, 300, 222
@@ -219,7 +219,7 @@ BEGIN
     PUSHBUTTON      "Remove",IDC_FAV_REMOVE,243,48,50,14
     PUSHBUTTON      "Move up",IDC_FAV_UP,243,68,50,14
     PUSHBUTTON      "Move down",IDC_FAV_DOWN,243,84,50,14
-    CONTROL         "Also show the Media Library folders (those that hold tracks)",IDC_LIBRARY_ROOTS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,141,281,10
+    CONTROL         "Also show the music folders from Preferences > Media Library",IDC_LIBRARY_ROOTS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,141,281,10
     LTEXT           "Show them:",IDC_STATIC,12,158,70,8
     COMBOBOX        IDC_FAV_PLACE,85,156,120,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "Space between:",IDC_STATIC,12,174,70,8

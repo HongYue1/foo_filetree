@@ -54,6 +54,8 @@ public:
     bool add();
     //! Appends those of `extra` that are not listed yet.
     bool merge(const std::vector<std::wstring>& extra);
+    //! Replaces the whole list (Restore defaults).
+    bool replace(std::vector<std::wstring> next);
     bool remove();
     bool move(bool up);
 

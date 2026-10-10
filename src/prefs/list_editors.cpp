@@ -122,6 +122,13 @@ bool PathListEditor::merge(const std::vector<std::wstring>& extra) {
     return true;
 }
 
+bool PathListEditor::replace(std::vector<std::wstring> next) {
+    if (next == paths) return false;
+    paths = std::move(next);
+    show(0);
+    return true;
+}
+
 bool PathListEditor::remove() {
     const int index = selection();
     if (index < 0) return false;

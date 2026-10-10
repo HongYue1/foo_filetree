@@ -161,7 +161,10 @@ Listing enumerate_folder(std::wstring_view folder, const EnumOptions& options,
                                                        upper_path.data() + prefix, MAX_PATH);
             const std::wstring_view upper(upper_path.data(), prefix + length);
             if (by_path && rules->hidden_by_path(upper)) continue;
-            if (known_empty != nullptr && known_empty->contains(upper)) continue;
+            if (known_empty != nullptr && known_empty->contains(upper)) {
+                ++listing.skipped_empty;
+                continue;
+            }
         }
         Listing::Item item;
         item.name_offset = static_cast<std::uint32_t>(listing.names.size());

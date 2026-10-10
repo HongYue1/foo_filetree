@@ -69,7 +69,7 @@ void TreeView::request_probe(std::uint32_t node, const fs::Listing& listing) {
     const bool folders = std::any_of(listing.items.begin(), listing.items.end(), [](const auto& item) {
         return (item.attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
     });
-    if (!folders) return;
+    if (!folders && listing.skipped_empty == 0) return;
     if (std::any_of(pending_.begin(), pending_.end(),
                     [node](const PendingListing& p) { return p.node == node; })) {
         return; // a listing or check is on its way and probes when it lands

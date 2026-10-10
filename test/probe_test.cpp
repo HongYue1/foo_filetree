@@ -112,16 +112,26 @@ void test_probe(const std::filesystem::path& base) {
     options.probe = false;
     const fs::Listing quick = fs::enumerate_folder(root.wstring(), options, cancel);
     CHECK(!quick.probed);
+    CHECK(quick.skipped_empty == 2);
     CHECK(names_of(quick) == kept);
+
+    // Music arrives in a folder known as empty: the next probe shows it again.
+    make_file(root / L"blank" / L"new.mp3");
+    age(root / L"blank");
+    options.probe = true;
+    const std::vector<std::wstring> back{L"album", L"blank", L"library", L"nested"};
+    CHECK(names_of(fs::enumerate_folder(root.wstring(), options, cancel)) == back);
+    CHECK(!options.empty->contains(upper((root / L"blank").wstring())));
+    options.probe = false;
 
     // A folder that just changed is kept, whatever is in it.
     stdfs::create_directories(root / L"fresh");
     options.probe = true;
-    const std::vector<std::wstring> with_fresh{L"album", L"fresh", L"library", L"nested"};
+    const std::vector<std::wstring> with_fresh{L"album", L"blank", L"fresh", L"library", L"nested"};
     CHECK(names_of(fs::enumerate_folder(root.wstring(), options, cancel)) == with_fresh);
 
-    options.empty->set(upper((root / L"blank").wstring()), false);
-    CHECK(!options.empty->contains(upper((root / L"blank").wstring())));
+    options.empty->set(upper((root / L"blank").wstring()), true);
+    CHECK(options.empty->contains(upper((root / L"blank").wstring())));
     options.empty->clear();
     CHECK(!options.empty->contains(upper((root / L"empty").wstring())));
 }

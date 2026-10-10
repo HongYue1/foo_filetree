@@ -137,7 +137,8 @@ private:
         fill_combo(page, IDC_FILTER_BOX,
                    {L"In the address bar", L"Floating over the tree", L"Off"});
         fill_combo(page, IDC_STARTUP,
-                   {L"Restore the last state", L"All folders closed", L"Open this folder:"});
+                   {L"Restore the last state", L"All folders closed", L"Open this folder:",
+                    L"Show the last played track"});
         fill_combo(page, IDC_FAV_PLACE, {L"Before the drives", L"After the drives"});
         fill_combo(page, IDC_LINES, {L"None", L"Connector lines", L"Indentation guides"});
         fill_combo(page, IDC_EXTENSIONS,

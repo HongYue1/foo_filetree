@@ -193,6 +193,14 @@ void test_settings_model() {
     CHECK(wild.line_thickness == 4 && wild.row_padding == 0 && wild.line_opacity == 10);
     CHECK(wild.lines == TreeLines::none && wild.files == fs::FileMode::all);
     CHECK(wild.hidden_drives == (1u << 26) - 1);
+
+    Settings startup;
+    startup.startup = Startup::last_played;
+    startup.sanitize();
+    CHECK(startup.startup == Startup::last_played);
+    startup.startup = static_cast<Startup>(4);
+    startup.sanitize();
+    CHECK(startup.startup == Startup::restore);
 }
 
 void test_presets() {

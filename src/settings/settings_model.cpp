@@ -173,7 +173,7 @@ void Settings::sanitize() noexcept {
     sort.field = clamp_enum(sort.field, model::SortField::type);
     files = clamp_enum(files, fs::FileMode::none);
     filter_box = clamp_enum(filter_box, FilterBox::off);
-    startup = clamp_enum(startup, Startup::folder);
+    startup = clamp_enum(startup, Startup::last_played);
     favourites_place = clamp_enum(favourites_place, FavouritesPlace::after);
     tooltips = clamp_enum(tooltips, Tooltips::path);
     favourites = split_paths(join_paths(favourites));

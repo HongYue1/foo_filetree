@@ -8,6 +8,11 @@
 namespace filetree::view::now_playing {
 namespace {
 
+// The last local file played, kept for the next session.
+constexpr GUID guid_last_played = {
+    0x411d3168, 0x88ee, 0x48cb, {0xa3, 0x42, 0xf4, 0xaa, 0x34, 0x4c, 0xf7, 0x82}};
+cfg_var_modern::cfg_string cfg_last_played(guid_last_played, "");
+
 std::vector<Listener*> g_listeners;
 std::wstring g_path;
 bool g_known = false; //!< g_path is current (asked the player, or told since)
@@ -39,6 +44,7 @@ public:
     void on_playback_new_track(metadb_handle_ptr track) override {
         try {
             set(local_path(track));
+            if (!g_path.empty()) cfg_last_played.set(track->get_path() + 7); // after "file://"
         } catch (...) {
         }
     }
@@ -71,6 +77,11 @@ void subscribe(Listener* listener) {
 
 void unsubscribe(Listener* listener) noexcept {
     std::erase(g_listeners, listener);
+}
+
+std::wstring last_played() {
+    if (!path().empty()) return g_path;
+    return pfc::stringcvt::string_wide_from_utf8(cfg_last_played.get().c_str()).get_ptr();
 }
 
 const std::wstring& path() noexcept {

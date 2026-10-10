@@ -22,4 +22,8 @@ void unsubscribe(Listener* listener) noexcept;
 //! file (streams, archives).
 [[nodiscard]] const std::wstring& path() noexcept;
 
+//! The playing file, or else the last local file played, in this session or an earlier one
+//! (On startup: Show the last played track). Empty if none.
+[[nodiscard]] std::wstring last_played();
+
 } // namespace filetree::view::now_playing

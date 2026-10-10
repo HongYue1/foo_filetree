@@ -35,6 +35,11 @@ void Panel::start(const settings::PanelState& saved) noexcept {
         case settings::Startup::restore: tree_.restore_state(saved); break;
         case settings::Startup::folder: tree_.navigate_to(s.startup_folder, true); break;
         case settings::Startup::collapsed: break;
+        case settings::Startup::last_played:
+            if (const std::wstring track = now_playing::last_played(); !track.empty()) {
+                tree_.navigate_to(track, false);
+            }
+            break;
         }
     } catch (...) {
     }

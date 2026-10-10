@@ -20,7 +20,8 @@ enum class TreeLines : std::uint8_t { none, connectors, guides };
 enum class Extensions : std::uint8_t { always, never, non_playable };
 enum class FilterBox : std::uint8_t { bar, floating, off };
 //! What a panel shows when foobar2000 starts.
-enum class Startup : std::uint8_t { restore, collapsed, folder };
+//! last_played: opens down to the track played last (kept across sessions) and selects it.
+enum class Startup : std::uint8_t { restore, collapsed, folder, last_played };
 enum class FavouritesPlace : std::uint8_t { before, after }; //!< relative to the drives
 //! Row tooltips: none, the full name when it is cut off (in place), or the full path.
 enum class Tooltips : std::uint8_t { off, truncated, path };

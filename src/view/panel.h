@@ -65,6 +65,8 @@ private:
     void layout() noexcept;
     void on_selection() noexcept;
     void update_buttons() noexcept;
+    //! The favourites drop-down: a menu of settings quick_favourites below its button.
+    void show_favourites() noexcept;
     void go_back() noexcept;
     void go_forward() noexcept;
     void go_to_history() noexcept;

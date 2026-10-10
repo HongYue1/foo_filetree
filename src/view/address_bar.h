@@ -1,6 +1,7 @@
 #pragma once
 
-// The address bar above the tree: Back, Forward and Up buttons, then the selection's path as
+// The address bar above the tree: Back, Forward and Up buttons (and the favourites drop-down
+// when it has entries), then the selection's path as
 // crumbs. Clicking a crumb selects that folder; clicking the empty part (or Ctrl+L in the tree)
 // turns the crumbs into an edit box for typing a path. Painted with GDI like the tree; the
 // layout is measured when the crumbs, font or size change, never while painting.
@@ -19,7 +20,7 @@ namespace filetree::view {
 
 class AddressBar {
 public:
-    enum Button : int { back, forward, up, button_count };
+    enum Button : int { back, forward, up, favourites, button_count };
 
     struct Hooks {
         std::function<void(std::uint32_t node)> crumb;          //!< a crumb was clicked
@@ -48,6 +49,10 @@ public:
 
     void set_crumbs(std::vector<TreeView::Crumb> crumbs, std::wstring path) noexcept;
     void set_enabled(bool back_enabled, bool forward_enabled, bool up_enabled) noexcept;
+    //! The favourites drop-down button (after Up) shows only when there is something in it.
+    void show_favourites_button(bool shown) noexcept;
+    //! A button's rectangle in screen coordinates (for a menu below it).
+    [[nodiscard]] RECT button_screen_rect(Button button) const noexcept;
     void begin_edit() noexcept;
 
     //! Which parts show: the address (buttons + crumbs), and room on the right for a filter box
@@ -56,7 +61,7 @@ public:
     [[nodiscard]] RECT filter_rect() const noexcept { return filter_rect_; }
 
 private:
-    // Hit codes: buttons are 0..2, crumbs crumb_hit + index.
+    // Hit codes: buttons are 0..3, crumbs crumb_hit + index.
     static constexpr int hit_none = -1;
     static constexpr int hit_overflow = 8;
     static constexpr int hit_blank = 9;
@@ -74,10 +79,13 @@ private:
     void activate(int code) noexcept;
     void end_edit(bool commit) noexcept;
     void set_hover(int code) noexcept;
+    [[nodiscard]] int buttons() const noexcept { return show_favourites_ ? 4 : 3; }
+    [[nodiscard]] int buttons_width() const noexcept { return height_ * buttons(); }
 
     HWND wnd_{};
     HWND edit_{};
     bool show_address_{true};
+    bool show_favourites_{false};
     bool transparent_{false};
     int filter_height_{0};
     RECT filter_rect_{}; //!< where the panel puts the filter box

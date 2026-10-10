@@ -33,6 +33,8 @@ enum class Tooltips : std::uint8_t { off, truncated, path };
 [[nodiscard]] std::vector<std::wstring> split_paths(std::wstring_view text);
 //! The path as a favourite: trimmed, no trailing backslash except on a drive ("C:\").
 [[nodiscard]] std::wstring clean_path(std::wstring_view path);
+//! Case-insensitive (ordinal) path comparison.
+[[nodiscard]] bool same_path(std::wstring_view a, std::wstring_view b) noexcept;
 
 //! Folders hidden out of the box: Windows, programs, and the per-drive system folders.
 [[nodiscard]] std::vector<std::wstring> default_hidden_folders();
@@ -103,6 +105,9 @@ struct Settings {
     std::vector<std::wstring> favourites; //!< shown as roots, in this order
     //! Single files under one "Favourite files" root, in this order (any type).
     std::vector<std::wstring> favourite_files;
+    //! Favourites (folders or files) also listed under the address bar's drop-down button, in
+    //! this order; sanitize drops entries that are no longer favourites.
+    std::vector<std::wstring> quick_favourites;
     bool library_roots{false}; //!< the Media Library folders join the favourites as roots
     FavouritesPlace favourites_place{FavouritesPlace::before};
     bool separate_favourites{true}; //!< a line between the favourites and the drives

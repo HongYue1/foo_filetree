@@ -77,6 +77,7 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
                                   if (button == AddressBar::back) go_back();
                                   if (button == AddressBar::forward) go_forward();
                                   if (button == AddressBar::up) tree_.select_parent();
+                                  if (button == AddressBar::favourites) show_favourites();
                               },
                               [this] {
                                   if (tree_wnd_ != nullptr) SetFocus(tree_wnd_);
@@ -101,6 +102,7 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
     transparent_ = settings::current().transparent;
     status_.set_transparent(transparent_);
     address_.set_transparent(transparent_);
+    address_.show_favourites_button(!settings::current().quick_favourites.empty());
     // WM_CREATE attaches the tree (it needs the window).
     tree_wnd_ = CreateWindowExW(0, tree_class, L"",
                                 WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_CLIPSIBLINGS |
@@ -253,6 +255,7 @@ void Panel::on_settings_changed(std::uint32_t changes) noexcept {
     transparent_ = settings::current().transparent;
     status_.set_transparent(transparent_);
     address_.set_transparent(transparent_);
+    address_.show_favourites_button(!settings::current().quick_favourites.empty());
     const settings::FilterBox mode = settings::current().filter_box;
     if (mode != filter_mode_) {
         filter_.clear();
@@ -287,6 +290,35 @@ void Panel::on_selection() noexcept {
     } catch (...) {
     }
     update_buttons();
+}
+
+void Panel::show_favourites() noexcept {
+    try {
+        const std::vector<std::wstring> list = settings::current().quick_favourites;
+        if (list.empty()) return;
+        HMENU menu = CreatePopupMenu();
+        if (menu == nullptr) return;
+        for (std::size_t i = 0; i < list.size(); ++i) {
+            std::wstring label;
+            for (const wchar_t c : list[i]) {
+                if (c == L'&') label.push_back(L'&'); // not an accelerator
+                label.push_back(c);
+            }
+            AppendMenuW(menu, MF_STRING, i + 1, label.c_str());
+        }
+        const RECT button = address_.button_screen_rect(AddressBar::favourites);
+        TPMPARAMS params{sizeof(params), button};
+        const UINT chosen = static_cast<UINT>(TrackPopupMenuEx(
+            menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_LEFTALIGN | TPM_TOPALIGN | TPM_VERTICAL,
+            button.left, button.bottom, address_.wnd(), &params));
+        DestroyMenu(menu);
+        if (chosen == 0 || chosen > list.size()) return;
+        filter_.clear();
+        close_floating_filter();
+        if (!tree_.go_to_favourite(list[chosen - 1])) MessageBeep(MB_ICONWARNING);
+        if (tree_wnd_ != nullptr) SetFocus(tree_wnd_);
+    } catch (...) {
+    }
 }
 
 void Panel::update_buttons() noexcept {

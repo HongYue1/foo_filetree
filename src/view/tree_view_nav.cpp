@@ -123,6 +123,34 @@ bool TreeView::navigate_to(std::wstring_view input, bool expand_target) noexcept
     }
 }
 
+bool TreeView::go_to_favourite(std::wstring_view input) noexcept {
+    try {
+        const std::wstring target = normalise(input);
+        if (target.empty()) return false;
+        const settings::Settings& s = settings::current();
+        const bool pinned = std::any_of(s.favourite_files.begin(), s.favourite_files.end(),
+                                        [&](const std::wstring& f) { return settings::same_path(f, target); });
+        for (std::uint32_t node = 0;
+             node < tree_.node_count() && tree_.node(node).has(model::node_root); ++node) {
+            const model::Node& n = tree_.node(node);
+            const bool match = pinned ? n.has(model::node_virtual)
+                                      : n.has(model::node_favourite) && upper_path(node) == target;
+            if (!match) continue;
+            end_rename(false);
+            restore_expand_.clear();
+            restore_expand_.insert(upper_path(node));
+            restore_select_ = target;
+            try_restore(node);
+            return true;
+        }
+        return navigate_to(input, true);
+    } catch (...) {
+        restore_expand_.clear();
+        restore_select_.clear();
+        return false;
+    }
+}
+
 void TreeView::capture_state(settings::PanelState& out) const {
     out = {};
     std::wstring path;

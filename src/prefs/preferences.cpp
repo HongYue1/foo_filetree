@@ -120,6 +120,7 @@ public:
         COMMAND_HANDLER_EX(IDC_FAV_REMOVE, BN_CLICKED, on_fav_remove)
         COMMAND_HANDLER_EX(IDC_FAV_UP, BN_CLICKED, on_fav_move)
         COMMAND_HANDLER_EX(IDC_FAV_DOWN, BN_CLICKED, on_fav_move)
+        COMMAND_HANDLER_EX(IDC_FAV_QUICK, BN_CLICKED, on_fav_quick)
         COMMAND_HANDLER_EX(IDC_HIDDEN_LIST, LBN_SELCHANGE, on_hidden_select)
         COMMAND_HANDLER_EX(IDC_HIDDEN_ADD, BN_CLICKED, on_hidden_add)
         COMMAND_HANDLER_EX(IDC_HIDDEN_REMOVE, BN_CLICKED, on_hidden_remove)
@@ -305,6 +306,10 @@ private:
             };
             follow(favourites_, known_.favourites, now.favourites);
             follow(hidden_, known_.hidden_folders, now.hidden_folders);
+            if (now.quick_favourites != known_.quick_favourites && quick_ == known_.quick_favourites) {
+                quick_ = now.quick_favourites;
+                show_quick();
+            }
             known_ = now;
             callback_->on_state_changed();
         } catch (...) {
@@ -344,15 +349,49 @@ private:
     void on_menu_show(UINT, int id, CWindow) {
         if (!updating_ && menu_.toggle_shown()) on_changed(0, id, nullptr);
     }
-    void on_fav_select(UINT, int, CWindow) { favourites_.on_select(); }
+    void on_fav_select(UINT, int, CWindow) {
+        favourites_.on_select();
+        show_quick();
+    }
     void on_fav_add(UINT, int id, CWindow) {
         if (favourites_.add()) on_changed(0, id, nullptr);
+        show_quick();
     }
     void on_fav_remove(UINT, int id, CWindow) {
         if (favourites_.remove()) on_changed(0, id, nullptr);
+        show_quick();
     }
     void on_fav_move(UINT, int id, CWindow) {
         if (favourites_.move(id == IDC_FAV_UP)) on_changed(0, id, nullptr);
+    }
+    //! Index of the selected favourite in quick_, or -1.
+    [[nodiscard]] int quick_index() const {
+        const int at = favourites_.selection();
+        if (at < 0 || at >= static_cast<int>(favourites_.paths.size())) return -1;
+        for (std::size_t i = 0; i < quick_.size(); ++i) {
+            if (settings::same_path(quick_[i], favourites_.paths[at])) return static_cast<int>(i);
+        }
+        return -1;
+    }
+    //! The drop-down check box follows the selected favourite.
+    void show_quick() noexcept {
+        try {
+            enable(m_hWnd, IDC_FAV_QUICK, favourites_.selection() >= 0);
+            set_check(m_hWnd, IDC_FAV_QUICK, quick_index() >= 0);
+        } catch (...) {
+        }
+    }
+    void on_fav_quick(UINT, int id, CWindow) {
+        const int at = favourites_.selection();
+        if (updating_ || at < 0 || at >= static_cast<int>(favourites_.paths.size())) return;
+        const int index = quick_index();
+        if (get_check(m_hWnd, IDC_FAV_QUICK) == (index >= 0)) return;
+        if (index >= 0) {
+            quick_.erase(quick_.begin() + index);
+        } else {
+            quick_.push_back(favourites_.paths[at]);
+        }
+        on_changed(0, id, nullptr);
     }
 
     void on_hidden_select(UINT, int, CWindow) { hidden_.on_select(); }
@@ -443,6 +482,7 @@ private:
         s.hide_patterns = get_text(page, IDC_HIDE_PATTERNS);
         s.menu = menu_.layout;
         s.favourites = favourites_.paths;
+        s.quick_favourites = quick_; // sanitize drops the ones no longer favourites
         s.library_roots = get_check(page, IDC_LIBRARY_ROOTS);
         s.hidden_folders = hidden_.paths;
         s.hide_empty = get_check(page, IDC_HIDE_EMPTY);
@@ -526,6 +566,8 @@ private:
         set_int(page, IDC_FAV_GAP, s.favourites_gap);
         menu_.show(std::max(menu_.selection(), 0));
         favourites_.show(std::max(favourites_.selection(), 0));
+        quick_ = s.quick_favourites;
+        show_quick();
         hidden_.show(std::max(hidden_.selection(), 0));
         ::InvalidateRect(find_control(page, IDC_LINE_SWATCH), nullptr, FALSE);
         updating_ = false;
@@ -542,6 +584,7 @@ private:
     PathListEditor hidden_{m_hWnd, {IDC_HIDDEN_LIST, IDC_HIDDEN_REMOVE}};
     bool initialised_{false};
     bool updating_{false};
+    std::vector<std::wstring> quick_; //!< favourites drop-down (folders and files)
     settings::Settings known_; //!< stored settings as last seen, to follow outside changes
     // A member: it hooks this dialog and its controls for the lifetime of both.
     fb2k::CDarkModeHooks dark_;

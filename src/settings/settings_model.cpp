@@ -178,6 +178,15 @@ void Settings::sanitize() noexcept {
     tooltips = clamp_enum(tooltips, Tooltips::path);
     favourites = split_paths(join_paths(favourites));
     favourite_files = split_paths(join_paths(favourite_files));
+    quick_favourites = split_paths(join_paths(quick_favourites));
+    const auto known = [this](const std::wstring& path) {
+        const auto same = [&](const std::wstring& f) { return same_path(f, path); };
+        return std::any_of(favourites.begin(), favourites.end(), same) ||
+               std::any_of(favourite_files.begin(), favourite_files.end(), same);
+    };
+    quick_favourites.erase(std::remove_if(quick_favourites.begin(), quick_favourites.end(),
+                                          [&](const std::wstring& p) { return !known(p); }),
+                           quick_favourites.end());
     hidden_folders = split_paths(join_paths(hidden_folders));
 }
 
@@ -211,7 +220,7 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
     }
     if (a.show_address_bar != b.show_address_bar || a.filter_box != b.filter_box ||
         a.show_status_bar != b.show_status_bar || a.status_counters != b.status_counters ||
-        a.transparent != b.transparent) {
+        a.transparent != b.transparent || a.quick_favourites != b.quick_favourites) {
         out |= change_layout;
     }
     if (a.sort.field != b.sort.field || a.sort.folders_first != b.sort.folders_first ||
@@ -227,6 +236,11 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
 std::vector<std::wstring> default_hidden_folders() {
     return {L"%WINDIR%",           L"%ProgramFiles%",   L"%ProgramFiles(x86)%",
             L"%ProgramData%",      L"?:\\$Recycle.Bin", L"?:\\System Volume Information"};
+}
+
+bool same_path(std::wstring_view a, std::wstring_view b) noexcept {
+    return CompareStringOrdinal(a.data(), static_cast<int>(a.size()), b.data(),
+                                static_cast<int>(b.size()), TRUE) == CSTR_EQUAL;
 }
 
 std::wstring clean_path(std::wstring_view path) {
@@ -259,8 +273,7 @@ std::vector<std::wstring> split_paths(std::wstring_view text) {
         text.remove_prefix(bar == std::wstring_view::npos ? text.size() : bar + 1);
         if (path.empty()) continue;
         const bool repeated = std::any_of(out.begin(), out.end(), [&](const std::wstring& seen) {
-            return CompareStringOrdinal(seen.c_str(), static_cast<int>(seen.size()), path.c_str(),
-                                        static_cast<int>(path.size()), TRUE) == CSTR_EQUAL;
+            return same_path(seen, path);
         });
         if (!repeated) out.push_back(std::move(path));
     }

@@ -38,6 +38,7 @@ enum MenuId : UINT {
     id_open_with,
     id_properties,
     id_hide_folder,
+    id_quick_favourite,
     // Empty-area menu.
     id_refresh_all,
     id_collapse_all,
@@ -210,6 +211,11 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             case MenuItem::favourite: {
                 AppendMenuW(menu, MF_STRING, id_favourite,
                             fav_state == 1 ? L"Remove from favourites" : L"Add to favourites");
+                if (fav_state == 1) {
+                    AppendMenuW(menu, MF_STRING, id_quick_favourite,
+                                quick_state(nodes) ? L"Remove from favourites drop-down"
+                                                   : L"Add to favourites drop-down");
+                }
                 break;
             }
             case MenuItem::hide_folder:
@@ -361,6 +367,7 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
     case id_undo: undo(); break;
     case id_favourite: toggle_favourite(node); break;
     case id_hide_folder: hide_folder(node); break;
+    case id_quick_favourite: toggle_quick_favourite(node); break;
     case id_new_folder: new_folder(node); break;
     case id_paste: paste_into(node); break;
     case id_cut: put_on_clipboard(node, true); break;
@@ -384,6 +391,40 @@ int TreeView::favourite_state(const std::vector<std::uint32_t>& nodes) const {
         state = 1;
     }
     return state;
+}
+
+bool TreeView::quick_state(const std::vector<std::uint32_t>& nodes) const {
+    const std::vector<std::wstring>& quick = settings::current().quick_favourites;
+    std::wstring path;
+    for (const std::uint32_t n : nodes) {
+        if (tree_.node(n).has(model::node_virtual)) continue;
+        tree_.build_path(n, path);
+        if (path_index(quick, path) < 0) return false;
+    }
+    return true;
+}
+
+void TreeView::toggle_quick_favourite(std::uint32_t node) noexcept {
+    try {
+        std::vector<std::uint32_t> nodes;
+        actions_for(node, nodes);
+        if (favourite_state(nodes) != 1) return;
+        const bool remove = quick_state(nodes);
+        settings::Settings next = settings::stored();
+        std::wstring path;
+        for (const std::uint32_t n : nodes) {
+            if (tree_.node(n).has(model::node_virtual)) continue;
+            tree_.build_path(n, path);
+            const int index = path_index(next.quick_favourites, path);
+            if (remove && index >= 0) {
+                next.quick_favourites.erase(next.quick_favourites.begin() + index);
+            } else if (!remove && index < 0) {
+                next.quick_favourites.push_back(settings::clean_path(path));
+            }
+        }
+        settings::apply(std::move(next));
+    } catch (...) {
+    }
 }
 
 void TreeView::toggle_favourite(std::uint32_t node) noexcept {

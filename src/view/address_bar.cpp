@@ -28,7 +28,7 @@ void fill(HDC dc, const RECT& rect, COLORREF colour) noexcept {
     FillRect(dc, &rect, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
 }
 
-//! A chevron pointing left, right or up, centred on (cx, cy), `size` pixels across.
+//! A chevron pointing left (0), right (1), up (2) or down (3), centred on (cx, cy), `size` pixels across.
 void draw_chevron(HDC dc, int cx, int cy, int size, int direction, int width,
                   COLORREF colour) noexcept {
     const int h = std::max(size / 2, 2);
@@ -37,6 +37,7 @@ void draw_chevron(HDC dc, int cx, int cy, int size, int direction, int width,
     switch (direction) {
     case 0: points[0] = {cx + q, cy - h}; points[1] = {cx - q, cy}; points[2] = {cx + q, cy + h}; break;
     case 1: points[0] = {cx - q, cy - h}; points[1] = {cx + q, cy}; points[2] = {cx - q, cy + h}; break;
+    case 3: points[0] = {cx - h, cy - q}; points[1] = {cx, cy + q}; points[2] = {cx + h, cy - q}; break;
     default: points[0] = {cx - h, cy + q}; points[1] = {cx, cy - q}; points[2] = {cx + h, cy + q}; break;
     }
     HPEN pen = CreatePen(PS_SOLID, width, colour);
@@ -162,6 +163,21 @@ void AddressBar::set_enabled(bool back_enabled, bool forward_enabled, bool up_en
     if (changed && wnd_ != nullptr) InvalidateRect(wnd_, nullptr, FALSE);
 }
 
+void AddressBar::show_favourites_button(bool shown) noexcept {
+    enabled_[favourites] = shown;
+    if (shown == show_favourites_) return;
+    show_favourites_ = shown;
+    hover_ = pressed_ = hit_none;
+    if (edit_ != nullptr) end_edit(false);
+    layout();
+}
+
+RECT AddressBar::button_screen_rect(Button button) const noexcept {
+    RECT rect{button * height_, 0, (button + 1) * height_, height_ - 1};
+    if (wnd_ != nullptr) MapWindowPoints(wnd_, nullptr, reinterpret_cast<POINT*>(&rect), 2);
+    return rect;
+}
+
 void AddressBar::layout() noexcept {
     crumb_rects_.assign(crumbs_.size(), RECT{});
     overflow_rect_ = {};
@@ -170,7 +186,7 @@ void AddressBar::layout() noexcept {
     GetClientRect(wnd_, &client);
     const int pad = dpi::scale(6, dpi_);
     const int separator = dpi::scale(12, dpi_);
-    const int left = height_ * button_count + dpi::scale(4, dpi_);
+    const int left = buttons_width() + dpi::scale(4, dpi_);
     int right = client.right - pad;
 
     // The filter box: on the right, or the whole bar when the address part is hidden.
@@ -230,7 +246,7 @@ int AddressBar::hit(int x, int y) const noexcept {
     if (y < 0 || y >= height_ || !show_address_) return hit_none;
     const POINT at{x, y};
     if (PtInRect(&filter_rect_, at)) return hit_none;
-    if (x >= 0 && x < height_ * button_count) return x / height_;
+    if (x >= 0 && x < buttons_width()) return x / height_;
     const POINT point{x, y};
     if (PtInRect(&overflow_rect_, point)) return hit_overflow;
     for (std::size_t i = 0; i < crumb_rects_.size(); ++i) {
@@ -250,7 +266,7 @@ void AddressBar::paint(HDC dc, const RECT& client) noexcept {
     if (!show_address_) return;
     const int pen = std::max(dpi::scale(3, dpi_) / 2, 1);
     const int glyph = dpi::scale(10, dpi_);
-    for (int b = 0; b < button_count; ++b) {
+    for (int b = 0; b < buttons(); ++b) {
         const RECT rect{b * height_, 0, (b + 1) * height_, height_ - 1};
         if (enabled_[b] && (hover_ == b || pressed_ == b)) fill(dc, rect, hover_background_);
         draw_chevron(dc, (rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2, glyph, b, pen,
@@ -265,7 +281,7 @@ void AddressBar::paint(HDC dc, const RECT& client) noexcept {
     const int chevron = dpi::scale(7, dpi_);
     const int mid = height_ / 2;
     if (crumbs_.empty()) {
-        RECT rect{height_ * button_count + dpi::scale(10, dpi_), 0, client.right, height_};
+        RECT rect{buttons_width() + dpi::scale(10, dpi_), 0, client.right, height_};
         SetTextColor(dc, dim_text_);
         DrawTextW(dc, placeholder, -1, &rect, DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
     }
@@ -300,7 +316,7 @@ void AddressBar::set_hover(int code) noexcept {
 
 void AddressBar::activate(int code) noexcept {
     try {
-        if (code >= 0 && code < button_count) {
+        if (code >= 0 && code < buttons()) {
             if (enabled_[code] && hooks_.button) hooks_.button(static_cast<Button>(code));
         } else if (code >= crumb_hit) {
             const auto index = static_cast<std::size_t>(code - crumb_hit);
@@ -316,7 +332,7 @@ void AddressBar::begin_edit() noexcept {
     if (wnd_ == nullptr || edit_ != nullptr || !show_address_) return;
     RECT client{};
     GetClientRect(wnd_, &client);
-    const int left = height_ * button_count + dpi::scale(4, dpi_);
+    const int left = buttons_width() + dpi::scale(4, dpi_);
     // One line high and centred: a single-line EDIT draws its text at the top.
     const int edit_height = text_height_;
     const int top = (height_ - 1 - edit_height) / 2;

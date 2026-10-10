@@ -80,6 +80,9 @@ public:
     //! Expands down to `path` (listing folders as needed) and selects it. False when no root
     //! holds the path or it is not an absolute path; nothing changes then.
     bool navigate_to(std::wstring_view path, bool expand_target) noexcept;
+    //! Like navigate_to, but a favourite folder opens as its own root and a favourite file is
+    //! selected under "Favourite files".
+    bool go_to_favourite(std::wstring_view path) noexcept;
     //! Per-instance state for the host to store: open folders, selection, first visible row.
     //! Restores still waiting for a listing (an offline drive) are kept, so they survive.
     void capture_state(settings::PanelState& out) const;
@@ -249,6 +252,10 @@ private:
     void toggle_favourite(std::uint32_t node) noexcept;
     //! -1: nothing in `nodes` can be a favourite; 0: some are not yet; 1: all are.
     [[nodiscard]] int favourite_state(const std::vector<std::uint32_t>& nodes) const;
+    //! Whether all of `nodes` (favourites) are in the favourites drop-down.
+    [[nodiscard]] bool quick_state(const std::vector<std::uint32_t>& nodes) const;
+    //! Adds the selected favourites to the address bar's drop-down, or removes them.
+    void toggle_quick_favourite(std::uint32_t node) noexcept;
     //! Adds the selected folders (not roots, not files) to the hidden folders.
     void hide_folder(std::uint32_t node) noexcept;
     void delete_node(std::uint32_t node, bool permanent) noexcept;

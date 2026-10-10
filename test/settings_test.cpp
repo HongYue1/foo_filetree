@@ -207,6 +207,18 @@ void test_settings_model() {
     startup.startup = static_cast<Startup>(4);
     startup.sanitize();
     CHECK(startup.startup == Startup::restore);
+
+    // The drop-down keeps only favourites (folders or files), compared without case.
+    Settings quick;
+    quick.favourites = {L"D:\\Music"};
+    quick.favourite_files = {L"C:\\a.mp3"};
+    quick.quick_favourites = {L"d:\\music\\", L"C:\\gone", L"C:\\A.MP3", L"D:\\Music"};
+    quick.sanitize();
+    CHECK(quick.quick_favourites.size() == 2 && quick.quick_favourites[0] == L"d:\\music" &&
+          quick.quick_favourites[1] == L"C:\\A.MP3");
+    Settings more = quick;
+    more.quick_favourites.pop_back();
+    CHECK(diff(quick, more) == change_layout);
 }
 
 void test_presets() {

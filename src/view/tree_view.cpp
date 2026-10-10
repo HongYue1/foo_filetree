@@ -125,6 +125,8 @@ void TreeView::detach() noexcept {
     tree_.clear();
     selected_row_ = hover_row_ = -1;
     top_row_ = 0;
+    if (holding_paint_) KillTimer(wnd_, timer_hold_paint);
+    holding_paint_ = false;
     wnd_ = nullptr;
 }
 
@@ -412,6 +414,7 @@ void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
         }
     }
     apply_restore_top();
+    if (holding_paint_ && restore_expand_.empty()) release_paint();
     try {
         if (again) {
             // A change was reported while this listing ran: check once more now it has landed.
@@ -444,7 +447,7 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
     case WM_PAINT: {
         PAINTSTRUCT ps{};
         if (HDC dc = BeginPaint(wnd, &ps); dc != nullptr) {
-            paint(dc, ps.rcPaint);
+            if (!holding_paint_) paint(dc, ps.rcPaint);
             EndPaint(wnd, &ps);
         }
         return true;
@@ -500,6 +503,10 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
         }
         return true;
     case WM_TIMER:
+        if (static_cast<UINT_PTR>(wp) == timer_hold_paint) {
+            release_paint();
+            return true;
+        }
         return on_watch_timer(static_cast<UINT_PTR>(wp));
     case WM_GETOBJECT:
         return on_get_object(wp, lp, result);

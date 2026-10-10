@@ -194,6 +194,15 @@ private:
     void expand(std::uint32_t node) noexcept;
     void collapse(std::uint32_t node) noexcept;
     void request_listing(std::uint32_t node);
+    //! Favourite files changed: "Favourite files" merges the new list (settings change_pinned).
+    void update_pinned() noexcept;
+    //! While relist_all rebuilds the tree, WM_PAINT leaves the old picture until the open
+    //! folders are back or hold_paint_ms passed (one-shot timer).
+    void hold_paint() noexcept;
+    void release_paint() noexcept;
+    static constexpr UINT_PTR timer_hold_paint = 0x53;
+    static constexpr UINT hold_paint_ms = 400;
+    bool holding_paint_{false};
     //! The listing options for `node` ("Favourite files" looks up its files instead).
     [[nodiscard]] fs::EnumOptions options_for(std::uint32_t node) const;
     void on_listing(std::uint32_t node, std::uint64_t generation, fs::Listing& listing) noexcept;

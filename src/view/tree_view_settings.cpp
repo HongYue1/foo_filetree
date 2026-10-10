@@ -79,7 +79,11 @@ void TreeView::on_settings_changed(std::uint32_t changes) noexcept {
         } catch (...) {
         }
     }
-    if ((changes & (settings::change_relist | settings::change_roots)) != 0) relist_all();
+    if ((changes & (settings::change_relist | settings::change_roots)) != 0) {
+        relist_all();
+    } else if ((changes & settings::change_pinned) != 0) {
+        update_pinned();
+    }
     if ((changes & settings::change_repaint) != 0) {
         set_colours(colours_); // line colour
         remeasure();           // line width
@@ -109,6 +113,22 @@ void TreeView::on_library_changed() noexcept {
     schedule_watch_sync();
 }
 
+void TreeView::update_pinned() noexcept {
+    try {
+        pinned_ = std::make_shared<const std::vector<std::wstring>>(
+            settings::current().favourite_files);
+        for (std::uint32_t root = 0;
+             root < tree_.node_count() && tree_.node(root).has(model::node_root); ++root) {
+            const model::Node& r = tree_.node(root);
+            if (!r.has(model::node_virtual)) continue;
+            // Open or listed before: merge the new list in place (no relist, no scroll jump).
+            if (r.has(model::node_loaded) && !r.has(model::node_loading)) request_check(root);
+        }
+        resolve_playing();
+    } catch (...) {
+    }
+}
+
 void TreeView::relist_all(bool keep_pending) noexcept {
     try {
         end_rename(false);
@@ -116,6 +136,12 @@ void TreeView::relist_all(bool keep_pending) noexcept {
             restore_expand_.clear();
             restore_select_.clear();
         }
+        // Keep the scroll position: the row at the top comes back at the top. Until the open
+        // folders are back (or a moment has passed) the old picture stays, so it doesn't flicker.
+        if (top_row_ < tree_.row_count() && (!keep_pending || restore_top_.empty())) {
+            restore_top_ = upper_path(tree_.node_at_row(top_row_));
+        }
+        hold_paint();
         for (const std::uint32_t node : tree_.rows()) {
             const model::Node& n = tree_.node(node);
             if (n.has(model::node_expanded)) restore_expand_.insert(upper_path(node));
@@ -129,10 +155,26 @@ void TreeView::relist_all(bool keep_pending) noexcept {
         // Roots have no listing to wait for. They are the first nodes of a fresh tree.
         const auto roots = static_cast<std::uint32_t>(tree_.node_count());
         for (std::uint32_t node = 0; node < roots; ++node) try_restore(node);
+        apply_restore_top();
+        if (restore_expand_.empty()) release_paint();
     } catch (...) {
         restore_expand_.clear();
         restore_select_.clear();
+        release_paint();
     }
+}
+
+void TreeView::hold_paint() noexcept {
+    if (wnd_ == nullptr || tree_.row_count() == 0) return;
+    holding_paint_ = SetTimer(wnd_, timer_hold_paint, hold_paint_ms, nullptr) != 0;
+}
+
+void TreeView::release_paint() noexcept {
+    if (!holding_paint_) return;
+    holding_paint_ = false;
+    if (wnd_ == nullptr) return;
+    KillTimer(wnd_, timer_hold_paint);
+    InvalidateRect(wnd_, nullptr, FALSE);
 }
 
 void TreeView::try_restore(std::uint32_t node) {

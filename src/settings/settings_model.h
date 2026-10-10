@@ -159,6 +159,9 @@ enum Change : std::uint32_t {
     change_relist = 1 << 2,    //!< filter or sort: listings must be redone
     change_roots = 1 << 3,     //!< the root list (hidden drives)
     change_layout = 1 << 4,    //!< panel parts shown or hidden (address bar)
+    //! Favourite files added or removed: only the "Favourite files" root is looked at again
+    //! (change_roots when it appears or goes).
+    change_pinned = 1 << 5,
 };
 
 //! What a view must do to go from `before` to `after`.

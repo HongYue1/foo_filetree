@@ -159,6 +159,12 @@ void test_settings_model() {
     b.follow_playing = true;
     CHECK(diff(a, b) == change_repaint);
     b = a;
+    b.favourite_files = {L"C:\\a.mp3"};
+    CHECK(diff(a, b) == (change_roots | change_pinned)); // the root appears
+    a.favourite_files = {L"C:\\b.mp3"};
+    CHECK(diff(a, b) == change_pinned);
+    a.favourite_files.clear();
+    b = a;
     b.read_only = true;
     CHECK(diff(a, b) == change_repaint);
     CHECK(changes_files(MenuItem::remove) && changes_files(MenuItem::explorer_menu));

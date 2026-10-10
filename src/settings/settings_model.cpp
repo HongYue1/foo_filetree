@@ -184,11 +184,13 @@ void Settings::sanitize() noexcept {
 std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
     std::uint32_t out = 0;
     if (a.show_drives != b.show_drives || a.hidden_drives != b.hidden_drives ||
-        a.favourites != b.favourites || a.favourite_files != b.favourite_files ||
+        a.favourites != b.favourites ||
+        a.favourite_files.empty() != b.favourite_files.empty() ||
         a.library_roots != b.library_roots ||
         a.favourites_place != b.favourites_place) {
         out |= change_roots;
     }
+    if (a.favourite_files != b.favourite_files) out |= change_pinned;
     if (a.lines != b.lines || a.line_thickness != b.line_thickness ||
         a.line_custom_colour != b.line_custom_colour || a.line_colour != b.line_colour ||
         a.line_opacity != b.line_opacity || a.extensions != b.extensions) {

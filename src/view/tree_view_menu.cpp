@@ -142,6 +142,7 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             if (item == MenuItem::save_playlist && !any_folder && !several) continue;
             if (item == MenuItem::open_with && folder) continue;
             if (item == MenuItem::paste && !actions::clipboard_has_files()) continue;
+            if (read_only_ && settings::changes_files(item)) continue;
             const int group = settings::menu_group(item);
             if (last_group >= 0 && group != last_group) AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
             last_group = group;
@@ -397,6 +398,7 @@ actions::ShellDone TreeView::guard(std::function<void(TreeView&, actions::ShellR
 }
 
 void TreeView::undo() noexcept {
+    if (refuse_change()) return;
     if (undo_.kind == UndoRecord::Kind::none) {
         MessageBeep(MB_ICONWARNING);
         return;

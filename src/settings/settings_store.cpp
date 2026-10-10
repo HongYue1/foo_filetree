@@ -55,6 +55,7 @@ constexpr GUID guid_hidden_folders = {0x94af8dbf, 0xe2c8, 0x4114, {0x9f, 0xbf, 0
 constexpr GUID guid_show_drives = {0x29230d09, 0x9a45, 0x4730, {0x80, 0x37, 0x15, 0x36, 0x6a, 0x98, 0x76, 0xf8}};
 constexpr GUID guid_library_roots = {0x88687e90, 0x25e9, 0x40f0, {0x85, 0xa5, 0xd8, 0xd7, 0xcf, 0x7c, 0xc7, 0x99}};
 constexpr GUID guid_hide_empty = {0xd4f2acec, 0x50ba, 0x4684, {0xa8, 0x0c, 0x20, 0x3c, 0xac, 0xa4, 0x1c, 0x6f}};
+constexpr GUID guid_read_only = {0xe74e2162, 0x3de1, 0x4c02, {0x94, 0x29, 0xab, 0x87, 0x11, 0x8b, 0x67, 0xe7}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
 using cfg_int = cfg_var_modern::cfg_int;
@@ -97,6 +98,7 @@ cfg_bool cfg_show_icons(guid_show_icons, defaults.show_icons);
 cfg_bool cfg_mark_favourites(guid_mark_favourites, defaults.mark_favourites);
 cfg_bool cfg_mark_playing(guid_mark_playing, defaults.mark_playing);
 cfg_bool cfg_follow_playing(guid_follow_playing, defaults.follow_playing);
+cfg_bool cfg_read_only(guid_read_only, defaults.read_only);
 cfg_int cfg_filter_box(guid_filter_box, static_cast<int>(defaults.filter_box));
 cfg_int cfg_startup(guid_startup, static_cast<int>(defaults.startup));
 cfg_string cfg_startup_folder(guid_startup_folder, "");
@@ -165,6 +167,7 @@ Settings load() {
     s.mark_favourites = cfg_mark_favourites.get();
     s.mark_playing = cfg_mark_playing.get();
     s.follow_playing = cfg_follow_playing.get();
+    s.read_only = cfg_read_only.get();
     s.filter_box = as_enum<FilterBox>(cfg_filter_box.get());
     s.startup = as_enum<Startup>(cfg_startup.get());
     s.startup_folder = wide(cfg_startup_folder.get());
@@ -213,6 +216,7 @@ void save(const Settings& s) {
     cfg_mark_favourites.set(s.mark_favourites);
     cfg_mark_playing.set(s.mark_playing);
     cfg_follow_playing.set(s.follow_playing);
+    cfg_read_only.set(s.read_only);
     cfg_filter_box.set(static_cast<int>(s.filter_box));
     cfg_startup.set(static_cast<int>(s.startup));
     cfg_startup_folder.set(utf8(s.startup_folder));

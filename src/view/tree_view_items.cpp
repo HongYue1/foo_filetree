@@ -92,7 +92,7 @@ void TreeView::drag_node(std::uint32_t node) noexcept {
         actions_for(node, nodes);
         std::vector<std::wstring> paths;
         paths_of(nodes, paths);
-        actions::drag_out(wnd_, paths);
+        actions::drag_out(wnd_, paths, !read_only_);
     } catch (...) {
     }
     // The drag loop swallowed the mouse messages: the hover row is stale.
@@ -124,6 +124,7 @@ void TreeView::copy_path(std::uint32_t node) noexcept {
 }
 
 void TreeView::put_on_clipboard(std::uint32_t node, bool cut) noexcept {
+    if (cut && refuse_change()) return;
     try {
         std::vector<std::uint32_t> nodes;
         actions_for(node, nodes);
@@ -228,6 +229,7 @@ void TreeView::save_as_playlist(std::uint32_t node) noexcept {
 }
 
 void TreeView::delete_node(std::uint32_t node, bool permanent) noexcept {
+    if (refuse_change()) return;
     try {
         std::vector<std::uint32_t> nodes;
         actions_for(node, nodes);

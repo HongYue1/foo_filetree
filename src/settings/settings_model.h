@@ -64,6 +64,9 @@ inline constexpr std::size_t menu_item_count = 21;
 
 //! Items that share a group get no separator between them.
 [[nodiscard]] int menu_group(MenuItem item) noexcept;
+//! Items that change files on disk, left out in read-only mode. The Explorer submenu counts
+//! (it has Delete, Rename, Cut...).
+[[nodiscard]] bool changes_files(MenuItem item) noexcept;
 [[nodiscard]] const wchar_t* menu_item_label(MenuItem item) noexcept;
 
 struct MenuLayout {
@@ -92,6 +95,9 @@ struct Settings {
     Startup startup{Startup::restore};
     bool watch_changes{true}; //!< open folders update when their contents change on disk
     bool follow_playing{false}; //!< each new playing track is opened to and selected
+    //! Browse and play only: no rename, delete, cut, paste, new folder, undo or Explorer menu,
+    //! no drops on the tree, and drags out never move.
+    bool read_only{false};
     std::wstring startup_folder; //!< for Startup::folder
     std::vector<std::wstring> favourites; //!< shown as roots, in this order
     bool library_roots{false}; //!< the Media Library folders join the favourites as roots

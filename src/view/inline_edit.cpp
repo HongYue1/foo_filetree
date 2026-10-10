@@ -22,7 +22,7 @@ constexpr UINT_PTR edit_subclass_id = 1;
 } // namespace
 
 void TreeView::begin_rename(std::uint32_t node) noexcept {
-    if (wnd_ == nullptr) return;
+    if (wnd_ == nullptr || refuse_change()) return;
     if (edit_ != nullptr) end_rename(false);
     const model::Node& n = tree_.node(node);
     const auto row = tree_.row_of(node);

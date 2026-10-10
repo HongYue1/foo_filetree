@@ -453,6 +453,9 @@ private:
     // Now playing marker.
     bool mark_playing_{true};
     bool follow_playing_{false}; //!< select each new playing track (setting)
+    bool read_only_{false};      //!< no file changes from the panel (setting)
+    //! True (and a beep) when read-only mode stops a file change.
+    bool refuse_change() const noexcept;
     std::array<std::uint32_t, 4> playing_nodes_{};
     std::size_t playing_count_{0};
     bool playing_exact_{false}; //!< playing_nodes_ are the file itself (not a folder holding it)

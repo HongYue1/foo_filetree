@@ -159,6 +159,11 @@ void test_settings_model() {
     b.follow_playing = true;
     CHECK(diff(a, b) == change_repaint);
     b = a;
+    b.read_only = true;
+    CHECK(diff(a, b) == change_repaint);
+    CHECK(changes_files(MenuItem::remove) && changes_files(MenuItem::explorer_menu));
+    CHECK(!changes_files(MenuItem::copy) && !changes_files(MenuItem::play));
+    b = a;
     b.zebra = true;
     b.tooltips = Tooltips::path;
     CHECK(diff(a, b) == change_repaint);

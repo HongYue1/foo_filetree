@@ -11,7 +11,7 @@
 
 namespace filetree::actions {
 
-bool drag_out(HWND source, const std::vector<std::wstring>& paths) noexcept {
+bool drag_out(HWND source, const std::vector<std::wstring>& paths, bool allow_move) noexcept {
     Microsoft::WRL::ComPtr<IDataObject> data;
     if (FAILED(make_data_object(paths, &data)) || !data) return false;
 
@@ -31,8 +31,9 @@ bool drag_out(HWND source, const std::vector<std::wstring>& paths) noexcept {
     }
     // A null drop source gets the shell's default one (Esc cancels, cursors, drag image).
     DWORD effect = DROPEFFECT_NONE;
-    SHDoDragDrop(source, data.Get(), nullptr, DROPEFFECT_COPY | DROPEFFECT_MOVE | DROPEFFECT_LINK,
-                 &effect);
+    const DWORD allowed =
+        DROPEFFECT_COPY | DROPEFFECT_LINK | (allow_move ? DROPEFFECT_MOVE : DROPEFFECT_NONE);
+    SHDoDragDrop(source, data.Get(), nullptr, allowed, &effect);
     return true;
 }
 

@@ -15,6 +15,7 @@ namespace filetree::actions {
 //! cancelled. Offers copy, move and link with copy preferred: a drop into Explorer moves the
 //! user's files only with Shift held, as in Explorer.
 //! Returns false if no data object could be made for the paths (nothing was dragged).
-bool drag_out(HWND source, const std::vector<std::wstring>& paths) noexcept;
+//! `allow_move` false (read-only mode): targets may only copy or link, never move.
+bool drag_out(HWND source, const std::vector<std::wstring>& paths, bool allow_move) noexcept;
 
 } // namespace filetree::actions

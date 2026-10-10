@@ -32,7 +32,14 @@ void TreeView::check_if_open(std::uint32_t folder) noexcept {
     }
 }
 
+bool TreeView::refuse_change() const noexcept {
+    if (!read_only_) return false;
+    MessageBeep(MB_ICONWARNING);
+    return true;
+}
+
 void TreeView::new_folder(std::uint32_t node) noexcept {
+    if (refuse_change()) return;
     const std::uint32_t folder = target_folder(node);
     if (folder == model::no_node) {
         MessageBeep(MB_ICONWARNING);
@@ -62,6 +69,7 @@ void TreeView::new_folder(std::uint32_t node) noexcept {
 }
 
 void TreeView::paste_into(std::uint32_t node) noexcept {
+    if (refuse_change()) return;
     const std::uint32_t folder = target_folder(node);
     actions::ClipboardFiles files;
     if (folder == model::no_node || !actions::read_clipboard_files(wnd_, files)) {
@@ -106,7 +114,7 @@ DWORD TreeView::drag_over(IDataObject* data, DWORD keys, POINT point, DWORD allo
         drop_files_ = actions::has_files(data);
         drop_hover_node_ = model::no_node;
     }
-    if (!drop_files_ || wnd_ == nullptr || edit_ != nullptr) {
+    if (!drop_files_ || wnd_ == nullptr || edit_ != nullptr || read_only_) {
         set_drop_row(-1);
         return DROPEFFECT_NONE;
     }

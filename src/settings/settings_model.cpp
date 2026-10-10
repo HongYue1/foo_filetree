@@ -33,6 +33,19 @@ std::size_t default_rank(MenuItem item) noexcept {
 
 } // namespace
 
+bool changes_files(MenuItem item) noexcept {
+    switch (item) {
+    case MenuItem::new_folder:
+    case MenuItem::cut:
+    case MenuItem::paste:
+    case MenuItem::rename:
+    case MenuItem::remove:
+    case MenuItem::undo:
+    case MenuItem::explorer_menu: return true;
+    default: return false;
+    }
+}
+
 int menu_group(MenuItem item) noexcept {
     switch (item) {
     case MenuItem::play:
@@ -185,7 +198,7 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         out |= change_remeasure;
     }
     if (a.mark_favourites != b.mark_favourites || a.mark_playing != b.mark_playing ||
-        a.follow_playing != b.follow_playing ||
+        a.follow_playing != b.follow_playing || a.read_only != b.read_only ||
         a.separate_favourites != b.separate_favourites ||
         a.watch_changes != b.watch_changes || a.tooltips != b.tooltips ||
         a.hover_highlight != b.hover_highlight || a.zebra != b.zebra ||

@@ -13,6 +13,8 @@
 #include <string_view>
 #include <vector>
 
+#include <vector>
+
 #include "../model/extension_set.h"
 #include "../model/filter_rules.h"
 #include "../model/library_index.h"
@@ -38,6 +40,9 @@ struct EnumOptions {
     //! Always/never-shown extensions and hide patterns. Null: none.
     std::shared_ptr<const model::FilterRules> rules;
     model::SortOptions sort{};
+    //! The "Favourite files" root: instead of listing the folder, look up these files (full
+    //! paths, kept in this order, no filters). Missing ones and folders are left out.
+    std::shared_ptr<const std::vector<std::wstring>> pinned;
 
     //! Hide folders without playable files. A listing leaves out the folders `empty` knows;
     //! a probe listing (`probe`) searches every child folder instead (probe.h), updates `empty`
@@ -80,6 +85,10 @@ struct Listing {
 //! Turns "C:\Music" into the pattern FindFirstFileExW wants ("C:\Music\*"), adding the "\\?\"
 //! (or "\\?\UNC\") prefix when the result would exceed MAX_PATH.
 [[nodiscard]] std::wstring make_search_pattern(std::wstring_view folder);
+
+//! Looks up single files (EnumOptions::pinned) on a worker.
+[[nodiscard]] Listing look_up_files(const std::vector<std::wstring>& paths,
+                                    const std::atomic<bool>& cancel);
 
 //! Enumerates `folder` (no trailing "\*"), filters and sorts per `options`. Checks `cancel`
 //! between entries and returns early with `cancelled` set.

@@ -4,6 +4,8 @@
 
 #include "tree_view.h"
 
+#include <algorithm>
+
 namespace filetree::view {
 
 void TreeView::on_now_playing_changed() noexcept {
@@ -26,6 +28,36 @@ void TreeView::resolve_playing() noexcept {
                                      tree_.node(root).has(model::node_root) && count < nodes.size();
              ++root) {
             const model::Node& r = tree_.node(root);
+            if (r.has(model::node_virtual)) {
+                // "Favourite files": the file itself when open, else the root when it holds it.
+                const auto same = [&](std::wstring_view name) {
+                    return CompareStringOrdinal(name.data(), static_cast<int>(name.size()),
+                                                path.data(), static_cast<int>(path.size()),
+                                                TRUE) == CSTR_EQUAL;
+                };
+                std::uint32_t node = model::no_node;
+                bool found_file = false;
+                if (r.has(model::node_expanded) && r.has(model::node_loaded)) {
+                    for (std::uint32_t child = r.first_child;
+                         child < r.first_child + r.child_count; ++child) {
+                        if (same(tree_.node(child).name_view())) {
+                            node = child;
+                            found_file = true;
+                            break;
+                        }
+                    }
+                } else if (pinned_ != nullptr &&
+                           std::any_of(pinned_->begin(), pinned_->end(), same)) {
+                    node = root;
+                }
+                if (node == model::no_node || (tree_.filtered() && !tree_.row_of(node))) continue;
+                if (found_file && !exact) count = 0;
+                if (found_file || !exact) {
+                    nodes[count++] = node;
+                    exact = exact || found_file;
+                }
+                continue;
+            }
             std::wstring_view root_path = r.name_view();
             while (root_path.size() > 3 && root_path.back() == L'\\') root_path.remove_suffix(1);
             if (path.size() <= root_path.size() ||

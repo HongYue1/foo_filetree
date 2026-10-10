@@ -26,8 +26,8 @@ void TreeView::begin_rename(std::uint32_t node) noexcept {
     if (edit_ != nullptr) end_rename(false);
     const model::Node& n = tree_.node(node);
     const auto row = tree_.row_of(node);
-    if (n.has(model::node_root) || !row) {
-        MessageBeep(MB_ICONWARNING);
+    if (n.has(model::node_root) || n.has(model::node_pinned) || !row) {
+        MessageBeep(MB_ICONWARNING); // a favourite file's entry would point nowhere after it
         return;
     }
     select_row(*row);

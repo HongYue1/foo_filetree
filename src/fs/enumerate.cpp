@@ -117,8 +117,31 @@ std::wstring make_search_pattern(std::wstring_view folder) {
     return pattern;
 }
 
+Listing look_up_files(const std::vector<std::wstring>& paths, const std::atomic<bool>& cancel) {
+    Listing listing;
+    for (const std::wstring& path : paths) {
+        if (cancel.load(std::memory_order_relaxed)) {
+            listing.cancelled = true;
+            return listing;
+        }
+        WIN32_FILE_ATTRIBUTE_DATA data{};
+        if (GetFileAttributesExW(path.c_str(), GetFileExInfoStandard, &data) == FALSE) continue;
+        if ((data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) continue;
+        Listing::Item item;
+        item.name_offset = static_cast<std::uint32_t>(listing.names.size());
+        item.name_length = static_cast<std::uint32_t>(path.size());
+        item.attributes = data.dwFileAttributes;
+        item.size = (static_cast<std::uint64_t>(data.nFileSizeHigh) << 32) | data.nFileSizeLow;
+        item.modified = to_int64(data.ftLastWriteTime);
+        listing.names.insert(listing.names.end(), path.begin(), path.end());
+        listing.items.push_back(item);
+    }
+    return listing;
+}
+
 Listing enumerate_folder(std::wstring_view folder, const EnumOptions& options,
                          const std::atomic<bool>& cancel) {
+    if (options.pinned != nullptr) return look_up_files(*options.pinned, cancel);
     Listing listing;
     const std::wstring pattern = make_search_pattern(folder);
 

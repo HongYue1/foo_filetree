@@ -49,7 +49,13 @@ void TreeView::paths_of(const std::vector<std::uint32_t>& nodes,
                         std::vector<std::wstring>& out) const {
     out.clear();
     out.reserve(nodes.size());
-    for (const std::uint32_t node : nodes) tree_.build_path(node, out.emplace_back());
+    for (const std::uint32_t node : nodes) {
+        if (tree_.node(node).has(model::node_virtual)) {
+            if (pinned_ != nullptr) out.insert(out.end(), pinned_->begin(), pinned_->end());
+            continue;
+        }
+        tree_.build_path(node, out.emplace_back());
+    }
 }
 
 bool TreeView::same_parent(const std::vector<std::uint32_t>& nodes) const noexcept {
@@ -68,6 +74,11 @@ void TreeView::send_node(const actions::Action& action, std::uint32_t node) noex
         request.action = action;
         request.items.reserve(nodes.size());
         for (const std::uint32_t n : nodes) {
+            if (tree_.node(n).has(model::node_virtual)) { // its files, in their order
+                if (pinned_ == nullptr) continue;
+                for (const std::wstring& path : *pinned_) request.items.push_back({path, false});
+                continue;
+            }
             actions::SendItem& item = request.items.emplace_back();
             tree_.build_path(n, item.path);
             item.is_folder = tree_.node(n).has(model::node_container);
@@ -100,6 +111,7 @@ void TreeView::drag_node(std::uint32_t node) noexcept {
 }
 
 void TreeView::open_in_explorer(std::uint32_t node) noexcept {
+    if (tree_.node(node).has(model::node_virtual)) return; // not a folder on disk
     try {
         std::wstring path;
         tree_.build_path(node, path);
@@ -112,11 +124,12 @@ void TreeView::copy_path(std::uint32_t node) noexcept {
     try {
         std::vector<std::uint32_t> nodes;
         actions_for(node, nodes);
+        std::vector<std::wstring> paths;
+        paths_of(nodes, paths); // "Favourite files" gives its files
         std::wstring text;
-        for (const std::uint32_t n : nodes) {
+        for (const std::wstring& path : paths) {
             if (!text.empty()) text += L"\r\n";
-            tree_.build_path(n, path_);
-            text += path_;
+            text += path;
         }
         if (!actions::copy_text(wnd_, text)) MessageBeep(MB_ICONWARNING);
     } catch (...) {
@@ -131,7 +144,8 @@ void TreeView::put_on_clipboard(std::uint32_t node, bool cut) noexcept {
         // A drive cannot be moved; a favourite root is a real folder and can.
         for (const std::uint32_t n : nodes) {
             const model::Node& item = tree_.node(n);
-            if (item.parent == model::no_node && !item.has(model::node_favourite)) {
+            if ((item.parent == model::no_node && !item.has(model::node_favourite)) ||
+                item.has(model::node_virtual)) {
                 MessageBeep(MB_ICONWARNING);
                 return;
             }
@@ -189,7 +203,7 @@ void TreeView::show_properties(std::uint32_t node) noexcept {
         actions_for(node, nodes);
         std::vector<std::wstring> paths;
         paths_of(nodes, paths);
-        actions::show_properties(paths, wnd_);
+        if (!paths.empty()) actions::show_properties(paths, wnd_);
     } catch (...) {
     }
 }
@@ -208,6 +222,7 @@ void TreeView::save_as_playlist(std::uint32_t node) noexcept {
         actions_for(node, nodes);
         std::vector<std::wstring> paths;
         paths_of(nodes, paths);
+        if (paths.empty() || tree_.node(nodes[0]).has(model::node_virtual)) return;
         // One folder: start in it, named after it. Several items: in (and after) their folder.
         std::wstring start = paths[0];
         std::wstring name = plain_name(tree_.node(nodes[0]));

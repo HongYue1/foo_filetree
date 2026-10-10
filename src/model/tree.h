@@ -34,6 +34,10 @@ enum NodeFlag : std::uint16_t {
     node_favourite = 1 << 6, //!< a root from the favourites list (else a drive)
     node_selected = 1 << 7,  //!< in the multi-selection (follows the node through merges)
     node_library = 1 << 8,   //!< with node_favourite: a root from the Media Library folders
+    //! The "Favourite files" root: not a folder on disk. Its path is its name, but it is left
+    //! out of its children's paths.
+    node_virtual = 1 << 9,
+    node_pinned = 1 << 10, //!< a child of a virtual root: its name is the file's full path
 };
 
 struct Node {
@@ -59,6 +63,11 @@ static_assert(sizeof(Node) <= 64, "Node exceeds the per-node memory budget");
 //! The name as shown: a drive root "C:\\" as "C:", a favourite root by its last component.
 [[nodiscard]] inline std::wstring_view display_name(const Node& node) noexcept {
     std::wstring_view name = node.name_view();
+    if (node.has(node_pinned)) {
+        const std::size_t slash = name.find_last_of(L'\\');
+        if (slash != std::wstring_view::npos) name.remove_prefix(slash + 1);
+        return name;
+    }
     if (!node.has(node_root)) return name;
     if (node.has(node_favourite)) {
         while (name.size() > 1 && name.back() == L'\\') name.remove_suffix(1);

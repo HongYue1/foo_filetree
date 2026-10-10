@@ -59,7 +59,7 @@ void TreeView::sync_watches() noexcept {
             if (wanted.size() >= max_watches) break;
             const model::Node& n = tree_.node(node);
             if (!n.has(model::node_container) || !n.has(model::node_expanded) ||
-                !n.has(model::node_loaded)) {
+                !n.has(model::node_loaded) || n.has(model::node_virtual)) {
                 continue;
             }
             tree_.build_path(node, path);

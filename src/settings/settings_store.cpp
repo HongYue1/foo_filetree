@@ -56,6 +56,7 @@ constexpr GUID guid_show_drives = {0x29230d09, 0x9a45, 0x4730, {0x80, 0x37, 0x15
 constexpr GUID guid_library_roots = {0x88687e90, 0x25e9, 0x40f0, {0x85, 0xa5, 0xd8, 0xd7, 0xcf, 0x7c, 0xc7, 0x99}};
 constexpr GUID guid_hide_empty = {0xd4f2acec, 0x50ba, 0x4684, {0xa8, 0x0c, 0x20, 0x3c, 0xac, 0xa4, 0x1c, 0x6f}};
 constexpr GUID guid_read_only = {0xe74e2162, 0x3de1, 0x4c02, {0x94, 0x29, 0xab, 0x87, 0x11, 0x8b, 0x67, 0xe7}};
+constexpr GUID guid_favourite_files = {0x655e4470, 0xa05c, 0x46a5, {0x9d, 0xf0, 0xdc, 0x13, 0x51, 0x74, 0x98, 0xa4}};
 constexpr GUID guid_menu = {0x96e18af9, 0xd800, 0x42bc, {0xad, 0xfd, 0x6b, 0x82, 0xc8, 0x2b, 0x41, 0x7d}};
 
 using cfg_int = cfg_var_modern::cfg_int;
@@ -103,6 +104,7 @@ cfg_int cfg_filter_box(guid_filter_box, static_cast<int>(defaults.filter_box));
 cfg_int cfg_startup(guid_startup, static_cast<int>(defaults.startup));
 cfg_string cfg_startup_folder(guid_startup_folder, "");
 cfg_string cfg_favourites(guid_favourites, "");
+cfg_string cfg_favourite_files(guid_favourite_files, "");
 cfg_int cfg_favourites_place(guid_favourites_place, static_cast<int>(defaults.favourites_place));
 cfg_int cfg_tooltips(guid_tooltips, static_cast<int>(defaults.tooltips));
 cfg_bool cfg_hover_highlight(guid_hover_highlight, defaults.hover_highlight);
@@ -172,6 +174,7 @@ Settings load() {
     s.startup = as_enum<Startup>(cfg_startup.get());
     s.startup_folder = wide(cfg_startup_folder.get());
     s.favourites = split_paths(wide(cfg_favourites.get()));
+    s.favourite_files = split_paths(wide(cfg_favourite_files.get()));
     s.favourites_place = as_enum<FavouritesPlace>(cfg_favourites_place.get());
     s.tooltips = as_enum<Tooltips>(cfg_tooltips.get());
     s.hover_highlight = cfg_hover_highlight.get();
@@ -221,6 +224,7 @@ void save(const Settings& s) {
     cfg_startup.set(static_cast<int>(s.startup));
     cfg_startup_folder.set(utf8(s.startup_folder));
     cfg_favourites.set(utf8(join_paths(s.favourites)));
+    cfg_favourite_files.set(utf8(join_paths(s.favourite_files)));
     cfg_favourites_place.set(static_cast<int>(s.favourites_place));
     cfg_tooltips.set(static_cast<int>(s.tooltips));
     cfg_hover_highlight.set(s.hover_highlight);

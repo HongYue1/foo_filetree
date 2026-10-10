@@ -116,8 +116,10 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
         bool any_folder = false;
         bool any_drive = false;
         bool any_root = false;
+        bool any_virtual = false; // "Favourite files": playlist commands and Refresh only
         for (const std::uint32_t item : nodes) {
             const model::Node& i = tree_.node(item);
+            any_virtual |= i.has(model::node_virtual);
             (i.has(model::node_container) ? any_folder : any_file) = true;
             any_root |= i.has(model::node_root);
             if (i.has(model::node_root)) any_drive |= !i.has(model::node_favourite);
@@ -137,12 +139,16 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
             using settings::MenuItem;
             if (item == MenuItem::undo && undo_.kind == UndoRecord::Kind::none) continue;
             if (item == MenuItem::fb2k_menu && !any_file) continue;
-            if (item == MenuItem::favourite && !folder) continue;
             if (item == MenuItem::hide_folder && (!folder || root)) continue;
             if (item == MenuItem::save_playlist && !any_folder && !several) continue;
             if (item == MenuItem::open_with && folder) continue;
             if (item == MenuItem::paste && !actions::clipboard_has_files()) continue;
             if (read_only_ && settings::changes_files(item)) continue;
+            if (any_virtual && item != MenuItem::play && item != MenuItem::add_active &&
+                item != MenuItem::new_playlist && item != MenuItem::queue &&
+                item != MenuItem::refresh) {
+                continue;
+            }
             const int group = settings::menu_group(item);
             if (last_group >= 0 && group != last_group) AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
             last_group = group;
@@ -194,7 +200,9 @@ void TreeView::on_context_menu(LPARAM lp) noexcept {
                 break;
             case MenuItem::refresh: AppendMenuW(menu, MF_STRING, id_refresh, L"Refresh\tF5"); break;
             case MenuItem::favourite: {
-                const bool listed = path_index(settings::current().favourites, path) >= 0;
+                const settings::Settings& s = settings::current();
+                const bool listed =
+                    path_index(folder ? s.favourites : s.favourite_files, path) >= 0;
                 AppendMenuW(menu, MF_STRING | single_flags, id_favourite,
                             listed ? L"Remove from favourites" : L"Add to favourites");
                 break;
@@ -356,14 +364,18 @@ void TreeView::run_menu_command(UINT id, std::uint32_t node) noexcept {
 }
 
 void TreeView::toggle_favourite(std::uint32_t node) noexcept {
+    if (tree_.node(node).has(model::node_virtual)) return;
     try {
         std::wstring path;
         tree_.build_path(node, path);
         settings::Settings next = settings::stored();
-        if (const int index = path_index(next.favourites, path); index >= 0) {
-            next.favourites.erase(next.favourites.begin() + index);
+        std::vector<std::wstring>& list = tree_.node(node).has(model::node_container)
+                                              ? next.favourites
+                                              : next.favourite_files;
+        if (const int index = path_index(list, path); index >= 0) {
+            list.erase(list.begin() + index);
         } else {
-            next.favourites.push_back(settings::clean_path(path));
+            list.push_back(settings::clean_path(path));
         }
         // Every panel rebuilds its roots (relist_all keeps what is open and selected). `node`
         // is not valid afterwards.

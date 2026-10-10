@@ -177,13 +177,15 @@ void Settings::sanitize() noexcept {
     favourites_place = clamp_enum(favourites_place, FavouritesPlace::after);
     tooltips = clamp_enum(tooltips, Tooltips::path);
     favourites = split_paths(join_paths(favourites));
+    favourite_files = split_paths(join_paths(favourite_files));
     hidden_folders = split_paths(join_paths(hidden_folders));
 }
 
 std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
     std::uint32_t out = 0;
     if (a.show_drives != b.show_drives || a.hidden_drives != b.hidden_drives ||
-        a.favourites != b.favourites || a.library_roots != b.library_roots ||
+        a.favourites != b.favourites || a.favourite_files != b.favourite_files ||
+        a.library_roots != b.library_roots ||
         a.favourites_place != b.favourites_place) {
         out |= change_roots;
     }

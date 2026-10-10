@@ -113,6 +113,7 @@ RowSplice Tree::apply_children(std::uint32_t index, std::span<const ChildRecord>
 
     const auto first = static_cast<std::uint32_t>(nodes_.size());
     const std::uint16_t depth = static_cast<std::uint16_t>(nodes_[index].depth + 1);
+    const std::uint16_t pinned = nodes_[index].has(node_virtual) ? node_pinned : 0;
     nodes_.reserve(nodes_.size() + children.size());
     for (const ChildRecord& record : children) {
         Node& child = nodes_.emplace_back();
@@ -123,8 +124,9 @@ RowSplice Tree::apply_children(std::uint32_t index, std::span<const ChildRecord>
         child.attributes = record.attributes;
         child.parent = index;
         child.depth = depth;
+        child.flags = pinned;
         if ((record.attributes & 0x10 /* FILE_ATTRIBUTE_DIRECTORY */) != 0) {
-            child.flags = node_container;
+            child.flags |= node_container;
         }
     }
 
@@ -231,6 +233,7 @@ Tree::MergeResult Tree::merge_children(std::uint32_t index,
     // name index over the old children (built on the first miss) covers the rest.
     const auto first = static_cast<std::uint32_t>(nodes_.size());
     const std::uint16_t depth = static_cast<std::uint16_t>(nodes_[index].depth + 1);
+    const std::uint16_t pinned = nodes_[index].has(node_virtual) ? node_pinned : 0;
     nodes_.reserve(nodes_.size() + children.size());
     std::unordered_map<std::wstring_view, std::uint32_t> by_name;
     std::uint32_t cursor = 0;
@@ -295,7 +298,8 @@ Tree::MergeResult Tree::merge_children(std::uint32_t index,
             child.attributes = record.attributes;
             child.parent = index;
             child.depth = depth;
-            if (container) child.flags = node_container;
+            child.flags = pinned;
+            if (container) child.flags |= node_container;
         }
     }
     for (std::uint32_t i = 0; i < old_count; ++i) {
@@ -336,12 +340,14 @@ std::uint32_t Tree::find_child(std::uint32_t parent, std::wstring_view name) con
 }
 
 void Tree::build_path(std::uint32_t index, std::wstring& out) const {
-    // Collect the chain bottom-up without allocating: depth bounds it.
+    // Collect the chain bottom-up without allocating: depth bounds it. A virtual root is only
+    // part of its own path (its children are full paths).
     std::uint32_t chain[256];
     std::size_t count = 0;
     std::size_t length = 0;
     for (std::uint32_t walk = index; walk != no_node && count < std::size(chain);
          walk = nodes_[walk].parent) {
+        if (walk != index && nodes_[walk].has(node_virtual)) break;
         chain[count++] = walk;
         length += nodes_[walk].name_length + 1u;
     }
@@ -366,7 +372,7 @@ RowSplice Tree::set_filter(std::wstring_view text) {
 }
 
 bool Tree::matches_filter(const Node& node) noexcept {
-    const std::size_t length = to_upper(node.name_view(), upper_, std::size(upper_));
+    const std::size_t length = to_upper(display_name(node), upper_, std::size(upper_));
     const std::wstring_view name(upper_, length);
     return filter_glob_ ? glob_match(filter_, name) : name.find(filter_) != std::wstring_view::npos;
 }

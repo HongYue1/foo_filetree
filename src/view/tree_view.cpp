@@ -138,7 +138,12 @@ void TreeView::populate_roots() {
     const settings::Settings& s = settings::current();
     // Favourites are not checked here (a network path could stall the UI); one that is gone
     // shows the load error when opened.
+    pinned_ = std::make_shared<const std::vector<std::wstring>>(s.favourite_files);
     const auto add_favourites = [&] {
+        if (!s.favourite_files.empty()) {
+            tree_.add_root(favourite_files_name, FILE_ATTRIBUTE_DIRECTORY,
+                           static_cast<std::uint16_t>(model::node_favourite | model::node_virtual));
+        }
         for (const std::wstring& path : s.favourites) {
             tree_.add_root(path, FILE_ATTRIBUTE_DIRECTORY, model::node_favourite);
         }
@@ -344,6 +349,12 @@ void TreeView::collapse(std::uint32_t node) noexcept {
     }
 }
 
+fs::EnumOptions TreeView::options_for(std::uint32_t node) const {
+    fs::EnumOptions options = options_;
+    if (tree_.node(node).has(model::node_virtual)) options.pinned = pinned_;
+    return options;
+}
+
 void TreeView::request_listing(std::uint32_t node) {
     if (options_.files == fs::FileMode::playable && options_.playable == nullptr) {
         refresh_options();
@@ -352,7 +363,7 @@ void TreeView::request_listing(std::uint32_t node) {
     std::weak_ptr<TreeView*> weak = alive_;
     const std::uint64_t generation = generation_;
     auto ticket = fs::enumeration().request(
-        path_, options_, [weak, node, generation](fs::Listing& listing) {
+        path_, options_for(node), [weak, node, generation](fs::Listing& listing) {
             if (const auto alive = weak.lock()) (*alive)->on_listing(node, generation, listing);
         });
     pending_.push_back({node, std::move(ticket)});

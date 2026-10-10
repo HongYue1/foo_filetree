@@ -14,8 +14,8 @@
 
 ## Features
 
-- **Drives, favourite folders and your Media Library folders** as roots. Folders are read in
-  the background, so a slow, sleeping or offline drive never freezes foobar2000.
+- **Drives, favourite folders and files, and your Media Library folders** as roots. Folders
+  are read in the background, so a slow, sleeping or offline drive never freezes foobar2000.
 - **Less clutter**: hide system folders (Windows, Program Files and the like are hidden by
   default) and folders with no playable files in them.
 - **Stays current.** Open folders update by themselves when files change on disk.
@@ -88,7 +88,12 @@ folder. Give them shortcuts in **Preferences > Keyboard Shortcuts**.
 - **Drag and drop**: drag items to a playlist, a playlist tab or Explorer. Drop files on a folder
   to copy them there; hold Shift to move. Holding a drag over a closed folder opens it.
 - **Favourites**: right-click a folder > **Add to favourites**. Favourites are shared by all
-  Folder Tree panels; order them on the Roots tab.
+  Folder Tree panels; order them on the Roots tab. Right-click a file (any type: music, video,
+  a PDF booklet, artwork) > **Add to favourites** and it shows under **Favourite files**. Files
+  that are missing (deleted, or on a drive that isn't there) are left out until they're back.
+- **Read-only mode** (Mouse & keys tab): browse and play only. No rename, delete, cut, paste,
+  new folder, undo or Explorer submenu, nothing can be dropped on the tree, and dragging out
+  copies, never moves.
 - **Filter box** filters what is open; it doesn't search the disk. `*` and `?` work (`*.flac`).
 - **Undo** is one step and covers renames and deletes made in the panel. Shift+Del can't be
   undone.
@@ -97,7 +102,7 @@ folder. Give them shortcuts in **Preferences > Keyboard Shortcuts**.
 - **Which files show**: playable files only by default. On the Files tab, show all files or
   only folders, list extra extensions (`cue; log`), or hide names by pattern (`@eaDir; *.tmp`).
 - **Each panel remembers** its open folders, selection and scroll position. On startup it can
-  restore them, start closed or open a fixed folder.
+  restore them, start closed, open a fixed folder or show the last played track.
 - **Transparency** only shows something when your layout draws a background behind the panel.
 - **Status bar** (General tab): counts and sizes of the selection, or of the focused folder.
 - **Media Library folders**: tick "Also show the music folders" on the Roots tab. foobar2000

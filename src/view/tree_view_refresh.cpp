@@ -55,7 +55,7 @@ void TreeView::request_check(std::uint32_t node) {
     std::weak_ptr<TreeView*> weak = alive_;
     const std::uint64_t generation = generation_;
     auto ticket = fs::enumeration().request(
-        path_, options_, [weak, node, generation](fs::Listing& listing) {
+        path_, options_for(node), [weak, node, generation](fs::Listing& listing) {
             if (const auto alive = weak.lock()) (*alive)->on_check(node, generation, listing);
         });
     pending_.push_back({node, std::move(ticket), true});
@@ -63,7 +63,7 @@ void TreeView::request_check(std::uint32_t node) {
 
 void TreeView::request_probe(std::uint32_t node, const fs::Listing& listing) {
     if (!options_.hide_empty || options_.probe_types == nullptr || listing.probed ||
-        listing.error != ERROR_SUCCESS) {
+        listing.error != ERROR_SUCCESS || tree_.node(node).has(model::node_virtual)) {
         return;
     }
     const bool folders = std::any_of(listing.items.begin(), listing.items.end(), [](const auto& item) {

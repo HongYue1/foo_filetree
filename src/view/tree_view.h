@@ -194,6 +194,8 @@ private:
     void expand(std::uint32_t node) noexcept;
     void collapse(std::uint32_t node) noexcept;
     void request_listing(std::uint32_t node);
+    //! The listing options for `node` ("Favourite files" looks up its files instead).
+    [[nodiscard]] fs::EnumOptions options_for(std::uint32_t node) const;
     void on_listing(std::uint32_t node, std::uint64_t generation, fs::Listing& listing) noexcept;
     void apply_splice(const model::RowSplice& splice) noexcept;
     void apply_full_splice() noexcept;
@@ -397,6 +399,9 @@ private:
     std::vector<model::ChildRecord> records_; //!< reused by on_listing
     std::wstring path_;                       //!< reused by request_listing
     fs::EnumOptions options_{};
+    //! Settings' favourite files, shared with the workers that look them up.
+    std::shared_ptr<const std::vector<std::wstring>> pinned_;
+    static constexpr std::wstring_view favourite_files_name = L"Favourite files";
 
     // Display options from the settings (refresh_options).
     settings::TreeLines lines_{settings::TreeLines::none};

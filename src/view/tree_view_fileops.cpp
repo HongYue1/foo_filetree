@@ -19,7 +19,12 @@ constexpr ULONGLONG drop_scroll_ms = 60;      //!< one row per step at the edges
 std::uint32_t TreeView::target_folder(std::uint32_t node) const noexcept {
     if (node == model::no_node || node >= tree_.node_count()) return model::no_node;
     const model::Node& n = tree_.node(node);
-    return n.has(model::node_container) ? node : n.parent;
+    const std::uint32_t folder = n.has(model::node_container) ? node : n.parent;
+    // Nothing is created in or dropped on "Favourite files": it is not a folder.
+    if (folder == model::no_node || tree_.node(folder).has(model::node_virtual)) {
+        return model::no_node;
+    }
+    return folder;
 }
 
 void TreeView::check_if_open(std::uint32_t folder) noexcept {

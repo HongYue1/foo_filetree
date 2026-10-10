@@ -298,6 +298,33 @@ void test_tree_merge() {
     CHECK(!disk.node(empty2).has(model::node_loaded));
     CHECK(changed.stale.size() == 1 && changed.stale[0] == disk.find_child(e, L"Open"));
     CHECK(disk.expand(empty2) == Tree::ExpandResult::needs_load);
+
+    // "Favourite files": a virtual root whose children are full paths.
+    Tree pins;
+    const auto fav = pins.add_root(L"Favourite files", 0x10,
+                                   static_cast<std::uint16_t>(model::node_favourite |
+                                                              model::node_virtual));
+    pins.add_root(L"C:\\");
+    CHECK(pins.expand(fav) == Tree::ExpandResult::needs_load);
+    std::vector<model::ChildRecord> pinned{{L"D:\\Music\\a.flac", FILE_ATTRIBUTE_ARCHIVE, 1, 0},
+                                           {L"E:\\Docs\\Booklet.pdf", FILE_ATTRIBUTE_ARCHIVE, 1, 0}};
+    pins.apply_children(fav, pinned);
+    const auto pdf = pins.find_child(fav, L"E:\\Docs\\Booklet.pdf");
+    CHECK(pdf != model::no_node && pins.node(pdf).has(model::node_pinned));
+    CHECK(model::display_name(pins.node(pdf)) == L"Booklet.pdf");
+    pins.build_path(pdf, path);
+    CHECK(path == L"E:\\Docs\\Booklet.pdf");
+    pins.build_path(fav, path);
+    CHECK(path == L"Favourite files");
+    CHECK(row_name(pins, 1) == L"D:\\Music\\a.flac"); // in the given order
+    pins.set_filter(L"music");
+    CHECK(pins.row_count() == 0); // matched by the file name, not the folder it is in
+    pins.set_filter(L"booklet");
+    CHECK(pins.row_count() == 2);
+    pins.set_filter(L"");
+    pinned.push_back({L"F:\\new.mp3", FILE_ATTRIBUTE_ARCHIVE, 1, 0});
+    pins.merge_children(fav, pinned);
+    CHECK(pins.node(pins.find_child(fav, L"F:\\new.mp3")).has(model::node_pinned));
 }
 
 void test_tree_filter() {
@@ -447,6 +474,16 @@ void test_enumerate(const std::filesystem::path& base) {
     std::vector<model::ChildRecord> records;
     listing.to_records(records);
     CHECK(records.size() == 10000 && records[0].name == L"f0.mp3");
+
+    // Favourite files: looked up one by one, in the given order; gone ones and folders dropped.
+    const std::wstring flac = (base / L"Track 10.flac").wstring();
+    const std::wstring jpg = (base / L"cover.jpg").wstring();
+    options.pinned = std::make_shared<const std::vector<std::wstring>>(std::vector<std::wstring>{
+        jpg, (base / L"gone.mp3").wstring(), (base / L"big").wstring(), flac});
+    listing = fs::enumerate_folder(L"Favourite files", options, cancel);
+    CHECK(listing.error == ERROR_SUCCESS && listing.items.size() == 2);
+    CHECK(listing.name(listing.items[0]) == jpg && listing.name(listing.items[1]) == flac);
+    CHECK(listing.items[1].size == 1 || listing.items[1].size == 0);
 }
 
 // A main-thread stand-in: workers post here, the test pumps.

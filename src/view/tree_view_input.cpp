@@ -182,7 +182,8 @@ bool TreeView::on_char(wchar_t ch, DWORD time) noexcept {
                                                  : static_cast<std::size_t>(selected_row_);
         for (std::size_t i = 0; i < rows; ++i) {
             const std::size_t row = (start + i) % rows;
-            if (starts_with_ignoring_case(tree_.node(tree_.node_at_row(row)).name_view(), prefix)) {
+            const model::Node& candidate = tree_.node(tree_.node_at_row(row));
+            if (starts_with_ignoring_case(model::display_name(candidate), prefix)) {
                 select_row(row);
                 break;
             }

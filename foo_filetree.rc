@@ -90,25 +90,22 @@ BEGIN
     COMBOBOX        IDC_FILES,85,21,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     CONTROL         "Show hidden files",IDC_SHOW_HIDDEN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,37,100,10
     CONTROL         "Show system files",IDC_SHOW_SYSTEM,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,190,37,103,10
-    LTEXT           "Sort by:",IDC_STATIC,12,53,70,8
-    COMBOBOX        IDC_SORT_FIELD,85,51,80,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Folders first",IDC_FOLDERS_FIRST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,171,52,57,10
-    CONTROL         "Reverse order",IDC_SORT_REVERSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,231,52,62,10
+    LTEXT           "Sort by:",IDC_STATIC,12,55,70,8
+    COMBOBOX        IDC_SORT_FIELD,85,53,120,80,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Folders first",IDC_FOLDERS_FIRST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,69,100,10
+    CONTROL         "Reverse order",IDC_SORT_REVERSE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,190,69,103,10
 
-    LTEXT           "Exceptions",IDC_STATIC,7,70,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,80,286,1
-    LTEXT           "Always show:",IDC_STATIC,12,89,70,8
-    EDITTEXT        IDC_ALWAYS_SHOW,85,87,208,12,ES_AUTOHSCROLL
-    LTEXT           "Extensions listed even when only playable files are shown, for example: cue; log",IDC_STATIC,85,102,208,16
-    LTEXT           "Never show:",IDC_STATIC,12,123,70,8
-    EDITTEXT        IDC_NEVER_SHOW,85,121,208,12,ES_AUTOHSCROLL
-    LTEXT           "Extensions that are never listed.",IDC_STATIC,85,136,208,8
-
-    LTEXT           "Hide by name",IDC_STATIC,7,152,286,8
-    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,162,286,1
-    LTEXT           "Patterns:",IDC_STATIC,12,171,70,8
-    EDITTEXT        IDC_HIDE_PATTERNS,85,169,208,12,ES_AUTOHSCROLL
-    LTEXT           "Hides files and folders whose whole name matches. * stands for any characters, ? for one. Separate patterns with semicolons, for example: *.tmp; Thumbs.db; @eaDir",IDC_STATIC,85,184,208,24
+    LTEXT           "Exceptions",IDC_STATIC,7,86,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,96,286,1
+    LTEXT           "Always show:",IDC_STATIC,12,105,70,8
+    EDITTEXT        IDC_ALWAYS_SHOW,85,103,208,12,ES_AUTOHSCROLL
+    LTEXT           "Extensions listed even when only playable files are shown, for example: cue; log",IDC_STATIC,85,118,208,16
+    LTEXT           "Never show:",IDC_STATIC,12,139,70,8
+    EDITTEXT        IDC_NEVER_SHOW,85,137,208,12,ES_AUTOHSCROLL
+    LTEXT           "Extensions that are never listed.",IDC_STATIC,85,152,208,8
+    LTEXT           "Hide names:",IDC_STATIC,12,168,70,8
+    EDITTEXT        IDC_HIDE_PATTERNS,85,166,208,12,ES_AUTOHSCROLL
+    LTEXT           "Hides files and folders whose whole name matches. * stands for any characters, ? for one. Separate patterns with semicolons, for example: *.tmp; Thumbs.db; @eaDir",IDC_STATIC,85,181,208,24
 END
 
 IDD_TAB_FOLDERS DIALOGEX 0, 0, 300, 222
@@ -199,13 +196,12 @@ IDD_TAB_MENU DIALOGEX 0, 0, 300, 222
 STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
 FONT 8, "Microsoft Sans Serif", 400, 0, 0x0
 BEGIN
-    LTEXT           "Context menu",IDC_STATIC,7,4,286,8
+    LTEXT           "Context menu (items in the order they appear)",IDC_STATIC,7,4,286,8
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,14,286,1
-    LTEXT           "Items in the order they appear:",IDC_STATIC,12,21,226,8
-    LISTBOX         IDC_MENU_LIST,12,32,226,140,LBS_NOTIFY | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "Move up",IDC_MENU_UP,243,32,50,14
-    PUSHBUTTON      "Move down",IDC_MENU_DOWN,243,48,50,14
-    CONTROL         "Show this item in the menu",IDC_MENU_SHOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,177,226,10
-    LTEXT           "Separators are added between groups automatically. Undo only appears when there is something to undo.",IDC_STATIC,12,191,226,16
+    LISTBOX         IDC_MENU_LIST,12,21,216,180,LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "Move up",IDC_MENU_UP,233,21,60,14
+    PUSHBUTTON      "Move down",IDC_MENU_DOWN,233,37,60,14
+    LTEXT           "Separators between groups are added for you.",IDC_STATIC,233,59,60,32
+    CONTROL         "Show this item in the menu",IDC_MENU_SHOW,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,205,216,10
 END
 

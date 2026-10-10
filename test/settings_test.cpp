@@ -172,6 +172,7 @@ void test_settings_model() {
     b = a;
     b.zebra = true;
     b.tooltips = Tooltips::path;
+    b.thin_scrollbar = true;
     CHECK(diff(a, b) == change_repaint);
     b = a;
     b.hover_highlight = false;

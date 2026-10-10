@@ -399,6 +399,24 @@ private:
     //! focus rectangles until the keyboard is used).
     bool keyboard_cue_{false};
     bool tracking_mouse_{false};
+
+    // The thin scrollbar (tree_view_scrollbar.cpp): drawn over the rows instead of the system
+    // bar while the mouse is over the tree.
+    [[nodiscard]] bool thin_shown() const noexcept;
+    [[nodiscard]] RECT thin_track() const noexcept;
+    [[nodiscard]] RECT thin_thumb() const noexcept;
+    void invalidate_thin() noexcept;
+    void paint_thin_scrollbar(HDC dc) noexcept;
+    void set_thin_hot(bool hot) noexcept;
+    void on_thin_mouse_move(int x, int y) noexcept;
+    void on_thin_mouse_leave() noexcept;
+    //! True when the press was on the strip (thumb drag or page), so the rows do not get it.
+    bool on_thin_button_down(int x, int y) noexcept;
+    bool end_thin_drag() noexcept; //!< true when a thumb drag ended
+    bool thin_scrollbar_{false};
+    bool mouse_inside_{false};
+    bool thumb_hot_{false}; //!< the mouse is over the strip: the thumb is wider
+    int thumb_drag_{-1};    //!< while dragging: the press's offset into the thumb, else -1
     int wheel_remainder_{};
     std::wstring typeahead_;  //!< characters typed within typeahead_reset_ms of each other
     DWORD typeahead_time_{};

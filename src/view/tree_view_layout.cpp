@@ -232,6 +232,13 @@ void TreeView::update_scrollbar() noexcept {
     if (wnd_ == nullptr) return;
     SCROLLINFO info{sizeof(info)};
     info.fMask = SIF_RANGE | SIF_PAGE | SIF_POS;
+    if (thin_scrollbar_) {
+        // A page larger than the range hides the system bar; the thin thumb is drawn instead.
+        info.nPage = 1;
+        SetScrollInfo(wnd_, SB_VERT, &info, TRUE);
+        invalidate_thin();
+        return;
+    }
     info.nMin = 0;
     info.nMax = static_cast<int>(std::min<std::size_t>(tree_.row_count(), 0x7ffffffe)) - 1;
     info.nPage = static_cast<UINT>(visible_rows());
@@ -274,6 +281,10 @@ void TreeView::scroll_to(std::size_t top_row) noexcept {
         if (hover_row_ >= 0) invalidate_row(static_cast<std::size_t>(hover_row_));
     }
 
+    if (thin_scrollbar_) {
+        invalidate_thin(); // the thumb moved (and ScrollWindowEx moved its old picture)
+        return;
+    }
     SCROLLINFO info{sizeof(info)};
     info.fMask = SIF_POS;
     info.nPos = static_cast<int>(top_row_);

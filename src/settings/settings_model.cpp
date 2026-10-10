@@ -215,6 +215,7 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         a.separate_favourites != b.separate_favourites ||
         a.watch_changes != b.watch_changes || a.tooltips != b.tooltips ||
         a.hover_highlight != b.hover_highlight || a.zebra != b.zebra ||
+        a.thin_scrollbar != b.thin_scrollbar ||
         a.transparent != b.transparent) {
         out |= change_repaint;
     }

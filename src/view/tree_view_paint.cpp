@@ -153,6 +153,7 @@ void TreeView::paint(HDC target, const RECT& dirty) noexcept {
                   -1, &hint, DT_CENTER | DT_WORDBREAK | DT_NOPREFIX);
     }
 
+    paint_thin_scrollbar(dc);
     SelectObject(dc, old_font);
     if (dc != target) {
         BitBlt(target, dirty.left, dirty.top, dirty.right - dirty.left, dirty.bottom - dirty.top,

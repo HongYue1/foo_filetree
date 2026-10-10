@@ -466,17 +466,25 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
         return true;
     case WM_LBUTTONDOWN:
     case WM_LBUTTONDBLCLK:
+        if (on_thin_button_down(GET_X_LPARAM(lp), GET_Y_LPARAM(lp))) return true;
         on_button_down(GET_X_LPARAM(lp), GET_Y_LPARAM(lp), msg == WM_LBUTTONDBLCLK);
         return true;
     case WM_MBUTTONDOWN:
         on_middle_button(GET_Y_LPARAM(lp));
         return true;
     case WM_MOUSEMOVE:
-        on_mouse_move(GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
+        on_thin_mouse_move(GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
+        if (thumb_drag_ < 0) on_mouse_move(GET_X_LPARAM(lp), GET_Y_LPARAM(lp));
         return true;
     case WM_MOUSELEAVE:
+        on_thin_mouse_leave();
         on_mouse_leave();
         return true;
+    case WM_LBUTTONUP:
+        return end_thin_drag();
+    case WM_CAPTURECHANGED:
+        end_thin_drag();
+        return false;
     case WM_KEYDOWN:
         return on_key(wp);
     case WM_CHAR:

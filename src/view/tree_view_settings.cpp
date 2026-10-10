@@ -31,6 +31,10 @@ void TreeView::refresh_options() noexcept {
     hover_highlight_ = s.hover_highlight;
     zebra_ = s.zebra;
     transparent_ = s.transparent;
+    if (thin_scrollbar_ != s.thin_scrollbar) {
+        thin_scrollbar_ = s.thin_scrollbar;
+        update_scrollbar(); // hides or brings back the system bar (WM_SIZE follows)
+    }
     if (tooltips_ != s.tooltips) {
         tooltips_ = s.tooltips;
         update_tooltip(hover_row_);

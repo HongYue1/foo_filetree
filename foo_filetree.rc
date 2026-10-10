@@ -168,6 +168,7 @@ BEGIN
     CONTROL         "Highlight on hover",IDC_HOVER_HIGHLIGHT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,185,92,10
     CONTROL         "Shade every other row",IDC_ZEBRA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,180,185,113,10
     CONTROL         "Transparent background (show what is behind the panel)",IDC_TRANSPARENT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,199,208,10
+    CONTROL         "Thin scrollbar, shown only while the mouse is over the tree",IDC_THIN_SCROLLBAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,85,211,208,10
 END
 
 IDD_TAB_ACTIONS DIALOGEX 0, 0, 300, 222

@@ -46,6 +46,7 @@ constexpr GUID guid_filter_box = {0x95efa8c6, 0x13ae, 0x4993, {0xbf, 0xaf, 0x74,
 constexpr GUID guid_tooltips = {0xcbdf7b49, 0xc5c2, 0x4bd1, {0x97, 0x60, 0x4a, 0xb0, 0x6a, 0x4e, 0x79, 0xd9}};
 constexpr GUID guid_hover_highlight = {0xe3b05361, 0x4c4b, 0x4fb1, {0x92, 0xae, 0x7c, 0x27, 0x59, 0x5e, 0x81, 0x3d}};
 constexpr GUID guid_thin_scrollbar = {0xfca8729d, 0x6ba1, 0x424a, {0xab, 0x91, 0x4d, 0xf8, 0x82, 0xd5, 0x75, 0x7b}};
+constexpr GUID guid_disk_search = {0x9e807bee, 0xc19b, 0x42e2, {0xa3, 0xb7, 0x53, 0x26, 0x68, 0x5e, 0xc7, 0xe8}};
 constexpr GUID guid_zebra = {0xddfc1742, 0x6710, 0x41d8, {0xba, 0xf8, 0x7f, 0x9a, 0x98, 0xcc, 0x21, 0xac}};
 // M8b.
 constexpr GUID guid_show_status_bar = {0xc6839425, 0x8ba9, 0x4642, {0xbc, 0x2d, 0x23, 0xd0, 0x01, 0x81, 0x9b, 0x5a}};
@@ -112,6 +113,7 @@ cfg_int cfg_favourites_place(guid_favourites_place, static_cast<int>(defaults.fa
 cfg_int cfg_tooltips(guid_tooltips, static_cast<int>(defaults.tooltips));
 cfg_bool cfg_hover_highlight(guid_hover_highlight, defaults.hover_highlight);
 cfg_bool cfg_zebra(guid_zebra, defaults.zebra);
+cfg_bool cfg_disk_search(guid_disk_search, defaults.disk_search);
 cfg_bool cfg_thin_scrollbar(guid_thin_scrollbar, defaults.thin_scrollbar);
 cfg_bool cfg_show_status_bar(guid_show_status_bar, defaults.show_status_bar);
 cfg_bool cfg_status_counters(guid_status_counters, defaults.status_counters);
@@ -184,6 +186,7 @@ Settings load() {
     s.tooltips = as_enum<Tooltips>(cfg_tooltips.get());
     s.hover_highlight = cfg_hover_highlight.get();
     s.zebra = cfg_zebra.get();
+    s.disk_search = cfg_disk_search.get();
     s.thin_scrollbar = cfg_thin_scrollbar.get();
     s.show_status_bar = cfg_show_status_bar.get();
     s.status_counters = cfg_status_counters.get();
@@ -236,6 +239,7 @@ void save(const Settings& s) {
     cfg_tooltips.set(static_cast<int>(s.tooltips));
     cfg_hover_highlight.set(s.hover_highlight);
     cfg_zebra.set(s.zebra);
+    cfg_disk_search.set(s.disk_search);
     cfg_thin_scrollbar.set(s.thin_scrollbar);
     cfg_show_status_bar.set(s.show_status_bar);
     cfg_status_counters.set(s.status_counters);

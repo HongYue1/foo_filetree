@@ -86,6 +86,7 @@ void TreeView::select_parent() noexcept {
 }
 
 bool TreeView::navigate_to(std::wstring_view input, bool expand_target) noexcept {
+    end_search(); // going somewhere: the normal tree
     try {
         const std::wstring target = normalise(input);
         if (target.empty()) return false;
@@ -124,6 +125,7 @@ bool TreeView::navigate_to(std::wstring_view input, bool expand_target) noexcept
 }
 
 bool TreeView::go_to_favourite(std::wstring_view input) noexcept {
+    end_search();
     try {
         const std::wstring target = normalise(input);
         if (target.empty()) return false;
@@ -152,6 +154,10 @@ bool TreeView::go_to_favourite(std::wstring_view input) noexcept {
 }
 
 void TreeView::capture_state(settings::PanelState& out) const {
+    if (search_mode_) { // what is stored is the normal tree
+        out = search_saved_;
+        return;
+    }
     out = {};
     std::wstring path;
     for (const std::uint32_t node : tree_.rows()) {

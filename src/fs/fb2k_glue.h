@@ -20,6 +20,9 @@ EnumerationService& enumeration();
 //! pool so a slow delete waiting on a confirmation dialog never stalls folder listings. Each task
 //! must initialise COM itself (STA). Created on first use, shut down in on_quit.
 platform::WorkerPool& shell_worker();
+//! A single worker for disk searches (disk_search.h): one runs at a time, a new one cancels the
+//! old. Created on first use, shut down in on_quit.
+platform::WorkerPool& search_worker();
 
 //! Runs `work` on the main thread later; dropped once foobar2000 is quitting.
 void post_to_main(std::function<void()> work);

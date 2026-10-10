@@ -101,6 +101,8 @@ struct Settings {
     //! Browse and play only: no rename, delete, cut, paste, new folder, undo or Explorer menu,
     //! no drops on the tree, and drags out never move.
     bool read_only{false};
+    //! Ctrl+Shift+F opens a box that searches every root by name; results replace the tree.
+    bool disk_search{false};
     std::wstring startup_folder; //!< for Startup::folder
     std::vector<std::wstring> favourites; //!< shown as roots, in this order
     //! Single files under one "Favourite files" root, in this order (any type).

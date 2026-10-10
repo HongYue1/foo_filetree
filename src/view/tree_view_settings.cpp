@@ -83,7 +83,10 @@ void TreeView::on_settings_changed(std::uint32_t changes) noexcept {
         } catch (...) {
         }
     }
-    if ((changes & (settings::change_relist | settings::change_roots)) != 0) {
+    if (search_mode_ && (changes & (settings::change_relist | settings::change_roots |
+                                    settings::change_pinned)) != 0) {
+        end_search(); // the normal tree with the new settings; the results would be stale
+    } else if ((changes & (settings::change_relist | settings::change_roots)) != 0) {
         relist_all();
     } else if ((changes & settings::change_pinned) != 0) {
         update_pinned();
@@ -107,7 +110,7 @@ void TreeView::on_library_changed() noexcept {
     if (wnd_ == nullptr) return;
     const auto index = fs::library_index();
     if (options_.hide_empty) options_.library = index; // for the next probes
-    if (index == nullptr || !settings::current().library_roots) return;
+    if (index == nullptr || !settings::current().library_roots || search_mode_) return;
     const bool same = library_ != nullptr ? library_->same_roots(*index) : index->roots().empty();
     if (same) {
         library_ = index;
@@ -134,6 +137,11 @@ void TreeView::update_pinned() noexcept {
 }
 
 void TreeView::relist_all(bool keep_pending) noexcept {
+    if (search_mode_) { // Refresh all on search results: search again
+        const std::wstring text = search_text_;
+        start_search(text);
+        return;
+    }
     try {
         end_rename(false);
         if (!keep_pending) {

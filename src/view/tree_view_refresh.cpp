@@ -11,6 +11,11 @@
 namespace filetree::view {
 
 void TreeView::refresh_open_folders() noexcept {
+    if (search_mode_) { // F5 on search results: search again
+        const std::wstring text = search_text_;
+        start_search(text);
+        return;
+    }
     try {
         for (std::size_t row = 0; row < tree_.row_count(); ++row) {
             const std::uint32_t node = tree_.node_at_row(row);

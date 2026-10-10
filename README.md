@@ -28,12 +28,13 @@
   paste, drag and drop to and from Explorer.
 - **Context menu** with foobar2000's track menu and the full Explorer menu. Reorder its items
   or hide the ones you don't use.
-- **Address bar** with Back, Forward, Up and typed paths, and a **filter box** that narrows the
-  open folders as you type.
+- **Address bar** with Back, Forward, Up, typed paths and a favourites drop-down, and a
+  **filter box** that narrows the open folders as you type.
+- **Search every drive** by name (optional, Ctrl+Shift+F): results fill in as they are found.
 - **Now playing**: the playing track is marked, and the tree can follow it.
 - **Your look**: icons, tree lines, sorting (natural order, by name, date, size or type),
-  tooltips, row height, hover highlight, shaded rows, a status bar with counts and sizes, and
-  transparency. Colours, font and dark mode follow your Default UI or Columns UI settings.
+  tooltips, row height, hover highlight, shaded rows, a thin scrollbar, a status bar with counts
+  and sizes, and transparency. Colours, font and dark mode follow your Default UI or Columns UI settings.
 - **Screen readers** can read and navigate the tree.
 - **Light on resources**: nothing runs while nothing changes.
 
@@ -77,6 +78,7 @@ press OK or Apply.
 | F5 | Refresh the open folders |
 | Ctrl+L | Type a path in the address bar (environment variables like `%USERPROFILE%` work) |
 | Ctrl+F | Filter box (Esc clears it) |
+| Ctrl+Shift+F | Search every root by name, if turned on (Mouse & keys tab). Esc stops, Esc again closes |
 | Alt+Left / Alt+Right / Alt+Up, mouse side buttons | Back / Forward / Up |
 | Shift+right-click | Context menu with Explorer's extra commands (Copy as path, Open in Terminal, ...) |
 
@@ -91,10 +93,19 @@ folder. Give them shortcuts in **Preferences > Keyboard Shortcuts**.
   Folder Tree panels; order them on the Roots tab. Right-click a file (any type: music, video,
   a PDF booklet, artwork) > **Add to favourites** and it shows under **Favourite files**. Files
   that are missing (deleted, or on a drive that isn't there) are left out until they're back.
+  Select several items to add or remove them all at once.
+- **Favourites drop-down**: right-click a favourite > **Add to favourites drop-down**. A button
+  with a down arrow appears next to Up in the address bar; pick an entry to jump to it. You can
+  also tick or untick it for the selected favourite on the Roots tab.
 - **Read-only mode** (Mouse & keys tab): browse and play only. No rename, delete, cut, paste,
   new folder, undo or Explorer submenu, nothing can be dropped on the tree, and dragging out
   copies, never moves.
 - **Filter box** filters what is open; it doesn't search the disk. `*` and `?` work (`*.flac`).
+- **Search** (turn it on in Preferences > Mouse & keys) looks through every drive and favourite
+  for names, using the same rules as the filter box and only what the tree would show (hidden
+  files, file types and hidden folders as you set them). Press Enter to start. The tree then
+  shows only the matches and the folders above them; play, drag and right-click them as usual.
+  F5 searches again; Esc stops, a second Esc brings your tree back. Stops at 10,000 matches.
 - **Undo** is one step and covers renames and deletes made in the panel. Shift+Del can't be
   undone.
 - **Removable and optical drives** aren't watched for changes, so Safely Remove keeps working.

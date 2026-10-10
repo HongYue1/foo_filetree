@@ -221,7 +221,8 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
     }
     if (a.show_address_bar != b.show_address_bar || a.filter_box != b.filter_box ||
         a.show_status_bar != b.show_status_bar || a.status_counters != b.status_counters ||
-        a.transparent != b.transparent || a.quick_favourites != b.quick_favourites) {
+        a.transparent != b.transparent || a.quick_favourites != b.quick_favourites ||
+        a.disk_search != b.disk_search) {
         out |= change_layout;
     }
     if (a.sort.field != b.sort.field || a.sort.folders_first != b.sort.folders_first ||

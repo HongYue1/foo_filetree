@@ -74,6 +74,13 @@ private:
     void place_filter() noexcept;
     void open_filter() noexcept;
     void close_floating_filter() noexcept;
+    //! Where a floating box goes: `slot` 0 at the top right of the rows, 1 below that.
+    [[nodiscard]] RECT floating_rect(int slot, int height) const noexcept;
+    void place_search() noexcept;
+    void open_search() noexcept;
+    void close_search() noexcept;
+    //! Esc in the search box or the tree: stop a running search, else end it and close the box.
+    void on_search_escape() noexcept;
     //! After every tree paint: the status bar follows the selection and listings.
     void update_status() noexcept;
 
@@ -91,6 +98,10 @@ private:
     bool show_address_{true};
     settings::FilterBox filter_mode_{settings::FilterBox::bar};
     bool floating_open_{false}; //!< floating mode: the box is shown
+    //! The disk search box (Ctrl+Shift+F): floats over the top right of the tree, above a
+    //! floating filter box.
+    FilterBox search_;
+    bool search_open_{false};
     bool dark_{false};
     bool theme_applied_{false};
 

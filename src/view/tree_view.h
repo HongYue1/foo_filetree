@@ -23,6 +23,7 @@
 
 #include "../actions/action.h"
 #include "../actions/shell_ops.h"
+#include "../fs/disk_search.h"
 #include "../fs/enumerate.h"
 #include "../fs/enumeration_service.h"
 #include "../fs/watcher.h"
@@ -93,6 +94,21 @@ public:
     void select_parent() noexcept;
     //! Name filter (filter box); empty shows everything again.
     void set_filter(std::wstring_view text) noexcept;
+
+    // Searching every root by name (tree_view_search.cpp).
+    //! Starts (or restarts) a search; the tree shows what is found as it comes in. Empty text
+    //! ends the search.
+    bool start_search(std::wstring_view text) noexcept;
+    void cancel_search() noexcept; //!< stops looking; what was found stays
+    void end_search() noexcept;    //!< the normal tree again, as it was before the search
+    [[nodiscard]] bool searching() const noexcept { return search_mode_; }
+    [[nodiscard]] bool search_running() const noexcept { return search_running_; }
+    //! "Searching... 12", "12 found", "Nothing found".
+    [[nodiscard]] std::wstring search_status() const;
+    //! Called when the search starts, ends, or finds more.
+    void set_search_listener(std::function<void()> listener) {
+        search_listener_ = std::move(listener);
+    }
     [[nodiscard]] HWND wnd() const noexcept { return wnd_; }
     //! The font the rows are drawn in, at the window's DPI. Owned by the view.
     [[nodiscard]] HFONT font() const noexcept { return font_; }
@@ -417,6 +433,30 @@ private:
     bool mouse_inside_{false};
     bool thumb_hot_{false}; //!< the mouse is over the strip: the thumb is wider
     int thumb_drag_{-1};    //!< while dragging: the press's offset into the thumb, else -1
+
+    // Disk search state (tree_view_search.cpp).
+    struct SearchRoot {
+        std::wstring path;
+        std::uint16_t flags{}; //!< node_favourite / node_library as the root had them
+    };
+    void stop_search_worker() noexcept;
+    void notify_search() noexcept;
+    void on_search_batch(fs::SearchBatch& batch) noexcept;
+    void on_search_timer() noexcept;
+    void rebuild_search_tree() noexcept;
+    bool search_mode_{false};
+    bool search_running_{false};
+    bool search_limited_{false};
+    bool search_dirty_{false}; //!< hits not yet in the tree
+    std::uint64_t search_folders_{0};
+    std::wstring search_text_;
+    std::vector<SearchRoot> search_roots_;
+    std::vector<fs::SearchHit> search_hits_;
+    std::shared_ptr<std::atomic<bool>> search_cancel_;
+    settings::PanelState search_saved_; //!< the normal tree, for end_search and capture_state
+    std::function<void()> search_listener_;
+    static constexpr UINT_PTR timer_search = 0x54;
+    static constexpr UINT search_rebuild_ms = 300;
     int wheel_remainder_{};
     std::wstring typeahead_;  //!< characters typed within typeahead_reset_ms of each other
     DWORD typeahead_time_{};

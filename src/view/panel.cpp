@@ -97,6 +97,30 @@ void Panel::attach(HWND host, HostHooks hooks) noexcept {
                                      close_floating_filter();
                                  }
                              }});
+    search_.create(host, FilterBox::Hooks{
+                             nullptr,
+                             [this](bool) {
+                                 if (tree_wnd_ != nullptr) SetFocus(tree_wnd_); // Down
+                             },
+                             [this] {
+                                 if (!tree_.searching() && search_.text().empty()) close_search();
+                             },
+                             [this] {
+                                 filter_.clear();
+                                 close_floating_filter();
+                                 if (!tree_.start_search(search_.text())) close_search();
+                             },
+                             [this] { on_search_escape(); }});
+    search_.set_floating(true);
+    search_.set_cue(L"Search every root (Enter)");
+    tree_.set_search_listener([this] {
+        if (!tree_.searching()) {
+            if (!search_.has_focus()) close_search();
+            search_.set_note({});
+            return;
+        }
+        search_.set_note(tree_.search_status());
+    });
     status_.create(host, [this] { return tree_.counters_text(); });
     status_.set_counters_enabled(settings::current().status_counters);
     transparent_ = settings::current().transparent;
@@ -124,6 +148,8 @@ void Panel::detach() noexcept {
         tree_wnd_ = nullptr;
     }
     tree_.set_selection_listener(nullptr);
+    tree_.set_search_listener(nullptr);
+    search_.destroy();
     filter_.destroy();
     status_.destroy();
     address_.destroy();
@@ -145,6 +171,7 @@ void Panel::set_colours(const ViewColours& colours) noexcept {
     tree_.set_colours(colours);
     address_.set_colours(colours);
     filter_.set_colours(colours);
+    search_.set_colours(colours);
     status_.set_colours(colours);
 }
 
@@ -152,6 +179,7 @@ void Panel::set_font(const LOGFONTW& font) noexcept {
     tree_.set_font(font);
     address_.set_font(font);
     filter_.set_font(font);
+    search_.set_font(font);
     status_.set_font(font);
     layout();
 }
@@ -182,6 +210,7 @@ void Panel::layout() noexcept {
     }
     if (status > 0) update_status();
     place_filter();
+    place_search();
 }
 
 void Panel::place_filter() noexcept {
@@ -200,7 +229,13 @@ void Panel::place_filter() noexcept {
         ShowWindow(box, SW_HIDE);
         return;
     }
-    // Floating: over the top right of the rows, clear of the scroll bar.
+    const RECT rect = floating_rect(search_open_ ? 1 : 0, filter_.height());
+    SetWindowPos(box, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
+                 SWP_NOACTIVATE | SWP_SHOWWINDOW);
+}
+
+RECT Panel::floating_rect(int slot, int height) const noexcept {
+    // Over the top right of the rows, clear of the scroll bar.
     RECT client{};
     GetClientRect(host_, &client);
     RECT tree{};
@@ -216,8 +251,51 @@ void Panel::place_filter() noexcept {
     const int width = std::clamp<int>(client.right * 4 / 10, MulDiv(140, dpi, 96),
                                       MulDiv(300, dpi, 96));
     const int left = std::max<int>(right - width, tree.left + margin);
-    SetWindowPos(box, HWND_TOP, left, tree.top + margin, std::max<int>(right - left, 0),
-                 filter_.height(), SWP_NOACTIVATE | SWP_SHOWWINDOW);
+    const int top = tree.top + margin + slot * (search_.height() + margin / 2);
+    return {left, top, std::max<int>(right, left), top + height};
+}
+
+void Panel::place_search() noexcept {
+    HWND box = search_.wnd();
+    if (box == nullptr) return;
+    if (!search_open_) {
+        ShowWindow(box, SW_HIDE);
+        return;
+    }
+    const RECT rect = floating_rect(0, search_.height());
+    SetWindowPos(box, HWND_TOP, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top,
+                 SWP_NOACTIVATE | SWP_SHOWWINDOW);
+}
+
+void Panel::open_search() noexcept {
+    if (!settings::current().disk_search) return;
+    if (!search_open_) {
+        search_open_ = true;
+        place_search();
+        place_filter(); // a floating filter moves below
+    }
+    search_.focus();
+}
+
+void Panel::close_search() noexcept {
+    tree_.end_search();
+    if (!search_open_) return;
+    const bool had_focus = search_.has_focus();
+    search_open_ = false;
+    search_.clear();
+    search_.set_note({});
+    place_search();
+    place_filter();
+    if (had_focus && tree_wnd_ != nullptr) SetFocus(tree_wnd_);
+}
+
+void Panel::on_search_escape() noexcept {
+    if (tree_.search_running()) {
+        tree_.cancel_search();
+        return;
+    }
+    close_search();
+    if (tree_wnd_ != nullptr) SetFocus(tree_wnd_);
 }
 
 void Panel::update_status() noexcept {
@@ -262,6 +340,7 @@ void Panel::on_settings_changed(std::uint32_t changes) noexcept {
         floating_open_ = false;
         filter_mode_ = mode;
     }
+    if (!settings::current().disk_search) close_search();
     layout();
 }
 
@@ -359,11 +438,19 @@ bool Panel::on_panel_key(UINT msg, WPARAM key) noexcept {
     if (msg != WM_KEYDOWN) return false;
     switch (key) {
     case VK_ESCAPE:
-        if (!filter_.active()) return false;
+        if (!filter_.active()) {
+            if (!search_open_ && !tree_.searching()) return false;
+            on_search_escape();
+            return true;
+        }
         filter_.clear();
         close_floating_filter();
         return true;
     case 'F':
+        if (ctrl && shift && GetKeyState(VK_MENU) >= 0 && settings::current().disk_search) {
+            open_search();
+            return true;
+        }
         if (!ctrl || shift || GetKeyState(VK_MENU) < 0 ||
             filter_mode_ == settings::FilterBox::off) {
             return false;
@@ -402,6 +489,7 @@ bool Panel::handle_message(HWND, UINT msg, WPARAM wp, LPARAM lp, LRESULT& result
     case WM_DPICHANGED_AFTERPARENT:
         address_.refresh_dpi();
         filter_.refresh_dpi();
+        search_.refresh_dpi();
         status_.refresh_dpi();
         layout();
         return true;

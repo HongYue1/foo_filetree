@@ -30,6 +30,7 @@ void test_settings_model();
 void test_presets();
 void test_enumerate_rules(const std::filesystem::path& base);
 void test_watcher(const std::filesystem::path& base);
+void test_disk_search(const std::filesystem::path& base); // search_test.cpp
 // selection_test.cpp
 void test_selection();
 void test_status();
@@ -623,6 +624,7 @@ int main() {
     test_search_pattern();
     const auto base = make_fixture();
     test_enumerate(base);
+    test_disk_search(base);
     test_service(base);
     test_enumerate_rules(base);
     test_watcher(base);

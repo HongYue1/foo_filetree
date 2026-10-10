@@ -123,7 +123,17 @@ void FilterBox::place_edit() noexcept {
     RECT client{};
     GetClientRect(wnd_, &client);
     const int top = std::max<int>((client.bottom - text_height_) / 2, 1);
-    SetWindowPos(edit_, nullptr, 1, top, std::max<int>(client.right - 2, 0),
+    note_width_ = 0;
+    if (!note_.empty() && font_ != nullptr) {
+        HDC dc = GetDC(wnd_);
+        const HGDIOBJ old = SelectObject(dc, font_);
+        SIZE extent{};
+        GetTextExtentPoint32W(dc, note_.c_str(), static_cast<int>(note_.size()), &extent);
+        SelectObject(dc, old);
+        ReleaseDC(wnd_, dc);
+        note_width_ = std::min<int>(extent.cx + dpi::scale(10, dpi_), client.right / 2);
+    }
+    SetWindowPos(edit_, nullptr, 1, top, std::max<int>(client.right - 2 - note_width_, 0),
                  std::min<int>(text_height_, std::max<int>(client.bottom - 2, 0)),
                  SWP_NOZORDER | SWP_NOACTIVATE);
 }
@@ -132,6 +142,26 @@ void FilterBox::focus() noexcept {
     if (edit_ == nullptr) return;
     SetFocus(edit_);
     SendMessageW(edit_, EM_SETSEL, 0, -1);
+}
+
+std::wstring FilterBox::text() const {
+    std::wstring out;
+    if (edit_ == nullptr) return out;
+    out.resize(static_cast<std::size_t>(std::max(GetWindowTextLengthW(edit_), 0)) + 1);
+    out.resize(static_cast<std::size_t>(
+        GetWindowTextW(edit_, out.data(), static_cast<int>(out.size()))));
+    return out;
+}
+
+void FilterBox::set_cue(const wchar_t* text) noexcept {
+    if (edit_ != nullptr) SendMessageW(edit_, EM_SETCUEBANNER, FALSE, reinterpret_cast<LPARAM>(text));
+}
+
+void FilterBox::set_note(std::wstring note) noexcept {
+    if (note == note_) return;
+    note_ = std::move(note);
+    place_edit();
+    if (wnd_ != nullptr) InvalidateRect(wnd_, nullptr, FALSE);
 }
 
 void FilterBox::clear() noexcept {
@@ -146,6 +176,20 @@ LRESULT CALLBACK FilterBox::edit_proc(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, 
     case WM_GETDLGCODE:
         return DefSubclassProc(wnd, msg, wp, lp) | DLGC_WANTALLKEYS;
     case WM_KEYDOWN:
+        if (wp == VK_RETURN && box->hooks_.submitted) {
+            try {
+                box->hooks_.submitted();
+            } catch (...) {
+            }
+            return 0;
+        }
+        if (wp == VK_ESCAPE && box->hooks_.escaped) {
+            try {
+                box->hooks_.escaped();
+            } catch (...) {
+            }
+            return 0;
+        }
         if (wp == VK_ESCAPE || wp == VK_RETURN || wp == VK_DOWN) {
             const bool cleared = wp == VK_ESCAPE && GetWindowTextLengthW(wnd) > 0;
             if (cleared) SetWindowTextW(wnd, L"");
@@ -199,6 +243,16 @@ LRESULT FilterBox::on_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp) noexcept
         RECT inner{client.left + 1, client.top + 1, client.right - 1, client.bottom - 1};
         SetDCBrushColor(dc, colours_.background);
         FillRect(dc, &inner, static_cast<HBRUSH>(GetStockObject(DC_BRUSH)));
+        if (note_width_ > 0) {
+            RECT note{inner.right - note_width_, inner.top, inner.right - dpi::scale(5, dpi_),
+                      inner.bottom};
+            const HGDIOBJ old = SelectObject(dc, font_);
+            SetBkMode(dc, TRANSPARENT);
+            SetTextColor(dc, blend(colours_.text, colours_.background, 0.45));
+            DrawTextW(dc, note_.c_str(), static_cast<int>(note_.size()), &note,
+                      DT_RIGHT | DT_VCENTER | DT_SINGLELINE | DT_NOPREFIX | DT_END_ELLIPSIS);
+            SelectObject(dc, old);
+        }
         EndPaint(wnd, &ps);
         return 0;
     }

@@ -132,6 +132,7 @@
     <ClCompile Include="src\view\tree_view_access.cpp" />
     <ClCompile Include="src\platform\worker_pool.cpp" />
     <ClCompile Include="src\fs\enumerate.cpp" />
+    <ClCompile Include="src\fs\disk_search.cpp" />
     <ClCompile Include="src\fs\enumeration_service.cpp" />
     <ClCompile Include="src\fs\drives.cpp" />
     <ClCompile Include="src\fs\fb2k_glue.cpp" />
@@ -141,6 +142,7 @@
     <ClCompile Include="src\view\tree_view_input.cpp" />
     <ClCompile Include="src\view\tree_view_select.cpp" />
     <ClCompile Include="src\view\tree_view_scrollbar.cpp" />
+    <ClCompile Include="src\view\tree_view_search.cpp" />
     <ClCompile Include="src\view\tree_view_tooltip.cpp" />
     <ClCompile Include="src\view\row_tooltip.cpp" />
     <ClCompile Include="src\view\tree_view_items.cpp" />

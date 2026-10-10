@@ -10,7 +10,7 @@ namespace filetree::view {
 
 void TreeView::on_now_playing_changed() noexcept {
     // Follow: open the folders down to the new track and select it (not while renaming).
-    if (follow_playing_ && edit_ == nullptr && !now_playing::path().empty()) {
+    if (follow_playing_ && edit_ == nullptr && !search_mode_ && !now_playing::path().empty()) {
         navigate_to(now_playing::path(), false);
     }
     resolve_playing();

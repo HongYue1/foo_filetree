@@ -18,6 +18,7 @@ std::atomic<bool> g_quitting{false};
 
 std::unique_ptr<EnumerationService> g_service;
 std::unique_ptr<platform::WorkerPool> g_shell_worker;
+std::unique_ptr<platform::WorkerPool> g_search_worker;
 std::shared_ptr<const model::ExtensionSet> g_playable;
 std::shared_ptr<EmptyFolders> g_empty;
 
@@ -37,6 +38,11 @@ void post_to_main(std::function<void()> work) {
 platform::WorkerPool& shell_worker() {
     if (!g_shell_worker) g_shell_worker = std::make_unique<platform::WorkerPool>(1);
     return *g_shell_worker;
+}
+
+platform::WorkerPool& search_worker() {
+    if (!g_search_worker) g_search_worker = std::make_unique<platform::WorkerPool>(1);
+    return *g_search_worker;
 }
 
 EnumerationService& enumeration() {
@@ -76,6 +82,7 @@ public:
         g_quitting.store(true, std::memory_order_release);
         if (g_service) g_service->shutdown(1500);
         if (g_shell_worker) g_shell_worker->shutdown(500);
+        if (g_search_worker) g_search_worker->shutdown(500);
         shutdown_watcher();
     }
 };

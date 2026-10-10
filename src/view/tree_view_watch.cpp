@@ -45,7 +45,7 @@ void TreeView::schedule_watch_sync() noexcept {
 
 void TreeView::sync_watches() noexcept {
     if (wnd_ == nullptr) return;
-    if (!watch_changes_) {
+    if (!watch_changes_ || search_mode_) { // search results: partial folders, nothing to watch
         unwatch_all();
         return;
     }

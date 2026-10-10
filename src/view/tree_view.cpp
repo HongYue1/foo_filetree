@@ -94,6 +94,7 @@ void TreeView::detach() noexcept {
     pending_select_ = {};
     for (const PendingListing& pending : pending_) pending.ticket.cancel();
     pending_.clear();
+    stop_search_worker();
     stop_watching();
     set_cut({});
     now_playing::unsubscribe(this);
@@ -513,6 +514,10 @@ bool TreeView::handle_message(HWND wnd, UINT msg, WPARAM wp, LPARAM lp, LRESULT&
     case WM_TIMER:
         if (static_cast<UINT_PTR>(wp) == timer_hold_paint) {
             release_paint();
+            return true;
+        }
+        if (static_cast<UINT_PTR>(wp) == timer_search) {
+            on_search_timer();
             return true;
         }
         return on_watch_timer(static_cast<UINT_PTR>(wp));

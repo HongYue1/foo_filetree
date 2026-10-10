@@ -143,14 +143,20 @@ void TreeView::paint(HDC target, const RECT& dirty) noexcept {
         fill(dc, RECT{dirty.left, bottom, dirty.right, dirty.bottom}, colours_.background);
     }
     if (tree_.node_count() == 0) {
-        // No roots at all: drives switched off and no favourites (or library folders) yet.
+        // No roots at all: drives switched off and no favourites (or library folders) yet. Or
+        // a search that has found nothing (yet).
         const int margin = MulDiv(12, metrics_.dpi, 96);
         RECT hint{margin, margin, client_width_ - margin, client_height_ - margin};
         SetTextColor(dc, dim_text_);
-        DrawTextW(dc,
-                  L"Nothing to show yet. Right-click here and open Preferences to add favourite "
-                  L"folders or show the drives.",
-                  -1, &hint, DT_CENTER | DT_WORDBREAK | DT_NOPREFIX);
+        std::wstring text;
+        try {
+            text = search_mode_ ? search_status()
+                                : L"Nothing to show yet. Right-click here and open Preferences "
+                                  L"to add favourite folders or show the drives.";
+        } catch (...) {
+        }
+        DrawTextW(dc, text.c_str(), static_cast<int>(text.size()), &hint,
+                  DT_CENTER | DT_WORDBREAK | DT_NOPREFIX);
     }
 
     paint_thin_scrollbar(dc);

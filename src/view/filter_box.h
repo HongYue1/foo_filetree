@@ -20,6 +20,10 @@ public:
         std::function<void(bool cleared)> done;
         //! The box lost the focus (floating mode hides an empty box then).
         std::function<void()> blurred;
+        //! Optional: Enter calls this instead of done (the disk search box starts a search).
+        std::function<void()> submitted;
+        //! Optional: Esc calls this instead of clearing the box and calling done.
+        std::function<void()> escaped;
     };
 
     FilterBox() = default;
@@ -42,6 +46,11 @@ public:
 
     void focus() noexcept;
     void clear() noexcept;
+    [[nodiscard]] std::wstring text() const;
+    //! The grey hint shown while the box is empty.
+    void set_cue(const wchar_t* cue) noexcept;
+    //! A short grey note at the right end inside the frame ("12 found"); empty: none.
+    void set_note(std::wstring note) noexcept;
     [[nodiscard]] bool active() const noexcept {
         return edit_ != nullptr && GetWindowTextLengthW(edit_) > 0;
     }
@@ -64,6 +73,8 @@ private:
     LOGFONTW base_font_{};
     bool has_base_font_{false};
     HFONT font_{};
+    std::wstring note_;
+    int note_width_{0};
     int dpi_{96};
     int text_height_{16};
     int height_{22};

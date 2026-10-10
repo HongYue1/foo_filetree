@@ -197,6 +197,10 @@ BEGIN
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,143,286,1
     CONTROL         "Read-only: browse and play, never change files",IDC_READ_ONLY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,150,281,10
     LTEXT           "No rename, delete, cut, paste, new folder, undo or Explorer submenu. Nothing can be dropped on the tree, and dragging out copies, never moves.",IDC_STATIC,24,163,269,16
+
+    LTEXT           "Search",IDC_STATIC,7,186,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,196,286,1
+    CONTROL         "Ctrl+Shift+F searches every root by name (folders and files)",IDC_DISK_SEARCH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,203,281,10
 END
 
 IDD_TAB_MENU DIALOGEX 0, 0, 300, 222

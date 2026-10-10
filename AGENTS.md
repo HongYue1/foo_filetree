@@ -30,6 +30,12 @@ General, Roots (drive check boxes are created at run time under `IDC_DRIVES_LABE
 Folders, Look, Mouse & keys, Menu. Controls are found across all tabs (`find_control`), so
 moving one between tabs is an rc-only change. Run `dialog_check` after any layout edit.
 
+Disk search (`fs/disk_search.cpp` on its own one-thread pool, `view/tree_view_search.cpp`):
+the tree is swapped for a results tree rebuilt from all hits (throttled, at most every 300 ms
+while running); the normal tree's state is kept in `search_saved_` and is what
+`capture_state` reports. Anything that needs the real tree (navigate_to, settings that relist,
+library roots) ends the search first; F5 / Refresh all search again; no watching meanwhile.
+
 Budget: idle = no timers, no repaints; no disk I/O on the main thread; paint < 1 ms; no
 allocations while scrolling; folders listed only when opened.
 

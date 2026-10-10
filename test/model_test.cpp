@@ -274,6 +274,30 @@ void test_tree_merge() {
     // Loading or unloaded folders are left alone.
     CHECK(tree.expand(tree.find_child(c, L"Users")) == Tree::ExpandResult::needs_load);
     CHECK(tree.merge_children(tree.find_child(c, L"Users"), {}).moved.empty());
+
+    // A listed folder that changed on disk: closed and empty, it is unloaded (gets its expander
+    // back); open, it is reported stale so it gets listed again.
+    Tree disk;
+    const auto e = disk.add_root(L"E:\\");
+    disk.expand(e);
+    const auto base = records({L"Empty", L"Open"}, {});
+    disk.apply_children(e, base);
+    const auto empty = disk.find_child(e, L"Empty");
+    disk.expand(empty);
+    disk.apply_children(empty, {});
+    disk.collapse(empty);
+    const auto open = disk.find_child(e, L"Open");
+    disk.expand(open);
+    disk.apply_children(open, records({}, {L"t.mp3"}));
+    CHECK(disk.merge_children(e, base).stale.empty()); // unchanged: nothing to do
+    auto later = base;
+    later[0].modified = 5;
+    later[1].modified = 5;
+    const auto changed = disk.merge_children(e, later);
+    const auto empty2 = disk.find_child(e, L"Empty");
+    CHECK(!disk.node(empty2).has(model::node_loaded));
+    CHECK(changed.stale.size() == 1 && changed.stale[0] == disk.find_child(e, L"Open"));
+    CHECK(disk.expand(empty2) == Tree::ExpandResult::needs_load);
 }
 
 void test_tree_filter() {

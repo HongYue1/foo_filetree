@@ -148,6 +148,10 @@ public:
         RowSplice splice;                 //!< the folder's visible descendants, replaced
         std::uint32_t old_first{no_node}; //!< the old child range...
         std::vector<std::uint32_t> moved; //!< ...and where each went (no_node: gone)
+        //! Open, listed child folders whose modified time changed: their own listing is out of
+        //! date (new indices). A closed, empty one is simply unloaded instead, so it gets its
+        //! expander back and is listed when opened.
+        std::vector<std::uint32_t> stale;
         [[nodiscard]] std::uint32_t map(std::uint32_t old) const noexcept {
             if (old_first == no_node || old < old_first || old - old_first >= moved.size()) {
                 return old;

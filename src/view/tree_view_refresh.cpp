@@ -148,6 +148,12 @@ void TreeView::merge_listing(std::uint32_t node, fs::Listing& listing) noexcept 
                 tree_.fail_load(moved);
             }
         }
+        // Open folders that changed on disk while their parent was closed (not watched).
+        for (const std::uint32_t stale : merge.stale) {
+            if (std::find(recheck.begin(), recheck.end(), stale) == recheck.end()) {
+                recheck.push_back(stale);
+            }
+        }
         for (const std::uint32_t moved : recheck) {
             try {
                 request_check(moved);

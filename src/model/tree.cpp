@@ -261,6 +261,16 @@ Tree::MergeResult Tree::merge_children(std::uint32_t index,
             result.moved[match] = at;
             if (anchor_ == old_first + match) anchor_ = at;
             Node moved = nodes_[old_first + match];
+            if (moved.has(node_loaded) && !moved.has(node_loading) &&
+                moved.modified != record.modified) {
+                if (moved.has(node_expanded)) {
+                    result.stale.push_back(at);
+                } else if (moved.child_count == 0) {
+                    moved.flags = static_cast<std::uint16_t>(moved.flags &
+                                                             ~(node_loaded | node_load_failed));
+                    moved.first_child = no_node;
+                }
+            }
             moved.size = record.size;
             moved.modified = record.modified;
             moved.attributes = record.attributes;

@@ -37,4 +37,15 @@ void test_library_index() {
     same.add(L"C:\\MUSIC\\z.mp3", L"z.mp3");
     same.finish();
     CHECK(same.same_roots(index));
+
+    // Roots remembered from the last session match the built index: no relist when it comes in.
+    LibraryIndex remembered;
+    remembered.add_root(L"D:\\");
+    remembered.add_root(L"c:\\music");
+    remembered.add_root(L"\\\\nas\\share");
+    remembered.add_root(L"C:\\Music");
+    remembered.add_root(L"");
+    remembered.finish();
+    CHECK(remembered.roots().size() == 3 && remembered.same_roots(index));
+    CHECK(remembered.folder_count() == 0);
 }

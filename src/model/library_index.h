@@ -20,6 +20,9 @@ public:
     //! `path` is a track's file path ("C:\Music\A\x.flac"), `relative` its path inside the
     //! library folder ("A\x.flac"). False when they do not fit together (then nothing is kept).
     bool add(std::wstring_view path, std::wstring_view relative);
+    //! A root remembered from the last session (no tracks known under it). Duplicates are
+    //! ignored.
+    void add_root(std::wstring_view root);
     //! Sorts the roots (case-insensitive). Call once, after the last add().
     void finish();
 

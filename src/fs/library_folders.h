@@ -11,6 +11,7 @@
 namespace filetree::fs {
 
 //! The last index built, or null while the first one is being built (or the library is off).
+//! Until the first build is in, the folders found last session (roots only, no tracks).
 //! The first call starts following the library.
 std::shared_ptr<const model::LibraryIndex> library_index();
 

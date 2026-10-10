@@ -59,6 +59,14 @@ bool LibraryIndex::add(std::wstring_view path, std::wstring_view relative) {
     return true;
 }
 
+void LibraryIndex::add_root(std::wstring_view root) {
+    if (root.empty()) return;
+    std::wstring root_key = upper(root);
+    if (std::find(root_keys_.begin(), root_keys_.end(), root_key) != root_keys_.end()) return;
+    roots_.emplace_back(root);
+    root_keys_.push_back(std::move(root_key));
+}
+
 void LibraryIndex::finish() {
     std::vector<std::size_t> order(roots_.size());
     std::iota(order.begin(), order.end(), std::size_t{0});

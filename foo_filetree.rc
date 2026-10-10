@@ -200,6 +200,11 @@ BEGIN
     PUSHBUTTON      "Remove",IDC_HIDDEN_REMOVE,233,57,60,14
     PUSHBUTTON      "Restore defaults",IDC_HIDDEN_DEFAULTS,233,77,60,14
     LTEXT           "Right-click a folder in the tree and pick Hide this folder to add it.",IDC_STATIC,12,157,281,8
+
+    LTEXT           "Empty folders",IDC_STATIC,7,175,286,8
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,7,185,286,1
+    CONTROL         "Hide folders with no playable files in them (checked in the background)",IDC_HIDE_EMPTY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,192,281,10
+    LTEXT           "A folder shows up while it is checked, and stays if the check takes too long.",IDC_STATIC,24,205,269,8
 END
 
 IDD_TAB_FAVOURITES DIALOGEX 0, 0, 300, 222

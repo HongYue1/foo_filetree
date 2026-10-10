@@ -201,7 +201,7 @@ std::uint32_t diff(const Settings& a, const Settings& b) noexcept {
         a.sort.reverse != b.sort.reverse || a.show_hidden != b.show_hidden ||
         a.show_system != b.show_system || a.files != b.files || a.always_show != b.always_show ||
         a.never_show != b.never_show || a.hide_patterns != b.hide_patterns ||
-        a.hidden_folders != b.hidden_folders) {
+        a.hidden_folders != b.hidden_folders || a.hide_empty != b.hide_empty) {
         out |= change_relist;
     }
     return out;

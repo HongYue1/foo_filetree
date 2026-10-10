@@ -9,6 +9,7 @@
 
 #include "../model/extension_set.h"
 #include "enumeration_service.h"
+#include "probe.h"
 
 namespace filetree::fs {
 
@@ -26,6 +27,10 @@ void post_to_main(std::function<void()> work);
 //! Extensions fb2k can play or load as a playlist, built on first use from the registered input
 //! and playlist types (no disk access). Cached; shared read-only with workers.
 std::shared_ptr<const model::ExtensionSet> playable_extensions();
+
+//! Folders found empty by the probes, shared by every panel (Hide folders with no playable
+//! files). Created on first use.
+std::shared_ptr<EmptyFolders> empty_folders();
 
 //! Drops the cached set so the next call rebuilds it (Preferences change, M5).
 void invalidate_playable_extensions() noexcept;

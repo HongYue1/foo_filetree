@@ -55,6 +55,14 @@ void TreeView::refresh_options() noexcept {
     } catch (...) {
     }
     options_.playable = s.files == fs::FileMode::playable ? playable_ : nullptr;
+    options_.hide_empty = s.hide_empty;
+    try {
+        options_.probe_types = s.hide_empty ? fs::playable_extensions() : nullptr;
+        options_.empty = s.hide_empty ? fs::empty_folders() : nullptr;
+        options_.library = s.hide_empty ? fs::library_index() : nullptr;
+    } catch (...) {
+        options_.probe_types = nullptr; // no hiding rather than half of it
+    }
 }
 
 void TreeView::on_settings_changed(std::uint32_t changes) noexcept {
@@ -63,6 +71,12 @@ void TreeView::on_settings_changed(std::uint32_t changes) noexcept {
     if ((changes & settings::change_remeasure) != 0) {
         remeasure();
         on_size();
+    }
+    if ((changes & settings::change_relist) != 0) {
+        try {
+            fs::empty_folders()->clear(); // other filters, other answers
+        } catch (...) {
+        }
     }
     if ((changes & (settings::change_relist | settings::change_roots)) != 0) relist_all();
     if ((changes & settings::change_repaint) != 0) {
@@ -81,9 +95,10 @@ std::wstring TreeView::upper_path(std::uint32_t node) const {
 }
 
 void TreeView::on_library_changed() noexcept {
-    if (wnd_ == nullptr || !settings::current().library_roots) return;
+    if (wnd_ == nullptr) return;
     const auto index = fs::library_index();
-    if (index == nullptr) return;
+    if (options_.hide_empty) options_.library = index; // for the next probes
+    if (index == nullptr || !settings::current().library_roots) return;
     const bool same = library_ != nullptr ? library_->same_roots(*index) : index->roots().empty();
     if (same) {
         library_ = index;

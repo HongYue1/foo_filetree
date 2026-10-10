@@ -133,6 +133,7 @@ struct Settings {
     // Folders
     //! Never listed (roots excepted). May hold variables ("%WINDIR%") and wildcards ("?:\x").
     std::vector<std::wstring> hidden_folders{default_hidden_folders()};
+    bool hide_empty{false}; //!< folders without playable files below them are left out
 
     // Menu
     MenuLayout menu{MenuLayout::defaults()};

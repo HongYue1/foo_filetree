@@ -19,6 +19,7 @@ std::atomic<bool> g_quitting{false};
 std::unique_ptr<EnumerationService> g_service;
 std::unique_ptr<platform::WorkerPool> g_shell_worker;
 std::shared_ptr<const model::ExtensionSet> g_playable;
+std::shared_ptr<EmptyFolders> g_empty;
 
 void add_utf8(model::ExtensionSet& set, const char* extension) {
     if (extension == nullptr || *extension == '\0') return;
@@ -59,6 +60,11 @@ std::shared_ptr<const model::ExtensionSet> playable_extensions() {
 }
 
 void invalidate_playable_extensions() noexcept { g_playable.reset(); }
+
+std::shared_ptr<EmptyFolders> empty_folders() {
+    if (!g_empty) g_empty = std::make_shared<EmptyFolders>();
+    return g_empty;
+}
 
 namespace {
 

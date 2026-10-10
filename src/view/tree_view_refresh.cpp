@@ -61,6 +61,32 @@ void TreeView::request_check(std::uint32_t node) {
     pending_.push_back({node, std::move(ticket), true});
 }
 
+void TreeView::request_probe(std::uint32_t node, const fs::Listing& listing) {
+    if (!options_.hide_empty || options_.probe_types == nullptr || listing.probed ||
+        listing.error != ERROR_SUCCESS) {
+        return;
+    }
+    const bool folders = std::any_of(listing.items.begin(), listing.items.end(), [](const auto& item) {
+        return (item.attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+    });
+    if (!folders) return;
+    if (std::any_of(pending_.begin(), pending_.end(),
+                    [node](const PendingListing& p) { return p.node == node; })) {
+        return; // a listing or check is on its way and probes when it lands
+    }
+    tree_.build_path(node, path_);
+    fs::EnumOptions options = options_;
+    options.probe = true;
+    std::weak_ptr<TreeView*> weak = alive_;
+    const std::uint64_t generation = generation_;
+    auto ticket = fs::enumeration().request(
+        path_, std::move(options), [weak, node, generation](fs::Listing& result) {
+            if (const auto alive = weak.lock()) (*alive)->on_check(node, generation, result);
+        });
+    // As a check: a merge that moves `node` re-requests a check, which probes again.
+    pending_.push_back({node, std::move(ticket), true});
+}
+
 void TreeView::on_check(std::uint32_t node, std::uint64_t generation,
                         fs::Listing& listing) noexcept {
     bool again = false;
@@ -72,11 +98,13 @@ void TreeView::on_check(std::uint32_t node, std::uint64_t generation,
     if (generation != generation_ || wnd_ == nullptr || node >= tree_.node_count()) return;
     merge_listing(node, listing);
     apply_pending_select(node); // after rename/delete (reload_and_select)
-    if (again) {
-        try {
+    try {
+        if (again) {
             request_check(node);
-        } catch (...) {
+        } else {
+            request_probe(node, listing);
         }
+    } catch (...) {
     }
 }
 

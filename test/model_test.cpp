@@ -540,6 +540,7 @@ void test_actions() {
 
 void test_file_kinds();
 void test_library_index();
+void test_probe(const std::filesystem::path& base);
 
 int main() {
     test_actions();
@@ -564,6 +565,7 @@ int main() {
     test_service(base);
     test_enumerate_rules(base);
     test_watcher(base);
+    test_probe(base);
     test_drives();
     std::error_code ignored;
     std::filesystem::remove_all(base, ignored);

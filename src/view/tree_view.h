@@ -241,6 +241,9 @@ private:
     // stay open, selection and scroll stay). Unchanged folders cost one listing, no repaint.
     void refresh_open_folders() noexcept;
     void request_check(std::uint32_t node);
+    //! Hide folders with no playable files: after `listing` landed in `node`, a probe listing
+    //! searches its child folders and merges the result (on_check). Only when it has folders.
+    void request_probe(std::uint32_t node, const fs::Listing& listing);
     void on_check(std::uint32_t node, std::uint64_t generation, fs::Listing& listing) noexcept;
     void retry_failed(std::uint32_t node) noexcept;
     void merge_listing(std::uint32_t node, fs::Listing& listing) noexcept;

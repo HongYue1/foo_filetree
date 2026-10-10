@@ -401,12 +401,14 @@ void TreeView::on_listing(std::uint32_t node, std::uint64_t generation,
         }
     }
     apply_restore_top();
-    if (again) {
-        // A change was reported while this listing ran: check once more now it has landed.
-        try {
+    try {
+        if (again) {
+            // A change was reported while this listing ran: check once more now it has landed.
             request_check(node);
-        } catch (...) {
+        } else {
+            request_probe(node, listing);
         }
+    } catch (...) {
     }
 }
 

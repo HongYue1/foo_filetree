@@ -15,6 +15,7 @@
 
 #include "../model/extension_set.h"
 #include "../model/filter_rules.h"
+#include "../model/library_index.h"
 #include "../model/sort.h"
 #include "../model/tree.h"
 
@@ -26,6 +27,8 @@ enum class FileMode : std::uint8_t {
     none,     //!< folders only
 };
 
+class EmptyFolders; // probe.h
+
 struct EnumOptions {
     bool show_hidden{false};
     bool show_system{false};
@@ -35,6 +38,16 @@ struct EnumOptions {
     //! Always/never-shown extensions and hide patterns. Null: none.
     std::shared_ptr<const model::FilterRules> rules;
     model::SortOptions sort{};
+
+    //! Hide folders without playable files. A listing leaves out the folders `empty` knows;
+    //! a probe listing (`probe`) searches every child folder instead (probe.h), updates `empty`
+    //! and drops those found empty. Folders changed in the last minutes are always kept (a new
+    //! folder, a rip in progress), and so are folders that hold Media Library tracks.
+    bool hide_empty{false};
+    bool probe{false};
+    std::shared_ptr<const model::ExtensionSet> probe_types; //!< playable types; null: no hiding
+    std::shared_ptr<EmptyFolders> empty;
+    std::shared_ptr<const model::LibraryIndex> library;
 };
 
 //! The result of one enumeration: entries in display order, names in one shared buffer.
@@ -51,6 +64,7 @@ struct Listing {
     std::vector<Item> items;
     DWORD error{ERROR_SUCCESS}; //!< Win32 error; ERROR_SUCCESS for a listing (even an empty one)
     bool cancelled{false};
+    bool probed{false}; //!< a probe listing: empty folders are already left out
 
     [[nodiscard]] std::wstring_view name(const Item& item) const noexcept {
         return {names.data() + item.name_offset, item.name_length};

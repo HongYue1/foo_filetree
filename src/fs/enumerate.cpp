@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <numeric>
 
+#include "probe.h"
+
 namespace filetree::fs {
 namespace {
 
@@ -37,6 +39,49 @@ bool keep(const WIN32_FIND_DATAW& data, const EnumOptions& options) noexcept {
         return options.playable == nullptr || options.playable->matches_file(data.cFileName);
     }
     return true;
+}
+
+//! The probe step: searches each child folder, drops the empty ones, updates the shared cache.
+void drop_empty_folders(Listing& listing, std::wstring_view folder, std::wstring& upper_path,
+                        std::size_t prefix, const EnumOptions& options,
+                        const std::atomic<bool>& cancel) {
+    constexpr std::int64_t keep_recent = 3LL * 60 * 10'000'000; // 3 minutes in FILETIME units
+    FILETIME now_time{};
+    GetSystemTimeAsFileTime(&now_time);
+    const std::int64_t now = to_int64(now_time);
+    const ProbeFilter filter{options.show_hidden, options.show_system, options.probe_types.get(),
+                             options.rules.get()};
+    std::wstring path(folder);
+    if (path.empty() || path.back() != L'\\') path.push_back(L'\\');
+    const std::size_t path_prefix = path.size();
+
+    std::erase_if(listing.items, [&](const Listing::Item& item) {
+        if ((item.attributes & FILE_ATTRIBUTE_DIRECTORY) == 0 || listing.cancelled) return false;
+        if (cancel.load(std::memory_order_relaxed)) {
+            listing.cancelled = true;
+            return false;
+        }
+        const std::wstring_view name = listing.name(item);
+        const std::size_t length = model::to_upper(name, upper_path.data() + prefix, MAX_PATH);
+        const std::wstring_view upper(upper_path.data(), prefix + length);
+        Probe found = Probe::unknown;
+        if (now - item.modified >= keep_recent) {
+            if (options.library != nullptr && options.library->holds_tracks(upper)) {
+                found = Probe::playable;
+            } else {
+                path.resize(path_prefix);
+                path.append(name);
+                found = probe_folder(path, filter, ProbeLimits{}, cancel);
+            }
+        }
+        if (cancel.load(std::memory_order_relaxed)) {
+            listing.cancelled = true;
+            return false;
+        }
+        if (options.empty != nullptr) options.empty->set(upper, found == Probe::empty);
+        return found == Probe::empty;
+    });
+    listing.probed = true;
 }
 
 } // namespace
@@ -88,11 +133,15 @@ Listing enumerate_folder(std::wstring_view folder, const EnumOptions& options,
         return listing;
     }
 
-    // Folders hidden by path: "<FOLDER>\" upper-cased once, each name appended in place.
+    // Folders hidden by path or known empty: "<FOLDER>\" upper-cased once, each name appended
+    // in place.
     const model::FilterRules* rules = options.rules.get();
+    const bool by_path = rules != nullptr && !rules->hide_paths.empty();
+    const bool hide_empty = options.hide_empty && options.probe_types != nullptr;
+    EmptyFolders* const known_empty = hide_empty && !options.probe ? options.empty.get() : nullptr;
     std::wstring upper_path;
     std::size_t prefix = 0;
-    if (rules != nullptr && !rules->hide_paths.empty()) {
+    if (by_path || hide_empty) {
         upper_path.resize(folder.size() + 1 + MAX_PATH);
         prefix = model::to_upper(folder, upper_path.data(), folder.size());
         if (prefix == 0 || upper_path[prefix - 1] != L'\\') upper_path[prefix++] = L'\\';
@@ -110,7 +159,9 @@ Listing enumerate_folder(std::wstring_view folder, const EnumOptions& options,
         if (prefix != 0 && (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
             const std::size_t length = model::to_upper({data.cFileName, name_length},
                                                        upper_path.data() + prefix, MAX_PATH);
-            if (rules->hidden_by_path({upper_path.data(), prefix + length})) continue;
+            const std::wstring_view upper(upper_path.data(), prefix + length);
+            if (by_path && rules->hidden_by_path(upper)) continue;
+            if (known_empty != nullptr && known_empty->contains(upper)) continue;
         }
         Listing::Item item;
         item.name_offset = static_cast<std::uint32_t>(listing.names.size());
@@ -128,6 +179,10 @@ Listing enumerate_folder(std::wstring_view folder, const EnumOptions& options,
     }
     FindClose(find);
     if (listing.cancelled) return listing;
+    if (hide_empty && options.probe) {
+        drop_empty_folders(listing, folder, upper_path, prefix, options, cancel);
+        if (listing.cancelled) return listing;
+    }
 
     // Sort an index permutation (moves 4 bytes per swap), then apply it once.
     std::vector<std::uint32_t> order(listing.items.size());

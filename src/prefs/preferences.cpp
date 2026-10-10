@@ -412,6 +412,7 @@ private:
         s.favourites = favourites_.paths;
         s.library_roots = get_check(page, IDC_LIBRARY_ROOTS);
         s.hidden_folders = hidden_.paths;
+        s.hide_empty = get_check(page, IDC_HIDE_EMPTY);
         s.favourites_place =
             static_cast<settings::FavouritesPlace>(get_combo(page, IDC_FAV_PLACE, 0));
         s.separate_favourites = get_check(page, IDC_FAV_SEPARATE);
@@ -485,6 +486,7 @@ private:
         favourites_.paths = s.favourites;
         set_check(page, IDC_LIBRARY_ROOTS, s.library_roots);
         hidden_.paths = s.hidden_folders;
+        set_check(page, IDC_HIDE_EMPTY, s.hide_empty);
         set_combo(page, IDC_FAV_PLACE, static_cast<int>(s.favourites_place));
         set_check(page, IDC_FAV_SEPARATE, s.separate_favourites);
         set_int(page, IDC_FAV_GAP, s.favourites_gap);
